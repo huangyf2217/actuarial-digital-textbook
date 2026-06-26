@@ -1,0 +1,107 @@
+.site-home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  color: var(--primary);
+  background: var(--primary-light);
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 650;
+  white-space: nowrap;
+  margin-left: auto;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.site-home-link:hover {
+  color: var(--primary-dark);
+  border-color: var(--primary);
+}
+
+#sidebar .book-global-nav {
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+#sidebar .book-global-nav a {
+  font-weight: 600;
+}
+
+#sidebar .book-global-nav a.book-muted {
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+.book-pager {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 18px;
+  margin: 32px 0 0;
+}
+
+.book-pager a,
+.book-pager span {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 13px;
+  color: var(--primary);
+  background: var(--primary-light);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.book-pager a:hover {
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.book-pager .book-home {
+  justify-content: center;
+  min-width: 88px;
+  color: var(--text);
+  background: transparent;
+}
+
+.book-pager .book-next {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.book-pager .book-disabled {
+  color: var(--text-muted);
+  background: transparent;
+  opacity: 0.72;
+}
+
+@media (max-width: 768px) {
+  .site-home-link {
+    margin-left: 0;
+    padding: 7px 10px;
+    font-size: 0.8rem;
+  }
+
+  .book-pager {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .book-pager .book-home,
+  .book-pager .book-next {
+    justify-content: flex-start;
+    text-align: left;
+  }
+}

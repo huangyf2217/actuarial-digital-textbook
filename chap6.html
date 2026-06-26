@@ -1,0 +1,3372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第6章 准备金评估 | 非寿险精算学模型与应用</title>
+
+<!-- MathJax -->
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$'],['\\(','\\)']],
+    displayMath: [['$$','$$'],['\\[','\\]']],
+    processEscapes: true,
+    tags: 'none'
+  },
+  svg: { fontCache: 'global' },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+
+<!-- Prism.js for code syntax highlighting -->
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-r.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sas.min.js"></script>
+
+<!-- WebR for running R code in browser (ES Module, loaded dynamically) -->
+<script type="module">
+  import('https://webr.r-wasm.org/v0.5.4/webr.mjs').then(({ WebR }) => {
+    window.WebR = { WebR };
+    console.log('WebR 模块已加载');
+  }).catch(err => {
+    console.warn('WebR 模块加载失败:', err);
+  });
+</script>
+
+<!-- Pyodide for running Python code in browser -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+
+<style>
+:root {
+  --bg: #f0f4f8;
+  --card-bg: #ffffff;
+  --text: #1a202c;
+  --text-muted: #64748b;
+  --primary: #2563eb;
+  --primary-light: #dbeafe;
+  --primary-dark: #1e40af;
+  --accent: #dc2626;
+  --border: #e2e8f0;
+  --code-bg: #1e1e1e;
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #cbd5e1;
+  --sidebar-active: #3b82f6;
+  --theorem-color: #7c3aed;
+  --theorem-bg: #f5f3ff;
+  --defn-color: #059669;
+  --defn-bg: #ecfdf5;
+  --example-color: #d97706;
+  --example-bg: #fffbeb;
+  --proof-color: #db2777;
+  --proof-bg: #fdf2f8;
+  --prop-color: #2563eb;
+  --prop-bg: #eff6ff;
+  --lemma-color: #9333ea;
+  --lemma-bg: #faf5ff;
+
+  --answer-color: #0891b2;
+  --answer-bg: #ecfeff;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --radius: 12px;
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --primary: #60a5fa;
+  --primary-light: #1e3a5f;
+  --primary-dark: #93c5fd;
+  --border: #334155;
+  --sidebar-bg: #020617;
+  --theorem-bg: #2e1065;
+  --defn-bg: #064e3b;
+  --example-bg: #451a03;
+  --proof-bg: #500724;
+  --answer-bg: #083344;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Segoe UI','PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.85;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ===== Header ===== */
+header {
+  position: fixed; top:0; left:0; right:0; height:64px; z-index:100;
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; padding: 0 24px;
+  gap: 16px;
+}
+header img.logo { height: 40px; border-radius: 6px; }
+header h1 { font-size: 1.15rem; font-weight: 700; flex: 1; color: var(--text); }
+header .subtitle { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+
+.theme-toggle {
+  background: none; border: 1px solid var(--border); border-radius: 20px;
+  padding: 8px 18px; cursor: pointer; font-size: 0.85rem; color: var(--text);
+  transition: all 0.3s; white-space: nowrap;
+}
+.theme-toggle:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+/* ===== Sidebar ===== */
+#sidebar {
+  position: fixed; top:64px; left:0; bottom:0; width:280px; z-index:90;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  overflow-y: auto;
+  padding: 16px 0;
+  transition: transform 0.3s;
+}
+#sidebar::-webkit-scrollbar { width: 6px; }
+#sidebar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+#sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+#sidebar nav { padding: 0 12px; }
+#sidebar .nav-section { margin-bottom: 8px; }
+#sidebar .nav-section-title {
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 12px 12px 6px; color: var(--sidebar-text); opacity: 0.5;
+  font-weight: 600;
+}
+#sidebar a {
+  display: block; padding: 7px 12px 7px 20px;
+  color: var(--sidebar-text); text-decoration: none;
+  font-size: 0.88rem; border-radius: 6px; margin: 2px 0;
+  transition: all 0.2s; border-left: 3px solid transparent;
+}
+#sidebar a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+#sidebar a.active {
+  background: rgba(59,130,246,0.15); color: #93c5fd;
+  border-left-color: var(--sidebar-active); font-weight: 500;
+}
+#sidebar a.sub { padding-left: 32px; font-size: 0.82rem; }
+#sidebar a.sub2 { padding-left: 48px; font-size: 0.78rem; opacity: 0.85; }
+
+/* ===== Main ===== */
+#main {
+  margin-left: 280px; margin-top: 64px; padding: 32px 40px 80px;
+  max-width: 920px; overflow-x: hidden;
+}
+
+/* ===== Section Cards ===== */
+.section-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 32px 36px; margin-bottom: 28px; box-shadow: var(--shadow-lg);
+  scroll-margin-top: 80px; overflow-x: auto;
+}
+.section-card h2 {
+  font-size: 1.6rem; margin-bottom: 20px; padding-bottom: 14px;
+  border-bottom: 3px solid var(--primary); color: var(--primary);
+  font-weight: 700;
+}
+.section-card h3 {
+  font-size: 1.3rem; margin: 28px 0 14px; color: var(--text);
+  font-weight: 600; padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.section-card h4 {
+  font-size: 1.1rem; margin: 20px 0 10px; color: var(--primary-dark);
+  font-weight: 600;
+}
+.section-card h5 {
+  font-size: 1rem; margin: 16px 0 8px; font-weight: 600;
+  color: var(--text);
+}
+
+/* ===== Content Elements ===== */
+.section-card p { margin-bottom: 14px; text-align: justify; }
+.section-card ul, .section-card ol { margin: 10px 0 14px 28px; }
+.section-card li { margin-bottom: 6px; }
+.section-card strong { color: var(--primary-dark); font-weight: 600; }
+
+.hl { color: var(--accent); font-weight: 500; }
+.key { color: var(--primary); font-weight: 600; }
+
+.highlight-box {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-left: 4px solid #f59e0b;
+  padding: 14px 18px; margin: 14px 0; border-radius: 6px;
+}
+
+[data-theme="dark"] .theorem-box.prop { background: rgba(37,99,235,0.1); }
+[data-theme="dark"] .theorem-box.lemma { background: rgba(147,51,234,0.1); }
+
+[data-theme="dark"] .highlight-box {
+  background: linear-gradient(135deg, #422006 0%, #451a03 100%);
+}
+
+/* ===== Theorem / Definition / Example Boxes ===== */
+.theorem-box {
+  border: 1px solid var(--border); border-left: 4px solid var(--theorem-color);
+  padding: 16px 20px; margin: 16px 0; border-radius: 8px;
+  background: var(--theorem-bg);
+}
+.theorem-box .label {
+  font-weight: 700; color: var(--theorem-color); margin-bottom: 8px;
+  display: block; font-size: 0.9rem;
+}
+.theorem-box.defn {
+  border-left-color: var(--defn-color);
+  background: var(--defn-bg);
+}
+.theorem-box.defn .label { color: var(--defn-color); }
+.theorem-box.exa {
+  border-left-color: var(--example-color);
+  background: var(--example-bg);
+}
+.theorem-box.exa .label { color: var(--example-color); }
+
+.theorem-box.prop {
+  border-left-color: #2563eb;
+  background: #eff6ff;
+}
+.theorem-box.prop .label { color: #2563eb; }
+.theorem-box.lemma {
+  border-left-color: #9333ea;
+  background: #faf5ff;
+}
+.theorem-box.lemma .label { color: #9333ea; }
+
+
+/* ===== Collapsible Sections ===== */
+.collapsible-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 10px 16px; border-radius: 8px;
+  cursor: pointer; font-size: 0.9rem; font-weight: 600;
+  transition: all 0.2s; border: 1px dashed; margin: 10px 0;
+}
+.collapsible-toggle .arrow { transition: transform 0.3s; font-size: 0.8rem; }
+.collapsible-toggle.open .arrow { transform: rotate(90deg); }
+
+.proof-toggle {
+  background: var(--proof-bg); border-color: var(--proof-color);
+  color: var(--proof-color);
+}
+.proof-toggle:hover { background: var(--proof-color); color: #fff; }
+
+.answer-toggle {
+  background: var(--answer-bg); border-color: var(--answer-color);
+  color: var(--answer-color);
+}
+.answer-toggle:hover { background: var(--answer-color); color: #fff; }
+
+.collapsible-content {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+  padding: 0 16px;
+}
+.collapsible-content.open {
+  max-height: 8000px; padding: 12px 16px;
+}
+
+/* ===== Code Blocks ===== */
+.code-tabs {
+  margin: 16px 0; border-radius: 10px; overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.code-tab-header {
+  display: flex; background: #2d2d2d;
+}
+.code-tab-btn {
+  padding: 10px 20px; background: transparent; border: none;
+  color: #999; cursor: pointer; font-size: 0.85rem; font-weight: 500;
+  transition: all 0.2s; border-bottom: 3px solid transparent;
+  display: flex; align-items: center; gap: 6px;
+}
+.code-tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.code-tab-btn.active { color: #fff; border-bottom-color: var(--primary); background: rgba(255,255,255,0.05); }
+.code-tab-btn .lang-dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+}
+.code-tab-btn[data-lang="r"] .lang-dot { background: #2563eb; }
+.code-tab-btn[data-lang="python"] .lang-dot { background: #eab308; }
+.code-tab-btn[data-lang="sas"] .lang-dot { background: #dc2626; }
+
+.code-tab-content { display: none; position: relative; overflow-x: auto; }
+.code-tab-content.active { display: block; }
+
+.code-actions {
+  position: absolute; top: 8px; right: 8px; z-index: 10;
+  display: flex; gap: 6px;
+}
+.code-btn {
+  background: rgba(255,255,255,0.1); border: none; color: #ccc;
+  padding: 5px 12px; border-radius: 5px; cursor: pointer;
+  font-size: 0.75rem; transition: all 0.2s;
+  display: flex; align-items: center; gap: 4px;
+}
+.code-btn:hover { background: rgba(255,255,255,0.25); color: #fff; }
+.code-btn.run-btn { background: rgba(34,197,94,0.2); color: #4ade80; }
+.code-btn.run-btn:hover { background: rgba(34,197,94,0.4); }
+.code-btn.copied { background: #10b981; color: #fff; }
+.code-btn.reset-btn { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.code-btn.reset-btn:hover { background: rgba(251,191,36,0.35); }
+
+pre[class*="language-"] {
+  margin: 0 !important; border-radius: 0 !important;
+  font-size: 0.85rem !important; padding: 16px !important;
+  max-height: 450px; overflow-y: auto;
+}
+
+/* 可编辑代码块样式 */
+pre[class*="language-"] code[contenteditable="true"] {
+  display: block; outline: none; white-space: pre;
+  border-left: 2px solid transparent; transition: border-color 0.2s;
+}
+pre[class*="language-"] code[contenteditable="true"]:focus {
+  border-left-color: #fbbf24; background: #1e1e1e;
+}
+pre[class*="language-"] code[contenteditable="true"]:hover {
+  border-left-color: rgba(251,191,36,0.3);
+}
+
+/* Code output area */
+.code-output {
+  background: #1a1a1a; color: #e0e0e0; padding: 12px 16px;
+  font-family: 'Consolas','Monaco','Courier New',monospace;
+  font-size: 0.82rem; line-height: 1.6; max-height: 300px;
+  overflow-y: auto; display: none; border-top: 1px solid #444;
+}
+.code-output.show { display: block; }
+.code-output .output-line { margin: 2px 0; white-space: pre-wrap; word-break: break-word; }
+.code-output .error { color: #f87171; }
+.code-output .info { color: #60a5fa; }
+.code-output .success { color: #4ade80; }
+.code-output .output-header {
+  color: #60a5fa; font-weight: 600; margin-bottom: 8px;
+  border-bottom: 1px solid #444; padding-bottom: 4px;
+}
+.code-output .output-running { color: #fbbf24; padding: 4px 0; }
+.code-output .output-error {
+  color: #f87171; background: rgba(248,113,113,0.1);
+  padding: 8px 12px; border-radius: 4px; margin: 4px 0;
+}
+.code-output .output-text {
+  background: transparent; color: #e0e0e0; padding: 2px 0;
+  margin: 0; white-space: pre-wrap; word-break: break-word;
+  font-family: 'Consolas','Monaco','Courier New',monospace;
+}
+.code-output .output-plot {
+  max-width: 100%; margin: 8px 0; border-radius: 4px;
+  background: #fff; padding: 4px;
+}
+.code-output .output-info {
+  background: rgba(96,165,250,0.08); padding: 12px 16px;
+  border-radius: 6px; border-left: 3px solid #60a5fa; margin: 8px 0;
+}
+.code-output .output-info p { margin: 4px 0; line-height: 1.7; }
+
+/* ===== Images ===== */
+.figure-wrapper {
+  text-align: center; margin: 24px 0; cursor: zoom-in;
+}
+.figure-wrapper img {
+  max-width: 100%; border-radius: 10px; box-shadow: var(--shadow-lg);
+  transition: transform 0.3s;
+}
+.figure-wrapper:hover img { transform: scale(1.02); }
+.figure-wrapper img.broken {
+  padding: 40px; background: var(--card-bg); opacity: 0.5;
+  border: 2px dashed var(--border);
+}
+.figure-wrapper .caption {
+  font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;
+  font-style: italic;
+}
+.figure-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0;
+}
+.figure-grid .figure-wrapper { margin: 0; }
+
+/* Lightbox */
+#lightbox {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.92); z-index: 9999;
+  display: none; justify-content: center; align-items: center;
+  cursor: zoom-out;
+}
+#lightbox img { max-width: 92%; max-height: 92%; border-radius: 8px; }
+#lightbox.active { display: flex; }
+.lightbox-close {
+  position: absolute; top: 20px; right: 30px; color: #fff;
+  font-size: 40px; font-weight: bold; cursor: pointer; line-height: 1;
+}
+
+/* ===== Tables ===== */
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: center; }
+th { background: var(--primary-light); font-weight: 600; color: var(--primary-dark); }
+tr:nth-child(even) { background: rgba(0,0,0,0.02); }
+[data-theme="dark"] tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+
+/* ===== Math Display ===== */
+.math-display {
+  overflow-x: auto; padding: 8px 0; margin: 12px 0;
+}
+mjx-container { font-size: 1.05em !important; }
+
+/* ===== Back to Top ===== */
+#back-top {
+  position: fixed; bottom: 30px; right: 30px; width: 48px; height: 48px;
+  border-radius: 50%; background: var(--primary); color: #fff;
+  border: none; cursor: pointer; font-size: 1.3rem; z-index: 80;
+  display: none; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: transform 0.2s;
+}
+#back-top:hover { transform: translateY(-3px); }
+
+/* ===== WebR Status ===== */
+#webr-status {
+  position: fixed; bottom: 30px; left: 310px; z-index: 80;
+  background: var(--card-bg); padding: 8px 16px; border-radius: 20px;
+  box-shadow: var(--shadow); font-size: 0.8rem; color: var(--text-muted);
+  display: flex; align-items: center; gap: 8px;
+}
+#webr-status .dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;
+}
+#webr-status.ready .dot { background: #10b981; }
+#webr-status.loading .dot { background: #f59e0b; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ===== Mobile ===== */
+#sidebar-toggle {
+  display: none; background: none; border: none; font-size: 1.5rem;
+  color: var(--text); cursor: pointer;
+}
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-280px); }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left: 0; padding: 20px 16px 60px; }
+  #sidebar-toggle { display: block; }
+  .section-card { padding: 20px 16px; }
+  .figure-grid { grid-template-columns: 1fr; }
+  #webr-status { display: none; }
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.section-card { animation: fadeIn 0.4s ease; }
+
+/* ===== Learning Objectives ===== */
+.learning-objectives {
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(219,234,254,0.5) 100%);
+  border-radius: var(--radius); padding: 24px 28px; margin-bottom: 24px;
+  border-left: 5px solid var(--primary);
+}
+.learning-objectives h3 {
+  color: var(--primary-dark); margin-top: 0; border: none; padding: 0;
+}
+.learning-objectives ol { margin: 8px 0 0 24px; }
+.learning-objectives li { margin-bottom: 8px; }
+
+/* ===== Distribution Card ===== */
+.dist-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 0; margin: 24px 0; overflow: hidden;
+  box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+}
+.dist-card-header {
+  padding: 16px 24px; color: #fff; font-size: 1.2rem; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.dist-card-header .icon { font-size: 1.4rem; }
+.dist-card-body { padding: 24px 28px; }
+.dist-card-body h4 { margin-top: 0; }
+
+/* Color themes for distribution cards */
+.dist-binomial .dist-card-header { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.dist-poisson .dist-card-header { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.dist-nbinom .dist-card-header { background: linear-gradient(135deg, #ec4899, #be185d); }
+.dist-exponential .dist-card-header { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.dist-gamma .dist-card-header { background: linear-gradient(135deg, #10b981, #059669); }
+.dist-invgauss .dist-card-header { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.dist-pareto .dist-card-header { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.dist-lognormal .dist-card-header { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.dist-weibull .dist-card-header { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+
+/* ===== Practice Problems ===== */
+.practice-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 24px 28px; margin: 20px 0; box-shadow: var(--shadow);
+  border-left: 5px solid var(--example-color);
+}
+.practice-card h4 { color: var(--example-color); }
+
+/* ===== References ===== */
+.references ol { margin: 8px 0 0 24px; }
+.references li { margin-bottom: 10px; }
+.references em { color: var(--text-muted); }
+</style>
+
+<link href="bookdown-lite.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header>
+  <button id="sidebar-toggle">&#9776;</button>
+  <img src="uibe.jpg" alt="UIBE" class="logo" onerror="this.style.display='none'">
+  <div>
+    <h1>非寿险精算学模型与应用</h1>
+    <div class="subtitle">第6章 准备金评估</div>
+  </div>
+  <a class="site-home-link" href="index.html">目录</a>
+  <button class="theme-toggle" onclick="toggleTheme()">&#127769; 深色模式</button>
+</header>
+
+<!-- ===== Sidebar ===== -->
+<aside id="sidebar">
+  <nav>
+        <div class="nav-section book-global-nav">
+      <div class="nav-section-title">全书</div>
+      <a href="index.html" class="nav-link">目录首页</a>
+      <a href="chap5.html" class="nav-link">上一章</a>
+      <a href="chap7.html" class="nav-link">下一章</a>
+    </div><div class="nav-section">
+      <div class="nav-section-title">导览</div>
+      <a href="#sec-intro" class="nav-link active">学习目标</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">6.1 时间序列基础</div>
+      <a href="#sec-6-1" class="nav-link">6.1 时间序列基础</a>
+      <a href="#sec-6-1-1" class="nav-link sub">6.1.1 时间序列过程</a>
+      <a href="#sec-6-1-2" class="nav-link sub">6.1.2 平稳时间序列</a>
+      <a href="#sec-6-1-3" class="nav-link sub">6.1.3 平稳性检验</a>
+      <a href="#sec-6-1-4" class="nav-link sub">6.1.4 非平稳序列的变换</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">6.2 一元时间序列模型</div>
+      <a href="#sec-6-2" class="nav-link">6.2 一元时间序列模型</a>
+      <a href="#sec-6-2-1" class="nav-link sub">6.2.1 滞后算子和差分算子</a>
+      <a href="#sec-6-2-2" class="nav-link sub">6.2.2 自回归模型</a>
+      <a href="#sec-6-2-3" class="nav-link sub">6.2.3 移动平均模型</a>
+      <a href="#sec-6-2-4" class="nav-link sub">6.2.4 自回归移动平均模型</a>
+      <a href="#sec-6-2-5" class="nav-link sub">6.2.5 ARIMA模型</a>
+      <a href="#sec-6-2-6" class="nav-link sub">6.2.6 时间序列的马尔可夫性</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">6.3 模型拟合与应用</div>
+      <a href="#sec-6-3" class="nav-link">6.3 模型拟合与应用</a>
+      <a href="#sec-6-3-1" class="nav-link sub">6.3.1 模型识别</a>
+      <a href="#sec-6-3-2" class="nav-link sub">6.3.2 参数估计</a>
+      <a href="#sec-6-3-3" class="nav-link sub">6.3.3 诊断检验</a>
+      <a href="#sec-6-3-4" class="nav-link sub">6.3.4 外推预测</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">6.4 多元时间序列模型</div>
+      <a href="#sec-6-4" class="nav-link">6.4 多元时间序列模型</a>
+      <a href="#sec-6-4-1" class="nav-link sub">6.4.1 协整时间序列</a>
+      <a href="#sec-6-4-2" class="nav-link sub">6.4.2 向量自回归模型</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">6.5 其他非平稳非线性时间序列</div>
+      <a href="#sec-6-5" class="nav-link">6.5 其他非平稳非线性时间序列</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">6.6 真题练习</div>
+            <a href="#sec-summary" class="nav-link">本章小结</a>
+<a href="#sec-6-6" class="nav-link">6.6 真题练习</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">附录</div>
+      <a href="#sec-references" class="nav-link">参考文献</a>
+    </div>
+  </nav>
+</aside>
+
+<!-- ===== Main Content ===== -->
+<div id="main">
+  <h1 class="chapter-title">第6章 准备金评估</h1>
+
+<div class="section-card" id="sec-intro">
+  <h2>本章学习目标</h2>
+  <div class="learning-objectives">
+    <ol>
+      <li>解释平稳性的概念，对时间序列的平稳性进行判断和检验。</li>
+      <li>了解滞后算子和差分算子的表示方法，能够应用差分等方法将非平稳序列转化为平稳序列。</li>
+      <li>熟悉常见的单变量时间序列模型，包括自回归（AR）、移动平均（MA）和自回归移动平均（ARMA）模型。</li>
+      <li>掌握时间序列的建模过程，包括模型识别、估计和诊断，以及应用时间序列模型进行外推预测。</li>
+      <li>认识多元时间序列和部分特殊的非平稳、非线性时间序列模型。</li>
+    </ol>
+  </div>
+</div>
+<div class="section-card" id="sec-6-1">
+  <h2>6.1 时间序列基础</h2>
+  
+
+  <h3 id="sec-6-1-1">6.1.1 时间序列过程</h3>
+  <p>单变量时间序列是按照时间顺序记录的一组观测数据，通常表示为：</p>
+<div class="math-display">$$x(t_{1}),x(t_{2}),\cdots,x(t_{n})~~\text{或}~~\{x(t_{i}): i = 1, 2, \cdots, n\}$$</div>
+<p>常见时间序列都是取相等时间间隔，故也可以表示为：</p>
+<div class="math-display">$$x_{1},x_{2},\cdots,x_{n}~~\text{或}~~\{x_t: t = 1, 2, \cdots, n\}$$</div>
+<p>时间序列分析是现代统计学的重要分支，其核心思想是应用数学与统计方法对按时间顺序组成的数据进行建模和分析，捕捉时间依赖性和动态变化特征，以预测其未来发展趋势。通过挖掘历史数据中的趋势、季节性和周期性特征，时间序列分析可以揭示数据的内在规律，为未来决策提供可靠依据，因而被广泛应用于经济、金融、气象、环境等领域。在非寿险精算研究中，时间序列分析可以帮助识别索赔数据的时间特征，评估宏观经济指标的变化趋势，从而支持保费定价和现金流管理的动态调整。此外，时间序列分析还可用于研究多个变量之间的动态关系。</p>
+<p>注意，时间序列的变化规律在很大程度上依赖于数据的观察顺序和观察间隔，故在对时间序列数据进行描述、分析和建模时，需要特别关注时间维度的特性。例如，上证指数各成分股在特定时点内的价格并非时间序列，因为数据的顺序与时间无关；但以一分钟为间隔获取的股票价格是一个时间序列。</p>
+<p>常见的时间序列$\{x_t\}$可以表现为如下形式：</p>
+<p>(1) 时间间隔较大的离散观测值，例如某只股票的每日收盘价；</p>
+<p>(2) 时间间隔较小的高频观测或连续观测值，例如设备在工作过程中每秒记录的传感器读数；</p>
+<p>(3) 每个观测结果也可以表示一段时间内的累计总量，例如保险公司每个月在某个新业务的总保费收入。</p>
+<div class="figure-wrapper" onclick="openLightbox('section6-figs/figure1.png')"><img src="section6-figs/figure1.png" alt="股票指数每日收盘价构成的时间序列" onerror='this.classList.add("broken");this.alt="图片加载失败: figure1.png";'><div class="caption">股票指数每日收盘价构成的时间序列</div></div>
+<p>由于$x_t$通常为连续型随机变量，时间序列数据可以用一个离散时间内连续状态的随机过程$\{X_t: t \in T\}$进行描述，称为时间序列过程。此时，序列$\{X_t: t = 1, 2, \cdots ,n\}$可视为双重无限集$\{X_t: t = \cdots, -2,-1,0,1,2,\cdots \}$中的子序列，这种解释对于研究时间序列的收敛性和均衡性等概念更加方便。</p>
+
+  <h3 id="sec-6-1-2">6.1.2 平稳时间序列</h3>
+  <p><strong>1. 平稳性的概念</strong></p>
+<p>对于随机过程$\{X_t: t = 1, 2, \cdots ,n\}$，定义其均值和协方差函数分别为：</p>
+<div class="math-display">$$\begin{gathered}\mu _{t} = \mathbb{E}({X_t}) \\
+\gamma_{s,t} = \text{Cov}(X_{s}, X_{t})=\mathbb{E}(X_{s}X_{t})-\mathbb{E}(X_{s})\mathbb{E}(X_{t})\end{gathered}$$</div>
+<p>随机过程的平稳性可通过如下两种方式表述：</p>
+<div class="theorem-box defn"><span class="label">定义 6.3（严平稳与宽平稳）</span>
+<p>(1) 若$\{X_{t_1} ,X_{t_2 } , \cdots,X_{t_n } \}$的联合分布与$\{X_{\tau + t_1 } ,X_{\tau + t_2 } ,\cdots,X_{\tau + t_n } \}$的联合分布在任意时间$\tau,t_{1},t_{2},\cdots,t_{n}$和任意整数$n$都相同，则称随机过程为<span style="color:red">严平稳</span>（strict stationary）。即当时间变化时，序列的统计特性保持不变。</p>
+<p>(2) 若随机过程的均值$m(t)=\mathbb{E}(X_{t})$为常数（与时间$t$无关），且随机过程的协方差$C(s, t)=\mathbb{E}[(X_{s} - m(s))(X_{t} - m(t))]$仅依赖于时间间隔$\tau=|t-s|$，则称随机过程为<span style="color:red">宽平稳</span>（weak stationary）。宽平稳是严平稳的一个弱化条件，只要求均值和协方差的稳定性，而无需联合分布保持不变。对于多元正态过程，严平稳和宽平稳相互等价。</p>
+</div>
+<p>进一步地，若$X_{1},X_2, \cdots ,X_{n}$的值对预测$X_t~(t \to \infty)$的值几乎没有帮助（没有提供任何信息），则称过程$\{X_t\}$为纯随机的。在讨论“平稳时间序列过程”时，一般指宽平稳纯随机过程。</p>
+<p>对于时间序列过程$\{X_t\}$：</p>
+<p>(1) 若$\{X_t\}$平稳，则称其为零阶单整（integrated of order 0）序列，记为$I(0)$；</p>
+<p>(2) 若$\{X_t\}$不平稳，但其增量$Y_t = X_t - X_{t-1}$平稳，则称序列$\{X_t\}$为一阶单整$I(1)$，即增量平稳的时间序列过程；</p>
+<p>(3) 若$\{X_t\}$不平稳，但其增量过程$\{Y_t\}$为$I(1)$，则称为二阶单整$I(2)$；依次类推。</p>
+<p>平稳随机过程在时间序列分析中占据核心地位。其重要性在于，如果某个时间序列在一段时间内表现出某种特定行为，则可以合理地预期其未来也将遵循相似的行为模式。与非平稳序列相比，平稳序列因其统计特性稳定而具有更加完善的理论支持，并且更便于实际应用。在对时间序列进行建模时，平稳性通常是一个基本的前提假设；对于非平稳时间序列，需要通过适当的转换方法（如差分或趋势分解）将其转化为平稳随机序列，以确保结果的可靠性。</p>
+<p><strong>2. 自相关和偏自相关函数</strong></p>
+<p>根据定义，当$\{X_t\}$为平稳时间序列时，该序列具有以下特征：</p>
+<p>(1) 过程均值为常数，即$\mathbb{E}(X_t) = \mu$；</p>
+<p>(2) 协方差仅依赖于时间间隔，因此可定义：</p>
+<div class="math-display">$$\gamma_{k} = \text{Cov}(X_{t},X_{t + k}) = \mathbb{E}(X_{t}X_{t+k}) - \mathbb{E}(X_{t})\mathbb{E}(X_{t + k})$$</div>
+<p>称为自协方差函数（autocovariance function）。自协方差函数描述了$X_t$和$X_{t+k}$的依赖关系，且不随时间$t$而变化。</p>
+<p>当$k=0$时，$\gamma_0 = \text{Var}(X_t)$称为自方差（autovariance），同样不随时间$t$变化。</p>
+<p>(3) 对于平稳时间序列，可定义其自相关函数（autocorrelation function，ACF）为：</p>
+<div class="math-display">$$\rho_k = \text{Cor}(X_t ,X_{t + k} ) = \frac{\gamma _k }{\gamma _0}$$</div>
+<p>当$k \to \infty$时，纯随机过程的自相关函数满足$\rho_{k} \to 0$。</p>
+<div class="theorem-box defn"><span class="label">定义 6.1（白噪声）</span>
+<p>白噪声是最简单的平稳随机过程。对于序列$\{e_t: t \in \mathbb{Z}\}$，若其满足：</p>
+<p>(1) 对任意$t$，都有$\mathbb{E}(e_{t}) = 0$；</p>
+<p>(2) 自协方差函数满足：</p>
+<div class="math-display">$$\gamma_k = \text{Cov}(e_t, e_{t + k}) =
+\left \{
+\begin{aligned}
+\sigma^2,&nbsp;&nbsp; &\text{if}~~~~ k=0~; \\
+0, ~&nbsp;&nbsp; &\text{otherwise}.
+\end{aligned}
+\right.$$</div>
+<p>则称为白噪声过程。白噪声过程的任一时点与其他时点均不相关，且均值、方差和协方差都不随时间变化，显然满足宽平稳的定义。典型的白噪声过程如一个均值为0、方差为$\sigma^2$且互不相关的正态随机变量构成的序列。</p>
+</div>
+<p>易证明平稳随机过程的自协方差函数和自相关函数是关于$k$的偶函数，即：</p>
+<div class="math-display">$$\begin{gathered}\gamma_{k} = \text{Cov}(X_{t - k}, X_{t - k + k}) = \text{Cov}(X_{t - k}, X_{t}) =
+\text{Cov}(X_{t}, X_{t - k})=\gamma _{- k} \\
+\rho_{k} = \rho_{-k}\end{gathered}$$</div>
+<p>在时间序列分析中，自相关函数$\rho_k$描述了$X_t$与$X_{t+k}$（或$X_t$与$X_{t-k}$）的线性相关性，但两者之间的关系可能是通过中间变量$X_{t-1},X_{t-2},\cdots,X_{t-k+1}$来传递的。为了剔除中间变量的影响，直接衡量当前时点值$X_t$与滞后$k$时刻值$X_{t-k}$间的相关性，可以引入偏自相关函数（partial autocorrelation function，PACF）。</p>
+<p>理论上讲，偏自相关系数$\phi_{k,k}$是以下线性回归模型的系数，各回归系数是最小化平方误差损失函数的解，即：</p>
+<div class="math-display">$$\begin{gathered}X_t = \phi_{k,1}X_{t-1} + \phi_{k,2}X_{t-2} + \cdots + \phi_{k,k}X_{t-k} + \epsilon_t \\
+\boldsymbol{\phi}_k = \arg\min~ \mathbb{E}\left[ {\left( {X_t - \phi _{k,1} X_{t - 1} - \phi _{k,2} X_{t - 2} - \cdots - \phi _{k,k} X_{t - k} } \right)^2} \right]\end{gathered}$$</div>
+<p>在实际应用中，$\phi_{k,k}$的估计值可以应用Durbin-Levinson递归公式计算：</p>
+<div class="math-display">$$\begin{aligned}
+\phi_{k,k} = \frac{\rho_k - \sum_{i=1}^{k-1} \phi_{k-1,i} \cdot \rho_{k-i}}{1 - \sum_{i=1}^{k-1} \phi_{k-1,i} \cdot \rho_i} ~~~~~~~~~~~~~~\\
+\phi_{k,i} = \phi_{k-1,i} - \phi_{k,k} \cdot \phi_{k-1, k-i},\ i=1,2,\cdots,k-1
+\end{aligned}$$</div>
+<p>特别当$k=1,2$时，有$\phi_{1,1}=\rho_1,\ \phi_{2,2} = (\rho_2 - \rho_1^2)/(1 - \rho_1^2)$。</p>
+<p><strong>3. 估计量的计算</strong></p>
+<p>给定来自平稳时间序列过程的观察数据$\{x_1,x_2,...,x_n\}$，该序列的样本均值、样本自协方差（自相关系数）和样本偏自相关系数可以通过以下方法估计：</p>
+<div class="math-display">$$\begin{gathered}\hat{\mu} = \frac{1}{n} \sum_{t=1}^n x_t \\
+\hat{\gamma}_k = \frac{1}{n} \sum_{t=1}^{n-k} (x_t - \hat{\mu})(x_{t+k} - \hat{\mu}),\ k=0,1,\cdots,n-1 \\
+\hat{\rho}_k = \hat{\gamma}_k / \hat{\gamma}_0 \\[1em]
+\hat{\phi}_{k,k} = \frac{\hat{\rho}_k - \sum_{i=1}^{k-1} \hat{\phi}_{k-1,i} \cdot \hat{\rho}_{k-i}}{1 - \sum_{i=1}^{k-1} \hat{\phi}_{k-1,i} \cdot \hat{\rho}_i}\end{gathered}$$</div>
+<p>集合$\{\hat{\rho}_k: k \in \mathbb{Z}\}$称为样本自相关函数（SACF），将$\hat{\rho}_k \sim k$绘制成图，称为样本自相关图。类似地，$\{\hat{\phi}_{k,k}: k \in \mathbb{Z}\}$称为样本偏自相关函数（SPACF），绘制$\hat{\phi}_{k,k} \sim k$称为样本偏自相关图。</p>
+<div class="theorem-box exa"><span class="label">例 6.2</span><p>白噪声的识别：渐进结果表明，若原始序列为白噪声$X_t = \mu + e_t$，则对任意$k>0$，$\hat{\rho}_k$和$\hat{\phi}_{k,k}$都近似服从均值为0、方差为$1/n$的正态分布。</p>
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">&#9654;</span></button>
+    <div class="collapsible-content">
+<p>因此，若SACF和SPACF的某些取值位于区间$(-1.96/\sqrt{n},~1.96/\sqrt{n})$之外，则可认为该序列并非白噪声。其中$\pm1.96/\sqrt{n}$是95%的置信区间。</p>
+    </div>
+  </div>
+
+  <h3 id="sec-6-1-3">6.1.3 平稳性检验</h3>
+  <p>对时间序列数据进行分析前，首先需要检验其平稳性。由前讲述可知，一个平稳序列的均值、方差和自协方差不应随时间变化，因此可绘制数据的时序图或样本自相关图，应用图像方法进行判断。</p>
+<div class="figure-wrapper" onclick="openLightbox('section6-figs/figure2.png')"><img src="section6-figs/figure2.png" alt="三种常见的非平稳时间序列" onerror='this.classList.add("broken");this.alt="图片加载失败: figure2.png";'><div class="caption">三种常见的非平稳时间序列</div></div>
+<p>前图~展示了非平稳时间序列的三种常见情况。其中：</p>
+<p>(1) 第一副图为具有线性趋势的时间序列，曲线随时间增长和逐渐上升；</p>
+<p>(2) 第二幅图为具有季节性趋势的时间序列，曲线呈周期性波动；</p>
+<p>(3) 第三幅图为具有随机游走特性的时间序列，数据中不存在固定趋势或周期性变化，但$\{X_t\}$的方差随时间$t$增长。</p>
+<p>另一种方法是绘制样本自相关图。一般而言，平稳时间序列的自相关系数会随$k$的增加而快速降低，最终接近于0。若自相关系数衰减较慢，或具有明显的周期性趋势，则为非平稳序列。</p>
+<p>前图~展示了一个非平稳时间序列的样本自相关图。其中，横轴为$k$的阶数；竖线表示对应的自相关系数；蓝色虚线部分为置信区间，用于确定自相关系数是否不等于0。从图中可以看出，序列的自相关系数在20阶后仍然具有较大的值，显然为非平稳，需要经过一定处理才能变为平稳序列。事实上，该序列具有一定的趋势和周期性特征。</p>
+<div class="figure-wrapper" onclick="openLightbox('section6-figs/figure3.png')"><img src="section6-figs/figure3.png" alt="非平稳序列的样本自相关图" onerror='this.classList.add("broken");this.alt="图片加载失败: figure3.png";'><div class="caption">非平稳序列的样本自相关图</div></div>
+<p>除图像方法外，还可以构造多种检验统计量，对时间序列的平稳性进行判断。本书对此不进行展开。</p>
+
+  <h3 id="sec-6-1-4">6.1.4 非平稳序列的变换</h3>
+  <p><strong>1. 最小二乘法</strong></p>
+<p>假设时间序列具有线性趋势，则可以通过最小二乘方法进行识别和消除。给定原始时间序列$\{X_t\}$，最小二乘法将其分解为如下形式：</p>
+<div class="math-display">$$X_{t} = a + bt + Y_{t}$$</div>
+<p>其中，$a$和$b$为常数。将线性趋势部分$a + bt$去除后，得到的残差序列$\{Y_t\}$即为一个均值等于0的平稳时间序列。</p>
+<p><strong>2. 差分法</strong></p>
+<p>差分法通过计算相邻时间点之间的差值，消除趋势性或非平稳性，使时间序列转化为平稳序列。对于序列$\{X_t\}$，差分运算的定义如下：</p>
+<div class="math-display">$$\begin{aligned}&\text{一阶差分：} \nabla X_t = X_t - X_{t-1} \\
+&\text{二阶差分：} \nabla^2 X_t = \nabla X_t - \nabla X_{t-1} = (X_t - X_{t-1}) - (X_{t-1} - X_{t-2}) \\
+&&nbsp;&nbsp;&nbsp;&nbsp; \vdots \nonumber \\
+&\text{$d$阶差分：} \nabla^d X_t = \nabla^{d-1} X_t - \nabla^{d-1} X_{t-1}\end{aligned}$$</div>
+<p>通常情况下，一阶差分可以消除序列中的线性趋势，例如对序列()，差分后的结果为$\nabla X_t = b + \nabla Y_t$，消除了均值中的时间趋势。若一阶差分后的序列仍为非平稳序列，可以继续进行二阶或更高阶差分。</p>
+<p>如果数据中存在季节性特征，则可以通过季节性差分消除其影响，例如：</p>
+<div class="math-display">$$\nabla_s X_t = X_t - X_{t-s}$$</div>
+<p>其中，$s$为季节长度。对于呈现明显季节性波动的时间序列，该方法可以去除固定周期内的重复模式。</p>
+<div class="theorem-box exa"><span class="label">例 6.3</span><p>设时间序列$\{X_t\}$表示某地的月平均温度，取值规律可分解为：</p>
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">&#9654;</span></button>
+    <div class="collapsible-content">
+<div class="math-display">$$X_t = \mu + \theta _t + Y_t$$</div>
+<p>其中，$\theta_t$是周期为12的周期函数，$\{Y_t\}$是平稳序列。对$\{X_t\}$进行季节性差分后，得到结果$\nabla_{12} X_t = Y_t - Y_{t-12}$，变为平稳过程。</p>
+    </div>
+  </div>
+<div class="theorem-box exa"><span class="label">例 6.4</span><p>记$X_t$表示第$t$月的零售物价指数RPI，年通货膨胀率可以表示为：</p>
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">&#9654;</span></button>
+    <div class="collapsible-content">
+<div class="math-display">$$\text{年通货膨胀率} = \frac{X_t - X_{t - 12} }{X_{t - 12} }\times 100%$$</div>
+<p>公式中的分子即为季节性差分，消除了季节性价格变化带来的干扰。</p>
+    </div>
+  </div>
+<p>注意，尽管差分法可以有效帮助实现时间序列的平稳性，但如果差分阶数过高，则可能引入额外的噪声。此外，差分操作可能改变数据的内在结构，同时也不适合对趋势本身进行分析。</p>
+<p><strong>3. 滑动平均</strong></p>
+<p>滑动平均是一种平滑技术，主要目的是去除数据中的短期波动，从而更清晰地反映出数据的长期趋势或周期性变化。具体而言，该方法通过计算一个固定窗口内的数据平均值，生成新的时间序列。</p>
+<p>给定时间序列$\{X_t\}$，其$n$期滑动平均可定义为：</p>
+<div class="math-display">$$Y_t = \frac{1}{n} \sum_{i=0}^{n-1} X_{t-i}$$</div>
+<p>其中，$Y_t$表示在时间$t$的滑动平均值；$n$是滑动窗口的大小（窗口长度），即应用多少期数据计算平均值。窗口长度对平滑序列的结果具有重要影响，窗口过大可能导致平滑过度，而窗口过小则可能无法有效去除噪声。</p>
+<p>对于季节性数据，通过将窗口大小设置为周期长度，可以有效消除季节性趋势的影响。此外，平滑处理还可以部分抵消长期趋势，使时间序列接近平稳状态。</p>
+<div class="theorem-box exa"><span class="label">例 6.5</span><p>在上式中，滑动平均的结果可能过于偏向某一侧，因此可考虑使用对称滑动平均。例如，若时间序列$X_t$具有季节效应，且周期为偶数$d =2h$，则滑动平均值可以表示为：</p>
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">&#9654;</span></button>
+    <div class="collapsible-content">
+<div class="math-display">$$Y_t = \frac{\left( {\frac{1}{2}X_{t - h} + X_{t - h + 1} + \cdots +	X_{t - 1} + X_t + \cdots + X_{t + h - 1} + \frac{1}{2}X_{t + h} } \right)}{2h}$$</div>
+<p>该方法确保了每个周期对$Y_{t}$具有相同贡献度。</p>
+    </div>
+  </div>
+<p><strong>4. 趋势分解</strong></p>
+<p>趋势分解法是对最小二乘法的拓展，其核心思想是将时间序列分解为多个组成部分，每个部分对应不同的特性。例如当序列$\{X_t\}$中同时存在趋势和季节性波动时，可以使用如下的加法模型或乘法模型：</p>
+<div class="math-display">$$X_t = T_t + S_t + R_t &nbsp;&nbsp; \text{或} &nbsp;&nbsp; X_t = T_t \times S_t \times R_t$$</div>
+<p>其中，$T_t$是趋势成分，例如在上式中$T_t=a+bt$；$S_t$是季节性成分；$R_t$是随机性成分。在实际应用中可以根据数据的模式，给出对三种成分的假设。</p>
+<p>常用的趋势分解方法包括STL分解（Seasonal and Trend decomposition using Loess）等，能够捕捉复杂的非线性趋势与非等周期的季节性数据。</p>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">data(npext,package=&quot;urca&quot;) # 加载urca包的npext数据
+xt &lt;- ts(data=npext$cpi,start=npext$year[1]) # 提取CPI构建时间序列
+plot(xt) # 时序图
+acf(xt) # ACF图
+# 根据图像，xt显然为非平稳序列，这一结果也可通过ADF检验得出
+
+adf.test(xt) # 检验p值为0.7374，接受原假设，认为序列非平稳
+
+## 进行一阶差分，再次判断
+xt_diff1 &lt;- diff(xt,differences=1,lag=1) # 调整differences参数，可进行高阶差分；调整lag参数，可进行季节性差分
+plot(xt_diff1)
+acf(xt_diff1)
+adf.test(xt_diff1) # 检验p值为0.01，拒接原假设，认为差分后序列平稳</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">##############################################################################
+# 第6章 时间序列分析
+# 对应教材：section6.tex
+# 内容：平稳性检验、AR/MA/ARMA/ARIMA模型、模型识别、参数估计、
+#       诊断检验、外推预测、多元时间序列、非线性时间序列
+##############################################################################
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.stattools import adfuller, acf, pacf
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from statsmodels.tsa.api import VAR
+from arch import arch_model
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+plt.rcParams[&#x27;font.sans-serif&#x27;] = [&#x27;SimHei&#x27;, &#x27;DejaVu Sans&#x27;]
+plt.rcParams[&#x27;axes.unicode_minus&#x27;] = False
+
+
+##############################################################################
+# 6.1 时间序列数据生成与可视化
+##############################################################################
+np.random.seed(123)
+n = 200
+e = np.random.normal(0, 1, n)
+
+# AR(1)过程
+y_ar1 = np.zeros(n)
+for t in range(1, n):
+    y_ar1[t] = 0.7 * y_ar1[t-1] + e[t]
+
+# 白噪声
+y_wn = e
+
+# 随机游走
+y_rw = np.cumsum(e)
+
+fig, axes = plt.subplots(3, 1, figsize=(12, 10))
+axes[0].plot(y_ar1); axes[0].set_title(&#x27;AR(1)过程&#x27;)
+axes[1].plot(y_wn); axes[1].set_title(&#x27;白噪声过程&#x27;)
+axes[2].plot(y_rw); axes[2].set_title(&#x27;随机游走过程&#x27;)
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 6.2 平稳性检验
+##############################################################################
+
+## 6.2.1 ACF和PACF
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+plot_acf(y_ar1, lags=20, ax=axes[0]); axes[0].set_title(&#x27;AR(1) ACF&#x27;)
+plot_pacf(y_ar1, lags=20, ax=axes[1]); axes[1].set_title(&#x27;AR(1) PACF&#x27;)
+plt.tight_layout(); plt.show()
+
+
+## 6.2.2 ADF检验
+adf_ar1 = adfuller(y_ar1)
+adf_rw = adfuller(y_rw)
+print(f&quot;AR(1) ADF检验: 统计量={adf_ar1[0]:.4f}, p值={adf_ar1[1]:.4f}&quot;)
+print(f&quot;随机游走 ADF检验: 统计量={adf_rw[0]:.4f}, p值={adf_rw[1]:.4f}&quot;)
+
+
+##############################################################################
+# 6.3 AR模型
+##############################################################################
+
+## 6.3.1 AR(1)模型估计
+model_ar1 = ARIMA(y_ar1, order=(1, 0, 0)).fit()
+print(f&quot;\nAR(1)模型:&quot;)
+print(model_ar1.summary().tables[1])
+
+## 6.3.2 AR(2)模型
+np.random.seed(456)
+n2 = 300
+e2 = np.random.normal(0, 1, n2)
+y_ar2 = np.zeros(n2)
+for t in range(2, n2):
+    y_ar2[t] = 0.3 * y_ar2[t-1] + 0.4 * y_ar2[t-2] + e2[t]
+
+model_ar2 = ARIMA(y_ar2, order=(2, 0, 0)).fit()
+print(f&quot;\nAR(2)模型:&quot;)
+print(model_ar2.summary().tables[1])
+
+
+##############################################################################
+# 6.4 MA模型
+##############################################################################
+np.random.seed(789)
+n3 = 300
+e3 = np.random.normal(0, 1, n3)
+y_ma1 = np.zeros(n3)
+for t in range(1, n3):
+    y_ma1[t] = e3[t] + 0.6 * e3[t-1]
+
+model_ma1 = ARIMA(y_ma1, order=(0, 0, 1)).fit()
+print(f&quot;\nMA(1)模型:&quot;)
+print(model_ma1.summary().tables[1])
+
+
+##############################################################################
+# 6.5 ARMA模型
+##############################################################################
+np.random.seed(101)
+n4 = 500
+e4 = np.random.normal(0, 1, n4)
+y_arma = np.zeros(n4)
+for t in range(1, n4):
+    y_arma[t] = 0.5 * y_arma[t-1] + e4[t] + 0.3 * e4[t-1]
+
+model_arma = ARIMA(y_arma, order=(1, 0, 1)).fit()
+print(f&quot;\nARMA(1,1)模型:&quot;)
+print(model_arma.summary().tables[1])
+
+
+##############################################################################
+# 6.6 ARIMA模型
+##############################################################################
+np.random.seed(202)
+n5 = 200
+e5 = np.random.normal(0, 1, n5)
+y_arima = np.zeros(n5)
+for t in range(1, n5):
+    y_arima[t] = 0.5 + y_arima[t-1] + e5[t]  # 带漂移的随机游走
+
+# 差分
+dy = np.diff(y_arima)
+adf_diff = adfuller(dy)
+print(f&quot;\n差分后ADF检验: 统计量={adf_diff[0]:.4f}, p值={adf_diff[1]:.4f}&quot;)
+
+# ARIMA(0,1,0)
+model_arima = ARIMA(y_arima, order=(0, 1, 0)).fit()
+print(f&quot;\nARIMA(0,1,0)模型:&quot;)
+print(model_arima.summary().tables[1])
+
+
+##############################################################################
+# 6.7 模型诊断检验
+##############################################################################
+residuals = model_ar1.resid
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+plot_acf(residuals, lags=20, ax=axes[0]); axes[0].set_title(&#x27;残差ACF&#x27;)
+axes[1].hist(residuals, bins=30, density=True, alpha=0.5)
+axes[1].set_title(&#x27;残差直方图&#x27;)
+plt.tight_layout(); plt.show()
+
+# Ljung-Box检验
+from statsmodels.stats.diagnostic import acorr_ljungbox
+lb_test = acorr_ljungbox(residuals, lags=[10], return_df=True)
+print(f&quot;\nLjung-Box检验: {lb_test}&quot;)
+
+
+##############################################################################
+# 6.8 外推预测
+##############################################################################
+forecast = model_ar1.forecast(steps=20)
+forecast_ci = model_ar1.get_forecast(steps=20).conf_int()
+
+fig, ax = plt.subplots(figsize=(12, 5))
+ax.plot(range(n), y_ar1, &#x27;b-&#x27;, label=&#x27;观测值&#x27;)
+ax.plot(range(n, n+20), forecast, &#x27;r-&#x27;, label=&#x27;预测&#x27;)
+ax.fill_between(range(n, n+20), forecast_ci[:, 0], forecast_ci[:, 1],
+                alpha=0.3, color=&#x27;red&#x27;, label=&#x27;95%置信区间&#x27;)
+ax.set_title(&#x27;AR(1)模型预测&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 6.9 季节性时间序列
+##############################################################################
+np.random.seed(303)
+n6 = 240
+t6 = np.arange(1, n6+1)
+seasonal = 10 * np.sin(2 * np.pi * t6 / 12)
+trend = 0.5 * t6
+e6 = np.random.normal(0, 2, n6)
+y_seasonal = trend + seasonal + 50 + e6
+
+fig, ax = plt.subplots(figsize=(12, 5))
+ax.plot(t6, y_seasonal)
+ax.set_title(&#x27;季节性时间序列&#x27;)
+plt.tight_layout(); plt.show()
+
+# 季节差分
+y_seasonal_diff = np.diff(y_seasonal, 12)
+adf_season = adfuller(y_seasonal_diff)
+print(f&quot;\n季节差分后ADF: 统计量={adf_season[0]:.4f}, p值={adf_season[1]:.4f}&quot;)
+
+
+##############################################################################
+# 6.10 指数平滑预测
+##############################################################################
+# 简单指数平滑
+model_es = ExponentialSmoothing(y_ar1, trend=None, seasonal=None).fit()
+forecast_es = model_es.forecast(20)
+
+# Holt-Winters
+model_hw = ExponentialSmoothing(y_seasonal, trend=&#x27;add&#x27;, seasonal=&#x27;add&#x27;,
+                                 seasonal_periods=12).fit()
+forecast_hw = model_hw.forecast(12)
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+axes[0].plot(range(n), y_ar1, &#x27;b-&#x27;, label=&#x27;观测&#x27;)
+axes[0].plot(range(n, n+20), forecast_es, &#x27;r-&#x27;, label=&#x27;预测&#x27;)
+axes[0].set_title(&#x27;简单指数平滑&#x27;); axes[0].legend()
+axes[1].plot(range(n6), y_seasonal, &#x27;b-&#x27;, label=&#x27;观测&#x27;)
+axes[1].plot(range(n6, n6+12), forecast_hw, &#x27;r-&#x27;, label=&#x27;预测&#x27;)
+axes[1].set_title(&#x27;Holt-Winters&#x27;); axes[1].legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 6.11 非线性时间序列：ARCH/GARCH模型
+##############################################################################
+np.random.seed(404)
+n7 = 500
+e7 = np.random.normal(0, 1, n7)
+y_arch = np.zeros(n7)
+sigma2 = np.zeros(n7)
+sigma2[0] = 1
+for t in range(1, n7):
+    y_arch[t] = np.sqrt(sigma2[t-1]) * e7[t]
+    sigma2[t] = 0.1 + 0.8 * y_arch[t]**2
+
+fig, ax = plt.subplots(figsize=(12, 5))
+ax.plot(y_arch)
+ax.set_title(&#x27;ARCH(1)过程&#x27;)
+plt.tight_layout(); plt.show()
+
+# GARCH模型估计
+model_garch = arch_model(y_arch, vol=&#x27;Garch&#x27;, p=1, q=1).fit(disp=&#x27;off&#x27;)
+print(f&quot;\nGARCH(1,1)模型:&quot;)
+print(model_garch.summary().tables[1])
+
+
+##############################################################################
+# 6.12 多元时间序列
+##############################################################################
+np.random.seed(505)
+n8 = 200
+e1_8 = np.random.normal(0, 1, n8)
+e2_8 = np.random.normal(0, 1, n8)
+y1_var = np.zeros(n8)
+y2_var = np.zeros(n8)
+for t in range(1, n8):
+    y1_var[t] = 0.5 * y1_var[t-1] + e1_8[t]
+    y2_var[t] = 0.3 * y2_var[t-1] + 0.4 * y1_var[t] + e2_8[t]
+
+fig, ax = plt.subplots(figsize=(12, 5))
+ax.plot(y1_var, label=&#x27;y1&#x27;)
+ax.plot(y2_var, label=&#x27;y2&#x27;)
+ax.set_title(&#x27;二元时间序列&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+# VAR模型
+df_var = pd.DataFrame({&#x27;y1&#x27;: y1_var, &#x27;y2&#x27;: y2_var})
+model_var = VAR(df_var).fit(1)
+print(f&quot;\nVAR(1)模型:&quot;)
+print(model_var.summary())</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">/****************************************************************************/
+/* 第6章 时间序列分析                                                       */
+/* 对应教材：section6.tex                                                   */
+/* 内容：平稳性检验、AR/MA/ARMA/ARIMA模型、模型识别、参数估计、              */
+/*       诊断检验、外推预测、多元时间序列、非线性时间序列                    */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 6.1 时间序列数据生成与可视化                                             */
+/****************************************************************************/
+
+/* 6.1.1 生成模拟时间序列 */
+data ts_data;
+  call streaminit(123);
+  /* AR(1)过程 */
+  y_ar1 = 0;
+  /* 白噪声 */
+  y_wn = 0;
+  /* 随机游走 */
+  y_rw = 0;
+  do t = 1 to 200;
+    e = rand(&#x27;NORMAL&#x27;, 0, 1);
+    y_ar1 = 0.7 * y_ar1 + e;
+    y_wn = e;
+    y_rw = y_rw + e;
+    output;
+  end;
+run;
+
+title &quot;AR(1)过程&quot;;
+proc sgplot data=ts_data;
+  series x=t y=y_ar1;
+run;
+title;
+
+title &quot;白噪声过程&quot;;
+proc sgplot data=ts_data;
+  series x=t y=y_wn;
+run;
+title;
+
+title &quot;随机游走过程&quot;;
+proc sgplot data=ts_data;
+  series x=t y=y_rw;
+run;
+title;
+
+
+/****************************************************************************/
+/* 6.2 平稳性检验                                                           */
+/****************************************************************************/
+
+/* 6.2.1 自相关函数和偏自相关函数 */
+title &quot;AR(1)过程的自相关函数&quot;;
+proc arima data=ts_data;
+  identify var=y_ar1 nlag=20;
+run;
+title;
+
+
+/* 6.2.2 ADF检验 */
+proc autoreg data=ts_data;
+  model y_rw = / stationarity=(adf=2);
+run;
+
+
+/****************************************************************************/
+/* 6.3 AR模型                                                               */
+/****************************************************************************/
+
+/* 6.3.1 AR(1)模型估计 */
+title &quot;AR(1)模型估计&quot;;
+proc arima data=ts_data;
+  identify var=y_ar1 nlag=20;
+  estimate p=1 method=ml;
+run;
+title;
+
+
+/* 6.3.2 AR(2)模型 */
+data ts_ar2;
+  call streaminit(456);
+  y = 0; y_lag1 = 0; y_lag2 = 0;
+  do t = 1 to 300;
+    e = rand(&#x27;NORMAL&#x27;, 0, 1);
+    y = 0.3 * y_lag1 + 0.4 * y_lag2 + e;
+    y_lag2 = y_lag1;
+    y_lag1 = y;
+    output;
+  end;
+run;
+
+title &quot;AR(2)模型估计&quot;;
+proc arima data=ts_ar2;
+  identify var=y nlag=20;
+  estimate p=2 method=ml;
+run;
+title;
+
+
+/****************************************************************************/
+/* 6.4 MA模型                                                               */
+/****************************************************************************/
+data ts_ma1;
+  call streaminit(789);
+  e_lag = 0;
+  do t = 1 to 300;
+    e = rand(&#x27;NORMAL&#x27;, 0, 1);
+    y = e + 0.6 * e_lag;
+    e_lag = e;
+    output;
+  end;
+run;
+
+title &quot;MA(1)模型估计&quot;;
+proc arima data=ts_ma1;
+  identify var=y nlag=20;
+  estimate q=1 method=ml;
+run;
+title;
+
+
+/****************************************************************************/
+/* 6.5 ARMA模型                                                             */
+/****************************************************************************/
+data ts_arma11;
+  call streaminit(101);
+  y_lag = 0; e_lag = 0;
+  do t = 1 to 500;
+    e = rand(&#x27;NORMAL&#x27;, 0, 1);
+    y = 0.5 * y_lag + e + 0.3 * e_lag;
+    y_lag = y;
+    e_lag = e;
+    output;
+  end;
+run;
+
+title &quot;ARMA(1,1)模型估计&quot;;
+proc arima data=ts_arma11;
+  identify var=y nlag=20;
+  estimate p=1 q=1 method=ml;
+run;
+title;
+
+
+/****************************************************************************/
+/* 6.6 ARIMA模型                                                            */
+/****************************************************************************/
+
+/* 6.6.1 非平稳序列的差分 */
+data ts_arima;
+  call streaminit(202);
+  y = 0; y_lag = 0;
+  do t = 1 to 200;
+    e = rand(&#x27;NORMAL&#x27;, 0, 1);
+    y = 0.5 + y_lag + e;  /* 带漂移的随机游走 */
+    y_lag = y;
+    output;
+  end;
+run;
+
+title &quot;带漂移的随机游走&quot;;
+proc sgplot data=ts_arima;
+  series x=t y=y;
+run;
+title;
+
+/* 差分 */
+proc arima data=ts_arima;
+  identify var=y(1) nlag=20;
+  estimate p=0 q=0 method=ml;
+run;
+
+
+/****************************************************************************/
+/* 6.7 模型诊断检验                                                         */
+/****************************************************************************/
+title &quot;AR(1)模型残差诊断&quot;;
+proc arima data=ts_data;
+  identify var=y_ar1 nlag=20;
+  estimate p=1 method=ml;
+  forecast out=forecast_res lead=10;
+run;
+title;
+
+/* 残差白噪声检验 */
+proc arima data=ts_data;
+  identify var=y_ar1 nlag=20;
+  estimate p=1 method=ml;
+  outlier;
+run;
+
+
+/****************************************************************************/
+/* 6.8 外推预测                                                             */
+/****************************************************************************/
+title &quot;AR(1)模型预测&quot;;
+proc arima data=ts_data;
+  identify var=y_ar1 nlag=20;
+  estimate p=1 method=ml;
+  forecast out=forecast_ar1 lead=20 alpha=0.05;
+run;
+title;
+
+/* 绘制预测结果 */
+data forecast_plot;
+  merge ts_data forecast_ar1;
+  by t;
+run;
+
+title &quot;AR(1)模型预测与置信区间&quot;;
+proc sgplot data=forecast_plot;
+  series x=t y=y_ar1;
+  series x=t y=FORECAST;
+  series x=t y=L95;
+  series x=t y=U95;
+  where t &gt; 180;
+run;
+title;
+
+
+/****************************************************************************/
+/* 6.9 季节性时间序列                                                       */
+/****************************************************************************/
+data ts_seasonal;
+  call streaminit(303);
+  do t = 1 to 240;
+    seasonal = 10 * sin(2 * constant(&#x27;PI&#x27;) * t / 12);
+    trend = 0.5 * t;
+    e = rand(&#x27;NORMAL&#x27;, 0, 2);
+    y = trend + seasonal + 50 + e;
+    output;
+  end;
+run;
+
+title &quot;季节性时间序列&quot;;
+proc sgplot data=ts_seasonal;
+  series x=t y=y;
+run;
+title;
+
+/* 季节差分 */
+proc arima data=ts_seasonal;
+  identify var=y(1,12) nlag=24;
+  estimate p=1 q=1 method=ml;
+  forecast out=forecast_seasonal lead=12;
+run;
+
+
+/****************************************************************************/
+/* 6.10 指数平滑预测                                                        */
+/****************************************************************************/
+title &quot;简单指数平滑&quot;;
+proc forecast data=ts_data method=expo trend=1 lead=20
+              out=forecast_expo outfull;
+  var y_ar1;
+run;
+title;
+
+title &quot;Holt-Winters方法&quot;;
+proc forecast data=ts_seasonal method=winters trend=1
+              seasons=12 lead=12
+              out=forecast_hw outfull;
+  var y;
+run;
+title;
+
+
+/****************************************************************************/
+/* 6.11 非线性时间序列：ARCH/GARCH模型                                      */
+/****************************************************************************/
+data ts_arch;
+  call streaminit(404);
+  y = 0; sigma2 = 1;
+  do t = 1 to 500;
+    e = rand(&#x27;NORMAL&#x27;, 0, sqrt(sigma2));
+    y = e;
+    sigma2 = 0.1 + 0.8 * e**2;  /* ARCH(1) */
+    output;
+  end;
+run;
+
+title &quot;ARCH(1)过程&quot;;
+proc sgplot data=ts_arch;
+  series x=t y=y;
+run;
+title;
+
+/* GARCH模型估计 */
+proc autoreg data=ts_arch;
+  model y = / garch=(q=1, p=1);
+  output out=garch_out cev=cev;
+run;
+
+
+/****************************************************************************/
+/* 6.12 多元时间序列                                                        */
+/****************************************************************************/
+data ts_bivariate;
+  call streaminit(505);
+  y1 = 0; y2 = 0;
+  do t = 1 to 200;
+    e1 = rand(&#x27;NORMAL&#x27;, 0, 1);
+    e2 = rand(&#x27;NORMAL&#x27;, 0, 1);
+    y1 = 0.5 * y1 + e1;
+    y2 = 0.3 * y2 + 0.4 * y1 + e2;  /* y2受y1影响 */
+    output;
+  end;
+run;
+
+title &quot;二元时间序列&quot;;
+proc sgplot data=ts_bivariate;
+  series x=t y=y1 / legendlabel=&quot;y1&quot;;
+  series x=t y=y2 / legendlabel=&quot;y2&quot;;
+run;
+title;
+
+/* VAR模型 */
+proc varmax data=ts_bivariate;
+  model y1 y2 / p=1;
+run;</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+</div>
+
+<div class="section-card" id="sec-6-2">
+  <h2>6.2 一元时间序列模型</h2>
+  <p>本节将介绍一元时间序列数据分析所使用的主要线性模型，包括自回归（AR）模型、移动平均（MA）模型和自回归移动平均（ARMA）模型。此外，由于金融时间序列数据通常具有趋势或季节性变化，在分析之前需要通过一阶或更高阶差分对数据进行转换，本节也将介绍ARMA模型的拓展——单整自回归移动平均（ARIMA）模型。</p>
+
+  <h3 id="sec-6-2-1">6.2.1 滞后算子和差分算子</h3>
+  <p>对于时间序列过程$\{X_t\}$，定义滞后算子$B$和差分算子$\nabla = 1-B$如下：</p>
+<div class="math-display">$$\begin{gathered}BX_t = X_{t-1} \\
+\nabla X_t = X_t - X_{t-1}\end{gathered}$$</div>
+<p>滞后算子和差分算子可以简化符号书写，概念非常直观。两种算子都可以重复使用，例如：</p>
+<div class="math-display">$$\begin{gathered}B^2 X_t = B(BX_t) = BX_{t-1} = X_{t-2} \\
+\nabla^2 X_t = \nabla X_t - \nabla X_{t-1} = X_t - 2X_{t-1} + X_{t-2}\end{gathered}$$</div>
+<p>也可以结合使用，例如：</p>
+<div class="math-display">$$B(\nabla X_t) = B(1 - B)X_t = BX_t - B^2 X_t = X_{t - 1} - X_{t - 2}$$</div>
+
+  <h3 id="sec-6-2-2">6.2.2 自回归模型</h3>
+  <p><strong>1. 一阶自回归模型</strong></p>
+<p>首先从简单模型开始，一阶自回归模型$\text{AR}(1)$的定义为：</p>
+<div class="theorem-box defn"><span class="label">定义 6.2（AR(1)模型）</span>
+<div class="math-display">$$X_t = \mu + \alpha (X_{t - 1} - \mu ) + e_t$$</div>
+<p>其中，$\alpha$称为自回归系数，表示$X_t$与$X_{t-1}$的线性相关程度；$e_t$为随机误差项，通常假设为均值等于0、方差等于$\sigma^2$的白噪声序列。</p>
+</div>
+<p>上述定义也可以通过递归方式表示，即：</p>
+<div class="math-display">$$X_t = \mu + \alpha ^t (X_0 - \mu) + \sum\limits_{i = 0}^{t - 1} {\alpha^i e_{t - i}}$$</div>
+<p>根据上式，易知$\{X_t\}$的均值函数和方差函数等于：</p>
+<div class="math-display">$$\begin{gathered}\mathbb{E}(X_{t}) = \mu_{t} = \mu +\alpha^{t} (\mu_{0} - \mu) \\
+\text{Var}(X_{t}) = \sigma ^2 \frac{1 - \alpha^{2t}}{1 - \alpha^2} + \alpha^{2t}\text{Var}(X_0)\end{gathered}$$</div>
+<p>注意：(1) 若$\mathbb{E}(X_0) \triangleq \mu_0 \neq \mu$，$X_t$的期望将随时间$t$变化；反之则恒定为$\mu$。</p>
+<p>(2) 若$X_0$是已知常数，即$\text{Var}(X_0)=0,\ \text{Var}(X_{t}) = \sigma ^2 (1 - \alpha^{2t})/(1 - \alpha^2)$，则$X_t$的期望和方差均与时间$t$有关。易知当且仅当$|\alpha|<1$时，$X_t$的期望随时间$t$增大而收敛于$\mu$，方差收敛于$\sigma^2/(1-\alpha^2)$，且序列$\{X_t\}$最终趋于平稳。</p>
+<p>(3) 若$X_0$为随机状态，同样可证明当$|\alpha|<1$时，序列$\{X_t\}$最终将趋于平稳。</p>
+<p>实际应用中一般可将序列$\{X_1, X_2, \cdots, X_n\}$视为$\{\cdots, X_{-1},X_0,X_1,\cdots\}$的一个子序列。原始过程$\{X_t:t\in \mathbb{Z}\}$在经过长期发展后（$t=-\infty \to 0$）已经达到稳定状态（尽管没有进行观测），观察得到的子序列$\{X_1, X_2, \cdots, X_n\}$为平稳时间序列。</p>
+<p>在上述假设下，初始条件对当前值$X_t$的影响基本消失，期望$\mathbb{E}(X_t)$已收敛至长期均值$\mu$，方差$\text{Var}(X_t)$（即$\gamma_0$）已收敛至平稳状态的方差$\sigma^2/(1-\alpha^2)$，且可以转换为如下的无穷阶自回归过程：</p>
+<div class="math-display">$$X_t = \mu + \sum_{i=0}^{\infty}\alpha^i e_{t-i}$$</div>
+<p>此时，可计算$\text{AR}(1)$过程的自协方差函数等于：</p>
+<div class="math-display">$$\begin{aligned}
+\gamma_k &= \text{Cov}(X_t,X_{t+k}) = \sum_{i=0}^{\infty} \sum_{j=0}^{\infty} \text{Cov}(e_{t-i}, e_{t+k-j}) \\
+&= \sum_{i=0}^{\infty} \alpha^{k+2i} \sigma^2 = \alpha^k \frac{\sigma^2}{1-\alpha^2} \triangleq \alpha^k \gamma_0
+\end{aligned}$$</div>
+<p>计算时应用了白噪声相互独立和等方差的性质。由上式可知，$\text{AR}(1)$过程的自协方差函数与时间$t$无关，同样符合平稳时间序列的特征。</p>
+<p>自协方差函数也可以通过另一种更简单的方法计算。假设$\{X_t\}$平稳，则：</p>
+<div class="math-display">$$\begin{aligned}
+\gamma_k & = \text{Cov}(X_t,X_{t - k}) = \text{Cov}(\mu + \alpha (X_{t - 1} - \mu) + e_t, X_{t - k}) \\
+& = \alpha \text{Cov}(X_{t - 1}, X_{t - k}) + \text{Cov}(e_t,X_{t-k}) \\
+&= \alpha \gamma_{k - 1} + \sigma^2 I\{k=0\}
+\end{aligned}$$</div>
+<p>同样可得$\text{AR}(1)$过程的自协方差函数$\gamma_0 = \sigma^2/(1-\alpha^2),\ \gamma_k = \alpha^k \gamma_0~ (k>0)$。</p>
+<p>$\text{AR}(1)$过程的自相关函数$\rho_k = \alpha^k$，可知其ACF是拖尾的（即始终有非零取值）。</p>
+<p>应用上式，可计算$\text{AR}(1)$过程的偏自相关系数为：</p>
+<div class="math-display">$$\phi_{k,k} = 
+\left \{
+\begin{aligned}
+\alpha,&nbsp;&nbsp; k=1 \\
+0,&nbsp;&nbsp; k > 1
+\end{aligned}
+\right.$$</div>
+<p>即PACF在$k>1$后截尾至0。这一结果也符合$\text{AR}(1)$过程的定义，即$X_{t-k}$与$X_t$的相关性主要仅通过中间变量$X_{t-1}$传递。</p>
+<div class="figure-wrapper" onclick="openLightbox('section6-figs/figure4.jpg')"><img src="section6-figs/figure4.jpg" alt="AR(1)过程的ACF和PACF（$\alpha=0.8$）" onerror='this.classList.add("broken");this.alt="图片加载失败: figure4.jpg";'><div class="caption">AR(1)过程的ACF和PACF（$\alpha=0.8$）</div></div>
+<div class="theorem-box exa"><span class="label">例 6.6</span><p>记$\{X_t:t=1,2,\cdots\}$表示消费价格指数CPI，则通货膨胀率$r_t$可表示为：</p>
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">&#9654;</span></button>
+    <div class="collapsible-content">
+<div class="math-display">$$r_t = \frac{X_t - X_{t-1}}{X_t} \approx \ln(Q_t/Q_{t-1})$$</div>
+<p>此时可假设$r_t$满足$\text{AR}(1)$过程，即：$r_t = \mu + \alpha(r_{t-1}-\mu) + e_t$~。</p>
+    </div>
+  </div>
+<p><strong>2. $p$阶自回归模型</strong></p>
+<p>自回归模型$\text{AR}(p)$试图将当前值$X_t$解释为过去$p$个时刻的值$(X_{t-1},\cdots,X_{t-p})$的线性组合加上外部的随机误差，其一般定义为：</p>
+<div class="math-display">$$X_t = \mu + \alpha_1 (X_{t - 1} - \mu ) + \alpha_2 (X_{t - 2} - \mu ) + \cdots + \alpha_p (X_{t - p} - \mu ) + e_t$$</div>
+<p>其中，$p$是自回归模型的阶数；$\alpha_1,\cdots,\alpha_p$为自回归系数。</p>
+<p>该模型也可用滞后算子表示，即：</p>
+<div class="math-display">$$(1 - \alpha _1 B - \alpha _2 B^2 - \cdots - \alpha _p B^p)(X_t - \mu ) = e_t$$</div>
+<p>$\text{AR}(p)$过程的平稳性由自回归系数决定。对上式定义的序列，$\{X_t\}$为平稳时间序列的充要条件是：方程$1 - \alpha_1 z - \alpha_2 z^2 -\cdots - \alpha_p z^p = 0$的所有根均满足$|z|>1$。其中，$1 - \alpha_1 z - \alpha_2 z^2 -\cdots - \alpha_p z^p$称为自回归模型的特征多项式。</p>
+<p>与$\text{AR}(1)$的推导类似，假定$\text{AR}(p)$过程已经达到平稳状态，则可分别计算$\{X_t\}$的期望和方差为：</p>
+<div class="math-display">$$\begin{gathered}\mathbb{E}(X_t) = \mu\\
+\text{Var}(X_t) = \frac{\sigma^2}{1-\sum_{i=1}^p \alpha_i^2}\end{gathered}$$</div>
+<p>自协方差函数可通过如下递归关系计算：</p>
+<div class="math-display">$$\begin{aligned}
+\gamma_k &= \alpha_1 \text{Cov}(X_{t-1}, X_{t - k}) + \cdots + \alpha_p \text{Cov}(X_{t-p}, X_{t - k}) + \text{Cov}(e_t, X_{t-k}) \\
+&= \alpha_1 \gamma_{k-1} + \cdots + \alpha_p \gamma_{k-p} + \sigma^2 \mathbf{I}\{k=0\}
+\end{aligned}$$</div>
+<p>该式也称为Yule-Walker方程。易知$\text{AR}(p)$过程的ACF仍然为拖尾衰减，而PACF在$k>p$后应截尾至0。</p>
+<div class="theorem-box exa"><span class="label">例 6.7</span><p>对如下自回归过程：
+<div class="math-display">$$X_n = \frac{11}{6}X_{n-1} - X_{n-2} + \frac{1}{6}X_{n-3} + e_n$$</div></p>
+<p>已知$\lambda=2$是该过程特征方程的一个根，试求其他的根。</p><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>已知上述过程可写为如下形式：</p>
+<div class="math-display">$$(1-\frac{11}{6}B + B^2 - \frac{1}{6}B^3)X_n = e_n$$</div>
+<p>则特征多项式可分解为：</p>
+<div class="math-display">$$\begin{aligned}1-\frac{11}{6}\lambda + \lambda^2 - \frac{1}{6}\lambda^3 &= (\lambda-2)(\frac{1}{6}\lambda^2 - \frac{2}{3}\lambda + \frac{1}{2}) \\
+&= \frac{1}{6}(\lambda-2)(\lambda-3)(\lambda-1)\end{aligned}$$</div>
+<p>其他特征根等于$\lambda=3$和$\lambda=1$。</p></div></div>
+<div class="theorem-box exa"><span class="label">例 6.8</span><p>平稳自回归时间序列$\{W_{t}\}$满足如下关系：</p>
+<div class="math-display">$$W_t = 0.6W_{t - 1} + 0.4W_{t - 2} - 0.1W_{t - 3} + e_t$$</div>
+<p>对整数时间$t$，$\{e_t\}$表示一系列均值为0、方差为$\sigma^2$且互不相关的随机变量。</p>
+<p>(1) 证明$\text{Cov}(W_t, e_{t+1})  = 0$。</p>
+<p>(2) 证明$\text{Cov}({W_{t-1}, W_t}) = \text{Cov}(W_{t-1}, W_{t-2})$。</p>
+<p>(3) 考虑当$k=0,1,2,3$时，写出自协方差函数$\gamma_k$的方程组。</p><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>(1) $W_{t}$（或$W_{t-1},\cdots,W_{t-3}$）仅仅依赖过去时间的$e$，与未来时间的$e_{t+1}$不相关，故$\text{Cov}(W_{t}, e_{t+1})=0$。</p>
+<p>(2) 由于$W_{t}$为平稳时间序列，故自协方差函数仅与滞后期数有关，与时间$t$无关。</p>
+<p>(3) 应用Yule-Walker方程，可得到如下方程组：</p>
+<div class="math-display">$$\left\{
+\begin{aligned}
+& \gamma_0 = 0.6 \gamma_{-1} + 0.4 \gamma_{-2} - 0.1 \gamma_{-3} + \sigma^2 = 0.6 \gamma_{1} + 0.4 \gamma_{2} - 0.1 \gamma_{3} + \sigma^2 \\
+& \gamma_1 = 0.6 \gamma_{0} + 0.4 \gamma_{-1} - 0.1 \gamma_{-2} = 0.6 \gamma_{0} + 0.4 \gamma_{1} - 0.1 \gamma_{2} \\
+& \gamma_2 = 0.6 \gamma_{1} + 0.4 \gamma_{0} - 0.1 \gamma_{-1} = 0.6 \gamma_{1} + 0.4 \gamma_{0} - 0.1 \gamma_{1} \\
+& \gamma_3 = 0.6 \gamma_{2} + 0.4 \gamma_{1} - 0.1 \gamma_{0}
+\end{aligned}
+\right.$$</div></div></div>
+<p>在应用自回归模型拟合数据时，阶数$p$的识别主要基于样本偏自相关图。由于$\text{AR}(p)$的PACF在$k>p$后截尾，故从样本偏自相关图中选择SPACF不为0（在95%的置信区间$\pm1.96/\sqrt{n}$外）的最大阶数即可。</p>
+
+  <h3 id="sec-6-2-3">6.2.3 移动平均模型</h3>
+  <p><strong>1. 一阶移动平均模型</strong></p>
+<p>一阶移动平均模型$\text{MA}(1)$的定义为：</p>
+<div class="math-display">$$X_t = \mu + e_t + \beta e_{t - 1}$$</div>
+<p>其中，$\beta$称为移动平均系数；$\{e_t\}$来自均值为0、方差为$\sigma^2$的白噪声序列。</p>
+<p>根据定义，容易求出$\{X_t\}$的均值函数和自协方差（自相关）函数分别为：</p>
+<div class="math-display">$$\mathbb{E}(X_t) = \mu_t = \mu$$</div>
+<div class="math-display">$$\left\{
+\begin{aligned}
+&\gamma_0 = \text{Var}(e_t + \beta e_{t-1}) = (1+\beta^2)\sigma^2 \\
+&\gamma_1 = \text{Cov}(e_t + \beta e_{t-1}, e_{t-1} + \beta e_{t-2}) = \beta \sigma^2 \\
+&\gamma_k=0,~k>1
+\end{aligned}
+\right. ~~\Rightarrow~~ 
+\left\{
+\begin{aligned}
+&\rho_0 = 1 \\
+&\rho_1 = \beta/(1+\beta^2) \\
+&\rho_k=0,~k>1
+\end{aligned}
+\right.$$</div>
+<p>注意两个不同的$\text{MA}(1)$过程可以具有相同的ACF，例如对于$\beta = 0.5$和$\beta=2$，两个模型均有$\rho_1=0.4$。</p>
+<p>与自回归过程不同，无论参数值如何，一阶移动平均过程$\text{MA}(1)$总是平稳的。</p>
+<p>一阶移动平均模型也可以用滞后算子表示，即：</p>
+<div class="math-display">$$\begin{aligned}
+X_t - \mu = (1 + \beta B)e_t ~~~\\
+(1 + \beta B)^{-1}(X_t - \mu) = e_t
+\end{aligned}$$</div>
+<p>使用$(1 + \beta B)^{-1}$的标准展开式，模型()可等价转换为：</p>
+<div class="math-display">$$(X_t - \mu) - \beta (X_{t - 1} - \mu ) + \beta ^2(X_{t - 2} - \mu ) - \beta^3(X_{t - 3} - \mu ) + \cdots = e_t$$</div>
+<p>此时，一阶移动平均模型转变为无穷阶的自回归模型。当$|\beta|<1$时，上述等价关系必成立、且唯一，故称$\text{MA}(1)$模型可逆。</p>
+<p>注意：尽管可以有多个$\text{MA}(1)$过程具有相同的ACF，但最多只有一个过程可逆。</p>
+<p>$\text{MA}(1)$过程的偏自相关函数具有显式解，即：</p>
+<div class="math-display">$$\phi_{k,k} = (-1)^{k + 1} \frac{(1 - \beta^2) \beta^k}{1 - \beta^{2(k + 1)}}$$</div>
+<p>与$\text{AR}(1)$过程不同，$\text{MA}(1)$的ACF在$k>1$后截尾，而PACF是拖尾衰减的。</p>
+<div class="figure-wrapper" onclick="openLightbox('section6-figs/figure5.jpg')"><img src="section6-figs/figure5.jpg" alt="MA(1)过程的ACF和PACF（$\beta=0.8$）" onerror='this.classList.add("broken");this.alt="图片加载失败: figure5.jpg";'><div class="caption">MA(1)过程的ACF和PACF（$\beta=0.8$）</div></div>
+<p><strong>2. $q$阶移动平均模型</strong></p>
+<p>移动平均模型$\text{MA}(q)$描述了时间序列数据中随机误差项的短期依赖性。在该模型中，当前值$X_t$可以表示为当前和最近$q$个时刻的随机误差项的线性组合，定义为：</p>
+<div class="math-display">$$X_{t} = \mu + e_{t} +\beta_{1} e_{t - 1} + \cdots + \beta_{q} e_{t - q}$$</div>
+<p>相当于对历史噪声进行了平滑。</p>
+<p>模型用滞后算子的表示为：</p>
+<div class="math-display">$$X_t - \mu = (1 + \beta_1 B + \beta_2 B^2 + \cdots + \beta_q B^q) e_t$$</div>
+<p>对于$\text{MA}(q)$过程，序列$\{X_t\}$的均值恒等于$\mu$，自协方差函数为：</p>
+<div class="math-display">$$\gamma_k = \sum\limits_{i = 0}^q \sum\limits_{j = 0}^q \beta_i \beta_j \mathbb{E}(e_{t - i} \cdot e_{t - j - k}) = \sigma^2 \sum\limits_{i = 0}^{q - k} \beta_i \beta_{i + k},\ k \leq q$$</div>
+<p>其中，记$\beta_0=1$。对任意$k>q$，有$\gamma_{k}=0$。</p>
+<p>$\text{MA}(q)$的ACF在$k>q$后截尾，PACF仍然为拖尾衰减。类似地，尽管可以有多个$\text{MA}(q)$过程具有相同的ACF，但最多只有一个过程可逆。</p>
+<p>在应用移动平均模型拟合数据时，阶数$q$的识别主要基于样本自相关图。由于$\text{MA}(q)$的ACF在$k>q$后截尾，故从样本自相关图中选择SACF不为0的最大阶数即可。若数据确实来自$\text{MA}(q)$模型，则对任意$k>q$，样本自相关系数的估计值$\hat{\rho}_k$近似服从正态分布$\text{N}(0, (1 + \sum_{k = 1}^q {\rho_k^2})/n)$，可应用该结果计算置信区间。</p>
+
+  <h3 id="sec-6-2-4">6.2.4 自回归移动平均模型</h3>
+  <p>自回归移动平均模型$\text{ARMA}(p,q)$是自回归模型和移动平均模型的结合。在该模型中，当前值$X_t$直接依赖于过去值$(X_{t-1},\cdots,X_{t-p})$以及误差项$(e_t,e_{t-1},\cdots,e_{t-q})$。</p>
+<p>$\text{ARMA}(p,q)$模型的定义为：</p>
+<div class="math-display">$$X_t = \mu + \alpha_1 (X_{t - 1} - \mu) + \cdots + \alpha_p (X_{t - p} -\mu) + e_t + \beta_1 e_{t - 1} + \cdots + \beta_q e_{t - q}$$</div>
+<p>当$q=0$时，$\text{ARMA}(p, 0)$即为$\text{AR}(p)$；当$p=0$时，$\text{ARMA}(0, q)$即为$\text{MA}(q)$。</p>
+<p>用滞后算子表示，该模型可以写为：</p>
+<div class="math-display">$$(1 - \alpha _1 B - \cdots - \alpha _p B^p)(X_t - \mu) = (1 + \beta _1 B + \cdots + \beta _q B^q)e_t$$</div>
+<p>对于$\text{ARMA}(p,q)$过程，可以应用Yule-Walker方程计算序列$\{X_t\}$的ACF。但由于ARMA模型的ACF和PACF缺乏明确的截断特性、均不等于0，使得ARMA模型阶数的识别更加困难。</p>
+<div class="theorem-box exa"><span class="label">例 6.9</span><p>考虑如下一个平稳、零均值的$\text{ARMA}(1,1)$过程，试推导自相关函数的形式。</p>
+<div class="math-display">$$X_t = \alpha X_{t - 1} + e_t + \beta e_{t - 1}$$</div><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>首先，根据定义有：</p>
+<div class="math-display">$$\begin{gathered}\text{Cov}(X_{t-1}, e_t) = 0 \\
+\text{Cov}(X_t, e_t) = \alpha \text{Cov}(X_{t-1}, e_t) + \text{Cov}(e_t, e_t) + \beta \text{Cov}(e_{t-1}, e_t) = \sigma^2 \\
+\text{Cov}(X_t, e_{t-1}) = \alpha \text{Cov}(X_{t-1}, e_{t-1}) + \text{Cov}(e_t, e_{t-1}) + \beta \text{Cov}(e_{t-1}, e_{t-1}) = (\alpha + \beta) \sigma^2\end{gathered}$$</div>
+<p>应用上述结果，可以计算$\{X_t\}$的自协方差函数：</p>
+<div class="math-display">$$\begin{gathered}\text{Cov}(X_t,X_t) = \alpha \text{Cov}(X_t,X_{t - 1}) + \text{Cov}(X_t,e_t) + \beta \text{Cov}(X_t, e_{t - 1}) \\
+\text{Cov}(X_{t - 1},X_t) = \alpha \text{Cov}(X_{t - 1},X_{t - 1}) + \text{Cov}(X_{t - 1},e_t) + \beta \text{Cov}(X_{t - 1},e_{t - 1}) \\
+\text{Cov}(X_{t - k},X_t) = \alpha \text{Cov}(X_{t - k},X_{t - 1}) + \text{Cov}(X_{t - k},e_t) + \beta \text{Cov}(X_{t - k},e_{t - 1}),\ k>1\end{gathered}$$</div>
+<p>化简可得到如下方程组：</p>
+<div class="math-display">$$\left\{
+\begin{aligned}
+&\gamma_0 = \alpha \gamma_1 + (1 + \alpha \beta + \beta^2) \sigma^2 \\
+&\gamma_1 = \alpha \gamma_0 + \beta \sigma^2 \\
+&\gamma_k = \alpha \gamma_{k - 1},\ k>1
+\end{aligned}
+\right.$$</div>
+<p>对于平稳过程（即$|\alpha| < 1$），上述方程组的解为：</p>
+<div class="math-display">$$\left\{
+\begin{aligned}
+&\gamma_0 = \frac{1 + 2\alpha \beta + \beta^2}{1 - \alpha^2} \sigma^2 \\
+&\gamma_1 = \frac{(\alpha + \beta)(1 + \alpha \beta)}{1 - \alpha^2} \sigma^2 \\
+&\gamma_k = \alpha^{k-1} \gamma_{1},\ k>1
+\end{aligned}
+\right.$$</div></div></div>
+
+  <h3 id="sec-6-2-5">6.2.5 ARIMA模型</h3>
+  <p>单整自回归移动平均模型$\text{ARIMA}(p,d,q)$是一种对非平稳时间序列进行分析的经典模型，其定义为：</p>
+<div class="math-display">$$(1 - \alpha_1 B - \cdots - \alpha_p B^p) (1-B)^d (X_t-\mu) = (1 + \beta_1 B + \cdots + \beta_q B^q)e_t$$</div>
+<p>其中，$(1-B)^d$表示对序列$\{X_t\}$进行$d$阶差分，以消除非平稳性；在差分完成后，再对序列$Y_t=\nabla^d X_t$构建$\text{ARMA}(p,q)$模型。</p>
+<p>在许多应用中，原始过程$\{X_t\}$是非平稳的，但一阶差分后的增量$Y_t = \nabla X_t$是平稳过程。此时，可以应用$\text{ARIMA}(p,1,q)$对过程$\{X_t\}$进行分析。</p>
+<p>最简单的ARIMA过程为随机游走，即：</p>
+<div class="math-display">$$X_t = X_0 + \sum\limits_{i=1}^t e_i$$</div>
+<p>其中，$\{e_t\}$来自均值为0、方差为$\sigma^2$的白噪声序列。</p>
+<p>在随机游走过程中，$X_t$的期望等于$\mathbb{E}(X_0)$，方差等于$\text{Var}(X_0) + t\sigma^2$，故$\{X_t\}$不是平稳序列。但在一阶差分后，$Y_t = \nabla X_t = e_t$变为平稳序列，故可以认为随机游走满足$\text{ARIMA}(0,1,0)$过程。</p>
+<p>ARIMA模型将差分、自回归和滑动平均方法有机结合，能够处理多种类型的时间序列数据，在实际应用中具有广泛的适用性。</p>
+<div class="theorem-box exa"><span class="label">例 6.10</span><p>记$Z_{t}$表示某股票在第$t$天的收盘价，且$Z_t$满足：</p>
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">&#9654;</span></button>
+    <div class="collapsible-content">
+<div class="math-display">$$Z_{t}=Z_{t - 1} \cdot \exp(\mu +e_{t})$$</div>
+<p>则在求对数后，易知$Y_t = \ln Z_t$为一阶单整$I(1)$，即：</p>
+<div class="math-display">$$Y_{t} = \mu + Y_{t - 1} + e_{t} = Y_0 + \sum_{i=1}^t e_t + t\mu$$</div>
+<p>事实上，$\{Y_t\}$是一个带漂移的随机游走过程，同时可以发现每日的对数收益率$ln(Z_{t}/Z_{t-1}) = Y_t-Y_{t-1}$与股票价格$Z_{0},Z_{1},\cdots,Z_{t-1}$均不相关。</p>
+    </div>
+  </div>
+<div class="theorem-box exa"><span class="label">例 6.11</span><p>消费价格指数$\{X_t\}$可以用$\text{ARIMA}(1,1,0)$模型描述，表达式如下：</p>
+<div class="math-display">$$(1 - B) \ln{X_t} = \mu + \alpha [(1 - B) \ln X_{t-1} - \mu] + e_{t}$$</div></div>
+<div class="theorem-box exa"><span class="label">例 6.12</span><p>识别以下$\text{ARIMA}(p,d,q)$过程中的$p,d,q$的值：</p>
+<div class="math-display">$$X_t = 0.6 X_{t-1} + 0.3 X_{t-2} + 0.1 X_{t-3} + e_t - 0.25 e_{t-1}$$</div><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>首先，用滞后算子改写上式：</p>
+<div class="math-display">$$(1 - 0.6B - 0.3B^2 - 0.1B^3)X_t = (1 - 0.25B)e_t$$</div>
+<p>检查左边的多项式是否能被$1-B$整除：若可以，则继续进行因式分解，直到不能被$1-B$整除为止。</p>
+<div class="math-display">$$(1 + 0.4B + 0.1B^2)(1 - B)X_t = (1 - 0.25B)e_t$$</div>
+<p>可知该模型为$\text{ARIMA}(2, 1, 1)$。</p></div></div>
+
+  <h3 id="sec-6-2-6">6.2.6 时间序列的马尔可夫性</h3>
+  <p>马尔可夫性是随机过程中的一个核心概念，它描述了一个随机过程的未来状态仅依赖于其当前状态，而与过去状态无关的特性。在时间序列分析中，马尔可夫性可以简化复杂序列的结构，对模型参数估计和预测具有重要意义。</p>
+<p>对于时间序列过程$\{X_t\}$，马尔可夫性是指对任意时间$n$：</p>
+<div class="math-display">$$\text{P}(X_n = x_n \vert X_{n-1} = x_{n-1}, X_{n-2} = x_{n-2}, \cdots) = \text{P}(X_n = x_n \vert X_{n-1} = x_{n-1})$$</div>
+<p>显然，一阶自回归过程具有马尔可夫性，因为$X_{n+1}$的条件分布仅仅由前一时刻的状态$X_{n}$决定。而高阶自回归模型则不一定具有马尔可夫性，例如当$\{X_t\}$为二阶自回归过程时，$X_{n+1}$的条件分布同时依赖于$X_{n}$和$X_{n-1}$。此时，可以定义向量过程$\{\boldsymbol{Y}_t\} = \{(X_{t},X_{t-1})^T\}$，当给定$\boldsymbol{Y}_n = (X_n,X_{n-1})^T$时，$\boldsymbol{Y}_{n+1} = (X_{n+1},X_n)^T$中的未知量$X_{n+1}$的条件分布可以由$(X_n,X_{n-1})$表出，即$\boldsymbol{Y}_{n+1}$仅依赖于$\boldsymbol{Y}_n$，具有马尔可夫性。</p>
+<p>更一般地，对于高阶自回归过程$\text{AR}(p)$，当$p>1$时不具有马尔可夫性，但定义的向量过程$\{\boldsymbol{Y}_t\} = \{(X_{t}, X_{t-1}, \cdots , X_{t-p+1})^T\}$具有马尔可夫性。</p>
+<p>对于移动平均或$\text{ARIMA}(p,d,q)$过程，当$q>0$时均不具有马尔可夫性。由于$X_{n+1}$依赖于过去的噪声项$(e_n,e_{n-1},\cdots,e_{n-q+1})$，而这些噪声项无法从$X_n$或$(X_n,X_{n-1},\cdots)$的观察值中直接推导，故无法确定未来的状态。此外，由于移动平均等价于无穷阶的自回归过程，也可以推知其不具有马尔可夫性。</p>
+</div>
+
+<div class="section-card" id="sec-6-3">
+  <h2>6.3 模型拟合与应用</h2>
+  <p>Box-Jenkins法是一种用于时间序列建模和预测的系统性方法。该方法考虑一般的$\text{ARIMA}(p,d,q)$模型，主要目标是构建适合数据的时间序列结构。Box-Jenkins法的核心步骤包括：</p>
+<p>(1) 模型识别：确定时间序列模型的结构和阶数；</p>
+<p>(2) 参数估计：估计模型的参数（自回归系数、移动平均系数）；</p>
+<p>(3) 诊断检验：验证拟合模型是否适合数据，若模型未通过检验，诊断检验结果应说明如何改进模型结构或调整参数；</p>
+<p>(4) 外推预测：应用模型对未来的时间序列值进行预测。</p>
+
+  <h3 id="sec-6-3-1">6.3.1 模型识别</h3>
+  <p>$\text{ARIMA}(p,d,q)$模型的参数$d$表示序列$\{X_t\}$达到平稳时需要进行差分的次数。因此，可以应用~节介绍的平稳性检验方法，确定$d$的阶数。</p>
+<p>1. 如果原始序列的样本自相关函数$\hat{\rho}_k$在滞后值$k$增大时快速减少到0，表明序列已经平稳，可以直接使用ARMA模型（即$d=0$）。若$\hat{\rho}_k$衰减较慢（如呈现正弦波形或指数趋势），则可能需要进行差分以消除趋势或季节性，使序列达到平稳状态。</p>
+<p>2. 记$\hat{\sigma}_d^2$表示差分序列$Z_t^{(d)} = \nabla^d X_t$的样本方差。通常情况下，$\hat{\sigma}_d^2$首先会随$d$的增加而减小，稳定后在某一个临界点开始增大。因此，可以选择使$\hat{\sigma}_d^2$达到最小时对应的$d$值，作为最优差分次数。</p>
+<p>对于平稳后的序列，可以计算其样本ACF和样本PACF，确定$p$和$q$的阶数。若样本ACF拖尾、样本PACF在延迟$p$步后截尾，可认为数据符合$\text{AR}(p)$过程；若样本ACF在延迟$q$步后截尾、样本PACF拖尾，可认为符合$\text{MA}(q)$过程；若样本ACF在延迟$(q-p)$步后拖尾、样本PACF在延迟$(p-q)$步后拖尾，可认为符合$\text{ARMA}(p,q)$。</p>
+<p>在实际应用中，也可以借助计算机编程的方法确定$p$和$q$的阶数。例如从简单的模型$\text{ARMA}(1,1)$开始，逐步尝试不同的阶数组合、增加模型的复杂度。精算师可根据赤池信息准则（AIC）或贝叶斯信息准则（BIC）选择最优模型。</p>
+
+  <h3 id="sec-6-3-2">6.3.2 参数估计</h3>
+  <p>在$p$和$q$的阶数确定后，问题变为估计$\text{ARMA}(p,q)$模型的参数$\alpha_1,\alpha_2,\cdots,\alpha_p$以及$\beta_1,\beta_2,\cdots,\beta_q$的值。</p>
+<p>假设$\{Z_t\}$是经过处理后的平稳序列，可以表示为：</p>
+<div class="math-display">$$\tilde{Z}_{t} = \alpha_{1} \tilde{Z}_{t - 1} + \alpha_{2} \tilde{Z}_{t - 2} + \cdots + \alpha_{p} \tilde{Z}_{t - p} + e_{t} + \beta_{1} e_{t - 1} + \beta_{2} e_{t - 2} + \cdots + \beta_{q} e_{t - q}$$</div>
+<p>其中，$\tilde{Z}_t = Z_t - \mu$。</p>
+<p>假设$e_{t}$是服从正态分布$\text{N}(0,\sigma^2)$的白噪声序列，则$(e_1,e_2,\cdots,e_n)^T$的联合概率密度函数可以写为：</p>
+<div class="math-display">$$f({\boldsymbol{e}}|{\boldsymbol{\alpha}},{\boldsymbol{\beta}},\mu,\sigma^2) = (2\pi\sigma^2)^{-n/2} \exp \left(-\frac{1}{2\sigma^2}\sum_{i=1}^n e_i^2 \right)$$</div>
+<p>其中，随机残差可以表示为：</p>
+<div class="math-display">$$e_t = \tilde{Z}_t - \alpha_{1} \tilde{Z}_{t-1} - \cdots - \alpha_{p} \tilde{Z}_{t-p} - \beta_{1} e_{t-1} - \cdots - \beta_{q} e_{t-q}$$</div>
+<p>对上式取对数并求极大化，可得参数的极大似然估计量是最小化平方偏差和$\sum_{i=1}^n e_i^2$的解。此处假设初始条件$(Z_{1-p},\cdots,Z_{-1},Z_0)$与$(e_{1-q},\cdots,e_{-1},e_0)$已知。</p>
+<p>另一种方法是矩估计法。对于$\text{ARMA}(p,q)$模型，其理论ACF是关于${\boldsymbol{\alpha}}$和${\boldsymbol{\beta}}$的函数。因此，可以将理论ACF与样本ACF（一共需计算$p+q$阶样本矩）匹配，得到参数的矩估计结果。矩估计法的计算相对简单、直观，但在样本量较小时，参数估计的准确性可能会受到随机波动影响。</p>
+
+  <h3 id="sec-6-3-3">6.3.3 诊断检验</h3>
+  <p>在完成模型识别和参数估计后，需要对模型进行诊断检验。检验的准则是，如果$\text{ARMA}(p,q)$是对时间序列数据的良好近似、且参数估计准确，则$\{\hat{e}_t\}$应当服从一个白噪声过程。</p>
+<p>此时，可以绘制残差$\{ \hat{e}_t \}$的时序图，检查序列是否满足零均值和等方差特性。同时还可绘制残差序列的样本ACF和样本PACF图，若有较多值超过置信限$\pm2/\sqrt{n}$，则认为模型的拟合效果较差，可以考虑增加或减少$p,q$的阶数，或使用更复杂的模型（如季节性ARIMA模型）。</p>
+<p>上述结果也可以通过Ljung-Box卡方检验得出：若某序列为白噪声（原假设），则检验统计量应服从卡方分布，即：</p>
+<div class="math-display">$$n(n+2)\sum_{k=1}^m \frac{\hat{\rho}_k^2}{n-k} \sim \chi_m^2$$</div>
+
+  <h3 id="sec-6-3-4">6.3.4 外推预测</h3>
+  <p>在$\text{ARMA}(p,q)$模型中，未来时刻的状况$X_{n+k}$具有如下表达式：</p>
+<div class="math-display">$$\begin{aligned}
+X_{n + k} &= \mu + \alpha_1 (X_{n + k - 1} - \mu ) + \cdots + \alpha_p (X_{n + k - p} - \mu ) + e_{n + k} \\
+&&nbsp;&nbsp;~ + \beta _1 e_{n + k - 1} + \cdots + \beta_q e_{n + k - q}
+\end{aligned}$$</div>
+<p>给定观测值$\{x_1,x_2,\cdots,x_n\}$，记$\hat{x}_n(k)$表示向前$k$步预测值。使用Box-Jenkins法预测平稳时间序列相对简单，主要基于以下假设和操作：</p>
+<p>(1) 获得参数估计的结果；</p>
+<p>(2) 代入观测数据，计算模型拟合残差$(\hat{e}_1,\hat{e}_2,\cdots,\hat{e}_n)$，替代噪声项$(e_1,e_2,\cdots,e_n)$；</p>
+<p>(3) 以$k=1$为起点，逐步递推预测。例如当$k=1$时，$\hat{x}_n(1)$的预测主要依赖历史观测值，并且假设未来噪声项$e_{n+1}=0$，即用其期望替代；当$k=2$时，$\hat{x}_n(2)$的预测需要使用$\hat{x}_n(1)$，仍然假设噪声项$e_{n+2}=0$；依次类推。</p>
+<div class="theorem-box exa"><span class="label">例 6.13</span><p>$\text{AR}(2)$的一步向前预测和两步向前预测分别为：</p>
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">&#9654;</span></button>
+    <div class="collapsible-content">
+<div class="math-display">$$\begin{gathered}\hat{x}_n (1) = \hat{\mu} + \hat{\alpha}_1 (x_n - \hat{\mu}) + \hat{\alpha}_2 (x_{n - 1} - \hat{\mu }) \\
+\hat{x}_n (2) = \hat{\mu} + \hat{\alpha}_1 (\hat{x}_n (1) - \hat{\mu}) + \hat{\alpha}_2 (x_n - \hat{\mu})\end{gathered}$$</div>
+<p>因此，$k$步向前预测实际上是考虑了当前可用信息，计算未来值的条件期望。</p>
+    </div>
+  </div>
+<p>若原始序列$\{X_t\}$满足$\text{ARIMA}(p,d,q)$过程，则$Z_t = \nabla^{d} X_t$满足$\text{ARMA}(p,q)$过程。在应用Box-Jenkins法计算$\{Z_t\}$的预测值和置信区间后，可以对差分过程进行逆向操作，得到$\{X_t\}$的预测值。</p>
+<p>注意当$d>0$时，$\text{ARIMA}(p,d,q)$过程是非平稳的。因此，随着$k$增加，向前$k$步预测结果的方差将不断增加，趋于无穷。</p>
+<div class="theorem-box exa"><span class="label">例 6.14</span><p>若$\{X_t\}$满足$\text{ARIMA}(0,1,1)$，即$Z_{n+1} = X_{n+1} - X_n$满足$\text{ARMA}(0,1)$，则有$\hat{x}_n (1) = x_n + \hat{z}_n (1)$。</p></div>
+<p>Holt在1958年提出了一种更简单的预测方法，使用过去值的加权平均对未来观测值进行预测。例如给定观测值$\{x_1,x_2,\cdots,x_n\}$，向前1步预测结果可以表示为：</p>
+<div class="math-display">$$\hat{x}_n (1) = \alpha x_n + (1 - \alpha) x_{n - 1} + (1 - \alpha)^2 x_{n - 2} + \cdots$$</div>
+<p>其中，预测结果依赖于参数$\alpha$。参数值可通过自主设定或最小二乘估计得到，通常取为0.2到0.3之间。此类按照几何方式减小权重的加权平滑方法，称为指数平滑法。</p>
+<p>指数平滑法的结果易于更新，易知：</p>
+<div class="math-display">$$\hat{x}_n (1) = (1 - \alpha ) \hat{x}_{n - 1} (1) + \alpha x_n = \hat{x}_{n - 1} (1) + \alpha (x_n - \hat{x}_{n - 1} (1))$$</div>
+<p>故在加入新的观测值$x_n$后，可以利用上一步预测值$\hat{x}_{n-1}(1)$，对下一步预测值$\hat{x}_{n}(1)$进行更新。</p>
+<p>上式对平稳序列具有较好的应用效果，但不适用于包含趋势或者季节性成分的序列。此时可以考虑更复杂的指数平滑方法。</p>
+<div class="theorem-box exa"><span class="label">例 6.15</span><p>在R软件中，随机模拟一组$\text{ARIMA}(2,1,1)$过程的时间序列数据，并应用Box-Jenkins法进行拟合分析。</p></div>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true"># 6.3.2 例6.15：ARIMA(2,1,1)模型的拟合与预测
+# 对应教材：section6.tex 6.3.4节，例6.15
+# -----------------------------------------------------------------
+set.seed(123)
+xt &lt;- arima.sim(n = 100, model = list(ar = c(0.5, 0.3), ma = 0.4, d = 1))
+plot(xt, main = &quot;ARIMA(2,1,1)模拟数据&quot;)
+
+## ACF检验
+acf(xt, main = &quot;原始序列ACF&quot;)  # ACF结果显示非平稳
+
+## 一阶差分
+xt1 &lt;- diff(xt)
+acf(xt1, main = &quot;一阶差分后ACF&quot;)  # 一阶差分后平稳
+
+## 拟合不同阶数的ARIMA模型
+arima1 &lt;- arima(xt, order = c(1, 1, 1))
+arima2 &lt;- arima(xt, order = c(2, 1, 1))
+arima3 &lt;- arima(xt, order = c(1, 1, 2))
+arima4 &lt;- arima(xt, order = c(2, 1, 2))
+
+## AIC和BIC比较
+AIC(arima1, arima2, arima3, arima4)  # AIC结果：模型4最优
+BIC(arima1, arima2, arima3, arima4)  # BIC结果：模型1最优
+
+## 诊断检验
+tsdiag(arima4)  # SACF均为0，且Ljung-Box检验通过
+
+## 外推预测
+xt_pred &lt;- predict(arima4, 10)  # 向前10步预测
+print(xt_pred)
+
+## 绘制预测图
+plot(xt, xlim = c(1, 110), main = &quot;ARIMA(2,1,2)模型预测&quot;)
+lines(101:110, xt_pred$pred, col = &quot;red&quot;, lwd = 2)
+lines(101:110, xt_pred$pred + 2 * xt_pred$se, col = &quot;blue&quot;, lty = 2)
+lines(101:110, xt_pred$pred - 2 * xt_pred$se, col = &quot;blue&quot;, lty = 2)
+legend(&quot;topleft&quot;, legend = c(&quot;预测值&quot;, &quot;95%置信区间&quot;),
+       col = c(&quot;red&quot;, &quot;blue&quot;), lty = c(1, 2), lwd = c(2, 1))
+
+##############################################################################
+# 6.4 模型拟合与应用（Box-Jenkins方法）
+##############################################################################</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true"># ARIMA模型拟合与预测
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.stattools import adfuller, acf
+
+# 模拟ARIMA数据
+np.random.seed(123)
+n = 100
+e = np.random.normal(0, 1, n)
+xt = np.zeros(n)
+for t in range(1, n):
+    xt[t] = 0.5 + xt[t-1] + e[t]  # 带漂移的随机游走
+
+# 一阶差分
+xt1 = np.diff(xt)
+
+# ADF检验
+adf_result = adfuller(xt1)
+print(f&quot;一阶差分后ADF检验: 统计量={adf_result[0]:.4f}, p值={adf_result[1]:.4f}&quot;)
+
+# 拟合不同阶数的ARIMA模型
+arima1 = ARIMA(xt, order=(1, 1, 1)).fit()
+arima2 = ARIMA(xt, order=(2, 1, 1)).fit()
+arima3 = ARIMA(xt, order=(1, 1, 2)).fit()
+arima4 = ARIMA(xt, order=(2, 1, 2)).fit()
+
+# AIC和BIC比较
+print(f&quot;ARIMA(1,1,1): AIC={arima1.aic:.2f}, BIC={arima1.bic:.2f}&quot;)
+print(f&quot;ARIMA(2,1,1): AIC={arima2.aic:.2f}, BIC={arima2.bic:.2f}&quot;)
+print(f&quot;ARIMA(1,1,2): AIC={arima3.aic:.2f}, BIC={arima3.bic:.2f}&quot;)
+print(f&quot;ARIMA(2,1,2): AIC={arima4.aic:.2f}, BIC={arima4.bic:.2f}&quot;)
+
+# 外推预测
+forecast = arima4.get_forecast(steps=10)
+pred_mean = forecast.predicted_mean
+pred_ci = forecast.conf_int(alpha=0.05)
+
+# 绘制预测图
+fig, ax = plt.subplots(figsize=(10, 5))
+ax.plot(range(1, n+1), xt, &#x27;k-&#x27;, label=&#x27;观测值&#x27;)
+ax.plot(range(n+1, n+11), pred_mean, &#x27;r-&#x27;, lw=2, label=&#x27;预测值&#x27;)
+ax.fill_between(range(n+1, n+11), pred_ci[:, 0], pred_ci[:, 1],
+                color=&#x27;blue&#x27;, alpha=0.2, label=&#x27;95%置信区间&#x27;)
+ax.set_xlabel(&#x27;t&#x27;); ax.set_ylabel(&#x27;xt&#x27;)
+ax.set_title(&#x27;ARIMA(2,1,2)模型预测&#x27;)
+ax.legend()
+plt.tight_layout(); plt.show()</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">/* ARIMA模型拟合与预测 */
+/* 生成模拟数据 */
+data arima_data;
+  call streaminit(123);
+  xt = 0;
+  do t = 1 to 100;
+    e = rand(&#x27;normal&#x27;, 0, 1);
+    if t &gt; 1 then xt = 0.5 + xt + e;
+    output;
+  end;
+run;
+
+/* 一阶差分 */
+data arima_diff;
+  set arima_data;
+  xt1 = dif(xt);
+run;
+
+/* ADF检验（使用PROC ARIMA的平稳性检验） */
+proc arima data=arima_data;
+  identify var=xt(1) stationarity=(adf=0);
+run;
+
+/* 拟合ARIMA(2,1,2)模型 */
+proc arima data=arima_data;
+  identify var=xt(1);
+  estimate p=2 q=2;
+  forecast out=forecast_arima lead=10;
+run;
+
+/* 绘制预测图 */
+data plot_data;
+  set arima_data(keep=t xt rename=(xt=value))
+      forecast_arima(keep=t FORECAST L95 U95 rename=(FORECAST=value));
+run;
+
+proc sgplot data=plot_data;
+  series x=t y=value / legendlabel=&quot;观测值/预测值&quot;;
+  band x=t upper=U95 lower=L95 / legendlabel=&quot;95%置信区间&quot; transparency=0.5;
+  xaxis label=&quot;t&quot;;
+  yaxis label=&quot;xt&quot;;
+  title &quot;ARIMA(2,1,2)模型预测&quot;;
+run;
+title;</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">set.seed(123)
+xt &lt;- arima.sim(n=100, model=list(ar=c(0.5,0.3),ma=0.4,d=1))
+plot(xt)
+acf(xt) # ACF结果显示非平稳
+xt1 &lt;- diff(xt)
+acf(xt1) # 一阶差分后平稳
+## 拟合模型
+arima1 &lt;- arima(xt, order=c(1,1,1))
+arima2 &lt;- arima(xt, order=c(2,1,1))
+arima3 &lt;- arima(xt, order=c(1,1,2))
+arima4 &lt;- arima(xt, order=c(2,1,2))
+AIC(arima1,arima2,arima3,arima4) # AIC结果：模型4最优
+BIC(arima1,arima2,arima3,arima4) # BIC结果：模型1最优
+## 诊断检验
+tsdiag(arima4) # SACF均为0，且Ljung-Box检验通过
+## 外推预测
+xt_pred &lt;- predict(arima4,10) # 向前10步预测</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">##############################################################################
+# 第6章 时间序列分析
+# 对应教材：section6.tex
+# 内容：平稳性检验、AR/MA/ARMA/ARIMA模型、模型识别、参数估计、
+#       诊断检验、外推预测、多元时间序列、非线性时间序列
+##############################################################################
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.stattools import adfuller, acf, pacf
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from statsmodels.tsa.api import VAR
+from arch import arch_model
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+plt.rcParams[&#x27;font.sans-serif&#x27;] = [&#x27;SimHei&#x27;, &#x27;DejaVu Sans&#x27;]
+plt.rcParams[&#x27;axes.unicode_minus&#x27;] = False
+
+
+##############################################################################
+# 6.1 时间序列数据生成与可视化
+##############################################################################
+np.random.seed(123)
+n = 200
+e = np.random.normal(0, 1, n)
+
+# AR(1)过程
+y_ar1 = np.zeros(n)
+for t in range(1, n):
+    y_ar1[t] = 0.7 * y_ar1[t-1] + e[t]
+
+# 白噪声
+y_wn = e
+
+# 随机游走
+y_rw = np.cumsum(e)
+
+fig, axes = plt.subplots(3, 1, figsize=(12, 10))
+axes[0].plot(y_ar1); axes[0].set_title(&#x27;AR(1)过程&#x27;)
+axes[1].plot(y_wn); axes[1].set_title(&#x27;白噪声过程&#x27;)
+axes[2].plot(y_rw); axes[2].set_title(&#x27;随机游走过程&#x27;)
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 6.2 平稳性检验
+##############################################################################
+
+## 6.2.1 ACF和PACF
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+plot_acf(y_ar1, lags=20, ax=axes[0]); axes[0].set_title(&#x27;AR(1) ACF&#x27;)
+plot_pacf(y_ar1, lags=20, ax=axes[1]); axes[1].set_title(&#x27;AR(1) PACF&#x27;)
+plt.tight_layout(); plt.show()
+
+
+## 6.2.2 ADF检验
+adf_ar1 = adfuller(y_ar1)
+adf_rw = adfuller(y_rw)
+print(f&quot;AR(1) ADF检验: 统计量={adf_ar1[0]:.4f}, p值={adf_ar1[1]:.4f}&quot;)
+print(f&quot;随机游走 ADF检验: 统计量={adf_rw[0]:.4f}, p值={adf_rw[1]:.4f}&quot;)
+
+
+##############################################################################
+# 6.3 AR模型
+##############################################################################
+
+## 6.3.1 AR(1)模型估计
+model_ar1 = ARIMA(y_ar1, order=(1, 0, 0)).fit()
+print(f&quot;\nAR(1)模型:&quot;)
+print(model_ar1.summary().tables[1])
+
+## 6.3.2 AR(2)模型
+np.random.seed(456)
+n2 = 300
+e2 = np.random.normal(0, 1, n2)
+y_ar2 = np.zeros(n2)
+for t in range(2, n2):
+    y_ar2[t] = 0.3 * y_ar2[t-1] + 0.4 * y_ar2[t-2] + e2[t]
+
+model_ar2 = ARIMA(y_ar2, order=(2, 0, 0)).fit()
+print(f&quot;\nAR(2)模型:&quot;)
+print(model_ar2.summary().tables[1])
+
+
+##############################################################################
+# 6.4 MA模型
+##############################################################################
+np.random.seed(789)
+n3 = 300
+e3 = np.random.normal(0, 1, n3)
+y_ma1 = np.zeros(n3)
+for t in range(1, n3):
+    y_ma1[t] = e3[t] + 0.6 * e3[t-1]
+
+model_ma1 = ARIMA(y_ma1, order=(0, 0, 1)).fit()
+print(f&quot;\nMA(1)模型:&quot;)
+print(model_ma1.summary().tables[1])
+
+
+##############################################################################
+# 6.5 ARMA模型
+##############################################################################
+np.random.seed(101)
+n4 = 500
+e4 = np.random.normal(0, 1, n4)
+y_arma = np.zeros(n4)
+for t in range(1, n4):
+    y_arma[t] = 0.5 * y_arma[t-1] + e4[t] + 0.3 * e4[t-1]
+
+model_arma = ARIMA(y_arma, order=(1, 0, 1)).fit()
+print(f&quot;\nARMA(1,1)模型:&quot;)
+print(model_arma.summary().tables[1])
+
+
+##############################################################################
+# 6.6 ARIMA模型
+##############################################################################
+np.random.seed(202)
+n5 = 200
+e5 = np.random.normal(0, 1, n5)
+y_arima = np.zeros(n5)
+for t in range(1, n5):
+    y_arima[t] = 0.5 + y_arima[t-1] + e5[t]  # 带漂移的随机游走
+
+# 差分
+dy = np.diff(y_arima)
+adf_diff = adfuller(dy)
+print(f&quot;\n差分后ADF检验: 统计量={adf_diff[0]:.4f}, p值={adf_diff[1]:.4f}&quot;)
+
+# ARIMA(0,1,0)
+model_arima = ARIMA(y_arima, order=(0, 1, 0)).fit()
+print(f&quot;\nARIMA(0,1,0)模型:&quot;)
+print(model_arima.summary().tables[1])
+
+
+##############################################################################
+# 6.7 模型诊断检验
+##############################################################################
+residuals = model_ar1.resid
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+plot_acf(residuals, lags=20, ax=axes[0]); axes[0].set_title(&#x27;残差ACF&#x27;)
+axes[1].hist(residuals, bins=30, density=True, alpha=0.5)
+axes[1].set_title(&#x27;残差直方图&#x27;)
+plt.tight_layout(); plt.show()
+
+# Ljung-Box检验
+from statsmodels.stats.diagnostic import acorr_ljungbox
+lb_test = acorr_ljungbox(residuals, lags=[10], return_df=True)
+print(f&quot;\nLjung-Box检验: {lb_test}&quot;)
+
+
+##############################################################################
+# 6.8 外推预测
+##############################################################################
+forecast = model_ar1.forecast(steps=20)
+forecast_ci = model_ar1.get_forecast(steps=20).conf_int()
+
+fig, ax = plt.subplots(figsize=(12, 5))
+ax.plot(range(n), y_ar1, &#x27;b-&#x27;, label=&#x27;观测值&#x27;)
+ax.plot(range(n, n+20), forecast, &#x27;r-&#x27;, label=&#x27;预测&#x27;)
+ax.fill_between(range(n, n+20), forecast_ci[:, 0], forecast_ci[:, 1],
+                alpha=0.3, color=&#x27;red&#x27;, label=&#x27;95%置信区间&#x27;)
+ax.set_title(&#x27;AR(1)模型预测&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 6.9 季节性时间序列
+##############################################################################
+np.random.seed(303)
+n6 = 240
+t6 = np.arange(1, n6+1)
+seasonal = 10 * np.sin(2 * np.pi * t6 / 12)
+trend = 0.5 * t6
+e6 = np.random.normal(0, 2, n6)
+y_seasonal = trend + seasonal + 50 + e6
+
+fig, ax = plt.subplots(figsize=(12, 5))
+ax.plot(t6, y_seasonal)
+ax.set_title(&#x27;季节性时间序列&#x27;)
+plt.tight_layout(); plt.show()
+
+# 季节差分
+y_seasonal_diff = np.diff(y_seasonal, 12)
+adf_season = adfuller(y_seasonal_diff)
+print(f&quot;\n季节差分后ADF: 统计量={adf_season[0]:.4f}, p值={adf_season[1]:.4f}&quot;)
+
+
+##############################################################################
+# 6.10 指数平滑预测
+##############################################################################
+# 简单指数平滑
+model_es = ExponentialSmoothing(y_ar1, trend=None, seasonal=None).fit()
+forecast_es = model_es.forecast(20)
+
+# Holt-Winters
+model_hw = ExponentialSmoothing(y_seasonal, trend=&#x27;add&#x27;, seasonal=&#x27;add&#x27;,
+                                 seasonal_periods=12).fit()
+forecast_hw = model_hw.forecast(12)
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+axes[0].plot(range(n), y_ar1, &#x27;b-&#x27;, label=&#x27;观测&#x27;)
+axes[0].plot(range(n, n+20), forecast_es, &#x27;r-&#x27;, label=&#x27;预测&#x27;)
+axes[0].set_title(&#x27;简单指数平滑&#x27;); axes[0].legend()
+axes[1].plot(range(n6), y_seasonal, &#x27;b-&#x27;, label=&#x27;观测&#x27;)
+axes[1].plot(range(n6, n6+12), forecast_hw, &#x27;r-&#x27;, label=&#x27;预测&#x27;)
+axes[1].set_title(&#x27;Holt-Winters&#x27;); axes[1].legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 6.11 非线性时间序列：ARCH/GARCH模型
+##############################################################################
+np.random.seed(404)
+n7 = 500
+e7 = np.random.normal(0, 1, n7)
+y_arch = np.zeros(n7)
+sigma2 = np.zeros(n7)
+sigma2[0] = 1
+for t in range(1, n7):
+    y_arch[t] = np.sqrt(sigma2[t-1]) * e7[t]
+    sigma2[t] = 0.1 + 0.8 * y_arch[t]**2
+
+fig, ax = plt.subplots(figsize=(12, 5))
+ax.plot(y_arch)
+ax.set_title(&#x27;ARCH(1)过程&#x27;)
+plt.tight_layout(); plt.show()
+
+# GARCH模型估计
+model_garch = arch_model(y_arch, vol=&#x27;Garch&#x27;, p=1, q=1).fit(disp=&#x27;off&#x27;)
+print(f&quot;\nGARCH(1,1)模型:&quot;)
+print(model_garch.summary().tables[1])
+
+
+##############################################################################
+# 6.12 多元时间序列
+##############################################################################
+np.random.seed(505)
+n8 = 200
+e1_8 = np.random.normal(0, 1, n8)
+e2_8 = np.random.normal(0, 1, n8)
+y1_var = np.zeros(n8)
+y2_var = np.zeros(n8)
+for t in range(1, n8):
+    y1_var[t] = 0.5 * y1_var[t-1] + e1_8[t]
+    y2_var[t] = 0.3 * y2_var[t-1] + 0.4 * y1_var[t] + e2_8[t]
+
+fig, ax = plt.subplots(figsize=(12, 5))
+ax.plot(y1_var, label=&#x27;y1&#x27;)
+ax.plot(y2_var, label=&#x27;y2&#x27;)
+ax.set_title(&#x27;二元时间序列&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+# VAR模型
+df_var = pd.DataFrame({&#x27;y1&#x27;: y1_var, &#x27;y2&#x27;: y2_var})
+model_var = VAR(df_var).fit(1)
+print(f&quot;\nVAR(1)模型:&quot;)
+print(model_var.summary())</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">/****************************************************************************/
+/* 第6章 时间序列分析                                                       */
+/* 对应教材：section6.tex                                                   */
+/* 内容：平稳性检验、AR/MA/ARMA/ARIMA模型、模型识别、参数估计、              */
+/*       诊断检验、外推预测、多元时间序列、非线性时间序列                    */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 6.1 时间序列数据生成与可视化                                             */
+/****************************************************************************/
+
+/* 6.1.1 生成模拟时间序列 */
+data ts_data;
+  call streaminit(123);
+  /* AR(1)过程 */
+  y_ar1 = 0;
+  /* 白噪声 */
+  y_wn = 0;
+  /* 随机游走 */
+  y_rw = 0;
+  do t = 1 to 200;
+    e = rand(&#x27;NORMAL&#x27;, 0, 1);
+    y_ar1 = 0.7 * y_ar1 + e;
+    y_wn = e;
+    y_rw = y_rw + e;
+    output;
+  end;
+run;
+
+title &quot;AR(1)过程&quot;;
+proc sgplot data=ts_data;
+  series x=t y=y_ar1;
+run;
+title;
+
+title &quot;白噪声过程&quot;;
+proc sgplot data=ts_data;
+  series x=t y=y_wn;
+run;
+title;
+
+title &quot;随机游走过程&quot;;
+proc sgplot data=ts_data;
+  series x=t y=y_rw;
+run;
+title;
+
+
+/****************************************************************************/
+/* 6.2 平稳性检验                                                           */
+/****************************************************************************/
+
+/* 6.2.1 自相关函数和偏自相关函数 */
+title &quot;AR(1)过程的自相关函数&quot;;
+proc arima data=ts_data;
+  identify var=y_ar1 nlag=20;
+run;
+title;
+
+
+/* 6.2.2 ADF检验 */
+proc autoreg data=ts_data;
+  model y_rw = / stationarity=(adf=2);
+run;
+
+
+/****************************************************************************/
+/* 6.3 AR模型                                                               */
+/****************************************************************************/
+
+/* 6.3.1 AR(1)模型估计 */
+title &quot;AR(1)模型估计&quot;;
+proc arima data=ts_data;
+  identify var=y_ar1 nlag=20;
+  estimate p=1 method=ml;
+run;
+title;
+
+
+/* 6.3.2 AR(2)模型 */
+data ts_ar2;
+  call streaminit(456);
+  y = 0; y_lag1 = 0; y_lag2 = 0;
+  do t = 1 to 300;
+    e = rand(&#x27;NORMAL&#x27;, 0, 1);
+    y = 0.3 * y_lag1 + 0.4 * y_lag2 + e;
+    y_lag2 = y_lag1;
+    y_lag1 = y;
+    output;
+  end;
+run;
+
+title &quot;AR(2)模型估计&quot;;
+proc arima data=ts_ar2;
+  identify var=y nlag=20;
+  estimate p=2 method=ml;
+run;
+title;
+
+
+/****************************************************************************/
+/* 6.4 MA模型                                                               */
+/****************************************************************************/
+data ts_ma1;
+  call streaminit(789);
+  e_lag = 0;
+  do t = 1 to 300;
+    e = rand(&#x27;NORMAL&#x27;, 0, 1);
+    y = e + 0.6 * e_lag;
+    e_lag = e;
+    output;
+  end;
+run;
+
+title &quot;MA(1)模型估计&quot;;
+proc arima data=ts_ma1;
+  identify var=y nlag=20;
+  estimate q=1 method=ml;
+run;
+title;
+
+
+/****************************************************************************/
+/* 6.5 ARMA模型                                                             */
+/****************************************************************************/
+data ts_arma11;
+  call streaminit(101);
+  y_lag = 0; e_lag = 0;
+  do t = 1 to 500;
+    e = rand(&#x27;NORMAL&#x27;, 0, 1);
+    y = 0.5 * y_lag + e + 0.3 * e_lag;
+    y_lag = y;
+    e_lag = e;
+    output;
+  end;
+run;
+
+title &quot;ARMA(1,1)模型估计&quot;;
+proc arima data=ts_arma11;
+  identify var=y nlag=20;
+  estimate p=1 q=1 method=ml;
+run;
+title;
+
+
+/****************************************************************************/
+/* 6.6 ARIMA模型                                                            */
+/****************************************************************************/
+
+/* 6.6.1 非平稳序列的差分 */
+data ts_arima;
+  call streaminit(202);
+  y = 0; y_lag = 0;
+  do t = 1 to 200;
+    e = rand(&#x27;NORMAL&#x27;, 0, 1);
+    y = 0.5 + y_lag + e;  /* 带漂移的随机游走 */
+    y_lag = y;
+    output;
+  end;
+run;
+
+title &quot;带漂移的随机游走&quot;;
+proc sgplot data=ts_arima;
+  series x=t y=y;
+run;
+title;
+
+/* 差分 */
+proc arima data=ts_arima;
+  identify var=y(1) nlag=20;
+  estimate p=0 q=0 method=ml;
+run;
+
+
+/****************************************************************************/
+/* 6.7 模型诊断检验                                                         */
+/****************************************************************************/
+title &quot;AR(1)模型残差诊断&quot;;
+proc arima data=ts_data;
+  identify var=y_ar1 nlag=20;
+  estimate p=1 method=ml;
+  forecast out=forecast_res lead=10;
+run;
+title;
+
+/* 残差白噪声检验 */
+proc arima data=ts_data;
+  identify var=y_ar1 nlag=20;
+  estimate p=1 method=ml;
+  outlier;
+run;
+
+
+/****************************************************************************/
+/* 6.8 外推预测                                                             */
+/****************************************************************************/
+title &quot;AR(1)模型预测&quot;;
+proc arima data=ts_data;
+  identify var=y_ar1 nlag=20;
+  estimate p=1 method=ml;
+  forecast out=forecast_ar1 lead=20 alpha=0.05;
+run;
+title;
+
+/* 绘制预测结果 */
+data forecast_plot;
+  merge ts_data forecast_ar1;
+  by t;
+run;
+
+title &quot;AR(1)模型预测与置信区间&quot;;
+proc sgplot data=forecast_plot;
+  series x=t y=y_ar1;
+  series x=t y=FORECAST;
+  series x=t y=L95;
+  series x=t y=U95;
+  where t &gt; 180;
+run;
+title;
+
+
+/****************************************************************************/
+/* 6.9 季节性时间序列                                                       */
+/****************************************************************************/
+data ts_seasonal;
+  call streaminit(303);
+  do t = 1 to 240;
+    seasonal = 10 * sin(2 * constant(&#x27;PI&#x27;) * t / 12);
+    trend = 0.5 * t;
+    e = rand(&#x27;NORMAL&#x27;, 0, 2);
+    y = trend + seasonal + 50 + e;
+    output;
+  end;
+run;
+
+title &quot;季节性时间序列&quot;;
+proc sgplot data=ts_seasonal;
+  series x=t y=y;
+run;
+title;
+
+/* 季节差分 */
+proc arima data=ts_seasonal;
+  identify var=y(1,12) nlag=24;
+  estimate p=1 q=1 method=ml;
+  forecast out=forecast_seasonal lead=12;
+run;
+
+
+/****************************************************************************/
+/* 6.10 指数平滑预测                                                        */
+/****************************************************************************/
+title &quot;简单指数平滑&quot;;
+proc forecast data=ts_data method=expo trend=1 lead=20
+              out=forecast_expo outfull;
+  var y_ar1;
+run;
+title;
+
+title &quot;Holt-Winters方法&quot;;
+proc forecast data=ts_seasonal method=winters trend=1
+              seasons=12 lead=12
+              out=forecast_hw outfull;
+  var y;
+run;
+title;
+
+
+/****************************************************************************/
+/* 6.11 非线性时间序列：ARCH/GARCH模型                                      */
+/****************************************************************************/
+data ts_arch;
+  call streaminit(404);
+  y = 0; sigma2 = 1;
+  do t = 1 to 500;
+    e = rand(&#x27;NORMAL&#x27;, 0, sqrt(sigma2));
+    y = e;
+    sigma2 = 0.1 + 0.8 * e**2;  /* ARCH(1) */
+    output;
+  end;
+run;
+
+title &quot;ARCH(1)过程&quot;;
+proc sgplot data=ts_arch;
+  series x=t y=y;
+run;
+title;
+
+/* GARCH模型估计 */
+proc autoreg data=ts_arch;
+  model y = / garch=(q=1, p=1);
+  output out=garch_out cev=cev;
+run;
+
+
+/****************************************************************************/
+/* 6.12 多元时间序列                                                        */
+/****************************************************************************/
+data ts_bivariate;
+  call streaminit(505);
+  y1 = 0; y2 = 0;
+  do t = 1 to 200;
+    e1 = rand(&#x27;NORMAL&#x27;, 0, 1);
+    e2 = rand(&#x27;NORMAL&#x27;, 0, 1);
+    y1 = 0.5 * y1 + e1;
+    y2 = 0.3 * y2 + 0.4 * y1 + e2;  /* y2受y1影响 */
+    output;
+  end;
+run;
+
+title &quot;二元时间序列&quot;;
+proc sgplot data=ts_bivariate;
+  series x=t y=y1 / legendlabel=&quot;y1&quot;;
+  series x=t y=y2 / legendlabel=&quot;y2&quot;;
+run;
+title;
+
+/* VAR模型 */
+proc varmax data=ts_bivariate;
+  model y1 y2 / p=1;
+run;</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+<div class="figure-wrapper" onclick="openLightbox('section6-figs/Ljung-Box.jpg')"><img src="section6-figs/Ljung-Box.jpg" alt="前例~的Ljung-Box检验结果" onerror='this.classList.add("broken");this.alt="图片加载失败: Ljung-Box.jpg";'><div class="caption">前例~的Ljung-Box检验结果</div></div>
+</div>
+
+<div class="section-card" id="sec-6-4">
+  <h2>6.4 多元时间序列模型</h2>
+  
+
+  <h3 id="sec-6-4-1">6.4.1 协整时间序列</h3>
+  <p>考虑$m$维向量序列$\{\boldsymbol{X}_1, \boldsymbol{X}_2, \cdots, \boldsymbol{X}_n\}$，每个向量$\boldsymbol{X}_t$表示在$t$时刻对$m$个变量的观测值，各分量记为$X_t^{(1)}, \cdots, X_t^{(m)}$。则上述序列称为多元时间序列，可以通过随机向量过程表示。</p>
+<p>对于随机向量序列，记$\boldsymbol{\mu}_t = \mathbb{E}(\boldsymbol{X}_t)$表示向量的期望，$\text{Cov}(\boldsymbol{X}_t, \boldsymbol{X}_{t+k})$表示随机向量的协方差矩阵（$m\times m$维）。若$\boldsymbol{\mu}_t$和$\text{Cov}(\boldsymbol{X}_t, \boldsymbol{X}_{t+k})$都与时间$t$无关，则称该向量过程是（宽）平稳的。</p>
+<p>当多元时间序列$\{\boldsymbol{X}_t\}$平稳时，易知：</p>
+<p>(1) 对于任意$t$，过程均值等于常数向量$\boldsymbol{\mu}$；</p>
+<p>(2) 协方差矩阵可记为$\text{Cov}(\boldsymbol{X}_t, \boldsymbol{X}_{t+k}) = \Sigma_k$，其中对角线元素是$\boldsymbol{X}_t$的各个分量滞后$k$期的自协方差，非对角线元素$\Sigma_k(i,j) = \text{Cov}(X_t^{(i)}, X_{t+k}^{(j)})$。</p>
+<p>协整是多元时间序列分析中的重要概念，描述了多个非平稳序列之间的长期均衡关系。对于两个时间序列过程$\{X_t\}$和$\{Y_t\}$，若$\{X_t\}$和$\{Y_t\}$均为一阶单整$I(1)$，但存在非零向量$(\alpha,\beta)$使两个序列的线性组合$\alpha X_t + \beta Y_t$是平稳的，则称序列$\{X_t\}$与$\{Y_t\}$协整（cointegrated）。向量$(\alpha,\beta)$称为协整向量。</p>
+<p>从广义上讲，对于同阶单整的序列$I(d)$，当存在向量使得序列的线性组合变为更低阶的单整序列$I(d-k)$时，都可称为协整。</p>
+<div class="theorem-box exa"><span class="label">例 6.16</span><p>USDollar/GBPound汇率$X_{t}$提供了协整的例子。假设汇率在购买力$P_{t}$/$Q_{t}$附近波动，$P_{t}$和$Q_{t}$分别是US和UK的消费者价格指数，可以通过下列模型表述：</p>
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">&#9654;</span></button>
+    <div class="collapsible-content">
+<div class="math-display">$$\begin{gathered}\ln X_{t} = \ln \frac{P_t}{Q_t} + Y_t \\
+Y_t = \mu + \alpha (Y_{t - 1} - \mu)+ e_t +\beta e_{t - 1}\end{gathered}$$</div>
+<p>其中，$\{e_t\}$是零均值白噪声。</p>
+<p>$\ln P_t$和$\ln Q_t$可以通过$\text{ARIMA}(1,1,0)$描述，即：</p>
+<div class="math-display">$$\begin{gathered}(1 - B) \ln P_{t} = \mu_{1}+\alpha_{1}[(1 - B) \ln P_{t - 1} - \mu_{1}] + e_t^{(1)} \\
+(1 - B) \ln Q_{t} = \mu_{2}+\alpha_{2}[(1 - B) \ln Q_{t - 1} - \mu_{2}] + e_t^{(2)}\end{gathered}$$</div>
+<p>其中，$e_t^{(1)}$和$e_t^{(2)}$是零均值白噪声，可能存在相关关系。
+		
+已知$\ln P_t$和$\ln Q_t$均为$\text{ARIMA}(1, 1, 0)$过程，为非平稳；汇率的对数$\ln X_t$也是非平稳的。但$Y_t = \ln X_t - \ln P_t + \ln Q_t$为$\text{ARMA}(1,1)$，是平稳随机过程。因此，序列$\{\ln X_{t}\}, \{\ln P_{t}\}, \{\ln Q_{t}\}$协整，协整向量为$(1, -1, 1)$。</p>
+    </div>
+  </div>
+
+  <h3 id="sec-6-4-2">6.4.2 向量自回归模型</h3>
+  <p>若$m$维随机向量$\{\boldsymbol{X}_1, \boldsymbol{X}_2, \cdots \}$满足：</p>
+<div class="math-display">$$\boldsymbol{X}_t = \mu + \sum\limits_{i = 1}^p A_i (\boldsymbol{X}_{t-i} - \mu) + \boldsymbol{e}_t$$</div>
+<p>其中，$A_{i}$是$m \times m$维矩阵，$\{\boldsymbol{e}_t\}$是$m$维白噪声过程。则称$\{ \boldsymbol{X}_t \}$为$p$阶向量自回归过程，记作$\text{VAR}(p)$。</p>
+<p>向量自回归模型是一种适用于平稳序列的多元时间序列模型。对于非平稳但协整的序列，需要扩展为向量误差修正模型。</p>
+</div>
+
+<div class="section-card" id="sec-6-5">
+  <h2>6.5 其他非平稳非线性时间序列</h2>
+  <p>在时间序列分析的众多分支中，针对非平稳和非线性数据的处理方法也是一个重要的研究方向。本节将简要介绍几种特殊的非平稳和非线性时间序列模型，包括阈值自回归模型、随机系数自回归模型、双线性模型和条件异方差自回归模型。</p>
+<p><strong>1. 阈值自回归模型</strong></p>
+<p>阈值自回归模型的定义为：</p>
+<div class="math-display">$$X_t = \mu + 
+\left\{
+\begin{aligned}
+\alpha_1 (X_{t-1} - \mu) + e_t,~~ &\text{if}~~ X_{t-1} \leq d \\
+\alpha_2 (X_{t-1} - \mu) + e_t,~~ &\text{if}~~ X_{t-1} > d
+\end{aligned}
+\right.$$</div>
+<p>阈值自回归模型的特点是有限循环行为，即通过阈值使时间序列在不同的状态或机制之间切换。因此，该模型适合用于描述时间序列数据中出现的周期性或重复性行为，例如经济增长与衰退周期的波动。</p>
+<p><strong>2. 随机系数自回归模型</strong></p>
+<p>对AR类模型的另一种修正方法是使自回归模型中的系数变为随机：</p>
+<div class="math-display">$$X_{t} = \mu + \alpha_{t} (X_{t - 1} - \mu) + e_{t}$$</div>
+<p>其中，$\{\alpha_{1},\alpha_{2},\cdots,\alpha_{n}\}$是一系列独立的随机变量。</p>
+<p>随机系数自回归模型可以用于模拟投资基金的行为，如令$\mu = 0$和$\alpha_{t} = 1 + i_{t}$，其中$i_{t}$代表随机收益率。随机系数自回归模型的特性会随$\alpha_{t}$的分布而改变，但一般均比对应的$\text{AR}(1)$模型更不规则。</p>
+<p><strong>3. 双线性模型</strong></p>
+<p>双线性模型的基本形式是：</p>
+<div class="math-display">$$X_{t} - \alpha (X_{t-1} - \mu) = \mu + e_{t} + \beta e_{t-1} + b (X_{t-1} - \mu) e_{t-1}$$</div>
+<p>在上式中，若仅将$X_t$视为$X_{t-1}$的函数，则模型是线性的；若仅将$X_t$视为$e_t,e_{t-1}$的函数，模型也是线性的。因此被称为“双线性”模型。</p>
+<p>双线性模型与ARMA类模型的主要差别在于“突变”行为：由于包含乘积项，当时间序列过程明显偏离其均值时（如$X_{t - 1}$与$\mu$的差异过大，或$e_{t - 1}$显著不为0），模型将表现出更大的波动。</p>
+<p><strong>4. 条件异方差自回归模型</strong></p>
+<p>条件异方差自回归模型$\text{ARCH}(p)$模型的定义为：</p>
+<div class="math-display">$$X_t = \mu + e_t \sqrt{\alpha_0 + \sum\limits_{k = 1}^p \alpha_k \left(X_{t - k} - \mu \right)^2}$$</div>
+<p>其中，$\{e_t\}$是独立的标准正态随机变量。
+		
+最简单的条件异方差自回归模型为$\text{ARCH}(1)$，定义为：</p>
+<div class="math-display">$$X_t = \mu + e_t \sqrt{\alpha_0 + \alpha_1 \left(X_{t - 1} - \mu \right)^2}$$</div>
+</div>
+
+<div class="section-card" id="sec-6-6">
+  
+
+<!-- ===== 本章汇总 ===== -->
+<div class="section-card" id="sec-summary">
+  <h2>本章小结</h2>
+  <h3>ARMA模型识别准则</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>模型</th>
+        <th>ACF</th>
+        <th>PACF</th>
+        <th>平稳条件</th>
+        <th>可逆条件</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>AR(p)</td>
+        <td>拖尾</td>
+        <td>p阶截尾</td>
+        <td>特征根在单位圆内</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>MA(q)</td>
+        <td>q阶截尾</td>
+        <td>拖尾</td>
+        <td>—</td>
+        <td>特征根在单位圆内</td>
+      </tr>
+      <tr>
+        <td>ARMA(p,q)</td>
+        <td>拖尾</td>
+        <td>拖尾</td>
+        <td>特征根在单位圆内</td>
+        <td>特征根在单位圆内</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Box-Jenkins建模流程</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>步骤</th>
+        <th>内容</th>
+        <th>工具</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1.识别</td>
+        <td>确定p,d,q</td>
+        <td>ACF/PACF图, AIC/BIC</td>
+      </tr>
+      <tr>
+        <td>2.估计</td>
+        <td>参数估计</td>
+        <td>MLE, 条件最小二乘</td>
+      </tr>
+      <tr>
+        <td>3.诊断</td>
+        <td>残差检验</td>
+        <td>Ljung-Box, Q-Q图</td>
+      </tr>
+      <tr>
+        <td>4.预测</td>
+        <td>点预测和区间预测</td>
+        <td>递推公式</td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+
+<h2>6.6 真题练习</h2>
+  <p>1. 给定过程$X_t = \alpha_1 X_{t - 1} + \alpha_2 X_{t - 2} + \alpha_3 X_{t - 3} +\varepsilon_t$，其中$\{\varepsilon_t\}$是白噪声序列。</p>
+<p>(1) 证明滞后一阶的自相关系数为$\rho_1 = (\alpha_1 + \alpha_2 \alpha_3)/(1 - \alpha_2 - \alpha_1 \alpha_3 - \alpha_3^2)$。</p>
+<p>考虑情况$\alpha _1 = \alpha _2 = \alpha _3 = 0.2$：</p>
+<p>(2) 讨论平稳性。提示：$5 - x - x^2 - x^3 \approx (1.278 - x) (3.912 + 2.278 x + x^2)$。</p>
+<p>(3) 计算 $\rho_1$ 和 $\rho_2$。</p>
+<p>(4) 计算偏自相关系数 $\phi_{1,1}$ 和 $\phi_{2,2}$。</p>
+<p>(5) 绘制自相关函数和偏自相关函数图（不要求计算高阶滞后项的系数）。</p>
+<p>【解答】(1) 运用Yule-Walker方程计算$X_t$与$X_{t-1},X_{t-2}$的协方差，有：</p>
+<div class="math-display">$$\begin{gathered}\text{Cov}(X_t ,X_{t - 1} ) = \text{Cov}(\alpha _1 X_{t - 1} + \alpha _2 X_{t - 2} + \alpha _3 X_{t - 3} + \varepsilon _t, X_{t - 1} ) \\
+\text{Cov}(X_t ,X_{t - 2} ) = \text{Cov}(\alpha _1 X_{t - 1} + \alpha _2 X_{t - 2} +
+		\alpha _3 X_{t - 3} + \varepsilon _t ,X_{t - 2} )\end{gathered}$$</div>
+<p>转化为自相关系数：
+<div class="math-display">$$\left\{
+\begin{aligned}
+\gamma _1 = \alpha _1 \gamma _0 + \alpha _2 \gamma _1 + \alpha _3 \gamma _2 \\
+\gamma _2 = \alpha _1 \gamma _1 + \alpha _2 \gamma _0 + \alpha _3 \gamma _1
+\end{aligned}
+\right. ~~\Rightarrow~~ 
+\left\{
+\begin{aligned}
+\rho _1 = \alpha _1  + \alpha _2 \rho _1 + \alpha _3 \rho _2 \\
+\rho _2 = \alpha _1 \rho _1 + \alpha _2 + \alpha _3 \rho _1
+\end{aligned}
+\right.$$</div></p>
+<p>从联立方程组中消去$\rho_{2}$，结果为：</p>
+<div class="math-display">$$\begin{gathered}\left( {1 - \alpha _2 } \right)\rho _1 = \alpha _1 + \alpha _3 \left[{(\alpha _1 + \alpha _3 )\rho _1 + \alpha _2 } \right] \\[0.5em]
+\left[ {\left( {1 - \alpha _2 } \right) - \alpha _3 \left( {\alpha _1 + \alpha _3 } \right)} \right]\rho _1 = \alpha _1 + \alpha _3 \alpha _2 \\[0.5em]
+\rho _1 = \frac{\alpha _1 + \alpha _3 \alpha _2 }{\left( {1 - \alpha _2 }\right) - \alpha _3 \left( {\alpha _1 + \alpha _3 } \right)} = \frac{\alpha_1 + \alpha _2 \alpha _3 }{1 - \alpha _2 - \alpha _1 \alpha _3 - \alpha_3^2}\end{gathered}$$</div>
+<p>(2) 此时模型可写为：</p>
+<div class="math-display">$$\begin{gathered}X_t - 0.2X_{t - 1} - 0.2X_{t - 2} - 0.2X_{t - 3} = \varepsilon _t \\
+\left( {1 - 0.2B - 0.2B^2 - 0.2B^3} \right)X_t = \varepsilon _t\end{gathered}$$</div>
+<p>平稳性取决于特征方程$1 - 0.2x - 0.2x^2 - 0.2x^3 = 0$的根，即：</p>
+<div class="math-display">$$5 - x - x^2 - x^3 = (1.278 - x) (3.912 + 2.278 x + x^2) = 0$$</div>
+<p>其中，二次方程$(3.912 + 2.278 x + x^2)$有根为：</p>
+<div class="math-display">$$x = \frac{ - 2.278\pm \sqrt {\left( {2.278} \right)^2 - 4\left( 1 \right)\left( {3.912} \right)} }{2} = - 1.139 \pm 1.617i$$</div>
+<p>特征方程的实数根为1.278，且两个复数根的模均大于1。由自回归模型的性质可知，题目中的过程是平稳的。</p>
+<p>(3) 应用Yule-Walker方程，有：</p>
+<div class="math-display">$$\begin{gathered}\rho_1 = \frac{0.2 + 0.2^2}{1-0.2-0.2^2-0.2^2} = \frac{0.24}{0.72} = \frac{1}{3} \\[0.5em]
+\rho_2 = \alpha_1 \rho_1 + \alpha_2 + \alpha_3 \rho_1 = \frac{1}{3}\end{gathered}$$</div>
+<p>(4) 易知$\phi_{1,1} = \rho_1 = 1/3$。根据上式，可计算得：</p>
+<div class="math-display">$$\phi_{2,2} = \frac{\rho_2 - \rho_1^2}{1 - \rho_1^2} = \frac{1}{4}$$</div>
+<p>(5) 已知$\rho_0 = 1,~ \rho_1 = \rho_2 = 1/3$，且根据Yule-Walker公式，高阶滞后项的自相关系数满足公式：</p>
+<div class="math-display">$$\rho_k = 0.2 (\rho_{k-1} + \rho_{k-2} + \rho_{k-3})$$</div>
+<p>可递推计算出高阶的$\rho_k$，例如：$\rho_3 = 1/3,~ \rho_4 = 0.2,~ \cdots$</p>
+<p>根据上式，可计算得$\phi_{3,3} = 0.2$。且由于题目过程为$\text{AR}(3)$，可知偏自相关系数在$k > 3$后截尾至0。因此，ACF和PACF图如下：</p>
+<div class="figure-wrapper" onclick="openLightbox('section6-figs/figure6.jpg')"><img src="section6-figs/figure6.jpg" alt="真题1的ACF和PACF图" onerror='this.classList.add("broken");this.alt="图片加载失败: figure6.jpg";'><div class="caption">真题1的ACF和PACF图</div></div>
+<p>2. 假设工资指数$S_{t}$和价格指数$P_{t}$的模型满足以下关系：</p>
+<div class="math-display">$$\begin{gathered}\nabla \ln S_t = \theta_S + \alpha_1 \nabla \ln S_{t-1} + \alpha_2 \nabla \ln P_{t-1} + e_{S,t} \\
+\nabla \ln P_t = \theta_P + \beta_1 \nabla \ln S_{t-1} + \beta_2 \nabla \ln P_{t-1} + e_{P,t}\end{gathered}$$</div>
+<p>(1) 解释为何对$\nabla\ln S$和$\nabla\ln P$建模，而不是对$S$和$P$建模。</p>
+<p>(2) 解释以下假设是否合理：$\nabla\ln S_t$受$\nabla\ln P_{t-1}$影响，$\nabla\ln P_t$受$\nabla\ln S_{t-1}$影响。</p>
+<p>(3) 用矩阵形式，将$(\nabla\ln S_t, \nabla\ln P_t)^T$表示为向量自回归模型，并识别$\text{VAR}(p)$过程的阶数$p$。</p>
+<p>(4) 假设模型参数已被估计，简述敏感性分析在验证模型有效性中的应用。</p>
+<p>【解答】(1) 回忆$\nabla\ln P_t = \ln(P_t/P_{t-1})$。选择对数差分数据建模的原因包括：</p>
+<p>其一，金融和经济数据通常更关注比例的变化。例如公司在调整员工工资时，通常会选择按比例涨薪（如5%）而不是增加一个固定值（如1000磅）。使用$\nabla\ln P_t$可以反映这种变化。</p>
+<p>其二，对数形式有助于避免模型输出为负值的问题。例如，即使预测值$\nabla$为负，实际价格指数$P_t = P_{t-1} \exp(\nabla)$也总是正数。</p>
+<p>其三，在正常经济条件下，工资和价格的变动预期将保持一定的增长趋势，而使用一阶差分有助于消除趋势、使序列达到平稳。</p>
+<p>(2) 假设时间$t$以年为单位，假设的合理性分析如下：</p>
+<p>$\nabla \ln P_{t-1}$代表通货膨胀率。若上一年的价格指数变化较大，说明有明显通胀（或通缩），则企业可能会根据价格变化调整工资，如工人要求提高薪资以抵消通胀影响；反之亦然。</p>
+<p>$\nabla \ln S_{t-1}$代表工资水平。工资水平影响商品价格，例如若上一年工资涨幅较大、生产成本增加，可能会导致商品价格上涨；反之，工资减少则可能导致商品价格下降。</p>
+<p>(3) 将模型转换为矩阵形式：</p>
+<div class="math-display">$$\begin{pmatrix}
+\nabla \ln S_t \\ \nabla \ln P_t
+\end{pmatrix} = 
+\begin{pmatrix}
+\theta_S \\ \theta_P
+\end{pmatrix} + 
+\begin{pmatrix}
+\alpha_1 & \alpha_2 \\ 
+\beta_1 & \beta_2
+\end{pmatrix}
+\begin{pmatrix}
+\nabla \ln S_{t-1} \\ \nabla \ln P_{t-1}
+\end{pmatrix} + 
+\begin{pmatrix}
+e_{S,t} \\ e_{P,t}
+\end{pmatrix}$$</div>
+<p>记$\boldsymbol{X}_t = (\nabla \ln S_t, \nabla \ln P_t)^T,~ \boldsymbol{\theta} = (\theta_S, \theta_P)^T,~\boldsymbol{A} = \begin{pmatrix}
+\alpha_1 & \alpha_2 \\ 
+\beta_1 & \beta_2
+\end{pmatrix}, \boldsymbol{e}_t = (e_{S,t},e_{P,t})^T$，则：</p>
+<div class="math-display">$$\boldsymbol{X}_t = \boldsymbol{\theta} + \boldsymbol{A} \boldsymbol{X}_{t-1} + \boldsymbol{e}_t$$</div>
+<p>上述模型满足一阶向量自回归过程。</p>
+<p>(4) 该模型主要用于预测未来的收入和价格指数，或者通过计算预测值的置信区间来评估其不确定性。一旦得到了模型参数的合理估计值，即可通过Box-Jenkins法计算未来时间的预测值。</p>
+<p>为了确保模型的预测结果可靠，通常需要对模型的稳健性进行检验。此时可以通过敏感性分析，判断当参数估计值发生微小改变时，预测结果是否会受到显著影响。</p>
+<p>敏感性分析的过程是：对模型中的每个参数（如$\theta$或$\beta$）进行“扰动”，并重新计算和观察预测值的变化。例如若增大某个$\boldsymbol{\theta}$，预测值中应该体现整体水平的增长；若改变$\alpha$或$\beta$，模型不会出现系统性的错误等。</p>
+</div>
+
+<div class="section-card" id="sec-references">
+  <h2>参考文献</h2>
+  <ol class="references">
+    <li>Klugman, S. A., Panjer, H. H., & Willmot, G. E. (2019). <em>Loss Models: From Data to Decisions</em> (5th ed.). Wiley.</li>
+    <li>Boland, P. J. (2007). <em>Statistical and Probabilistic Methods in Actuarial Science</em>. Chapman & Hall/CRC.</li>
+    <li>孟生旺, 袁卫. (2020). 《非寿险精算学》. 中国人民大学出版社.</li>
+    <li>Frees, E. W. (2009). <em>Regression Modeling with Actuarial and Financial Applications</em>. Cambridge University Press.</li>
+    <li>R Core Team. (2024). <em>R: A Language and Environment for Statistical Computing</em>. R Foundation for Statistical Computing.</li>
+  </ol>
+</div>
+
+<!-- ===== Footer ===== -->
+<div class="footer">
+  <p>非寿险精算学模型与应用 · 第六章 准备金评估</p>
+  <p>© 2024 保险学院 · 统计与精算学系</p>
+  <nav class="book-pager" aria-label="章节导航">
+    <a class="book-prev" href="chap5.html">上一章：第5章 损失调整与再保险</a>
+    <a class="book-home" href="index.html">目录</a>
+    <a class="book-next" href="chap7.html">下一章：第7章 广义线性模型</a>
+  </nav>
+</div>
+
+<!-- ===== Lightbox ===== -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close">&times;</span>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- ===== Scripts ===== -->
+<script>
+
+  // 折叠面板
+  function toggleCollapsible(btn) {
+    const content = btn.nextElementSibling;
+    const arrow = btn.querySelector('.arrow');
+    const label = btn.querySelector('span:first-child');
+    const isOpen = content.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+    arrow.textContent = isOpen ? '▼' : '▶';
+    if (label) {
+      if (isOpen && label.textContent.includes('查看')) {
+        label.textContent = label.textContent.replace('点击查看', '点击收起');
+      } else if (!isOpen && label.textContent.includes('收起')) {
+        label.textContent = label.textContent.replace('点击收起', '点击查看');
+      }
+    }
+  }
+
+  // 代码标签页切换
+  function switchTab(btn) {
+    const tabs = btn.parentElement;
+    const container = tabs.parentElement;
+    const targetLang = btn.dataset.lang;
+    tabs.querySelectorAll('.code-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    container.querySelectorAll('.code-tab-content').forEach(c => {
+      if (c.dataset.lang === targetLang) {
+        c.classList.add('active');
+      } else {
+        c.classList.remove('active');
+      }
+    });
+  }
+
+  // R代码中文字符串翻译（webR缺少中文字体时的兜底方案）
+  const _R_CN_EN_MAP = [
+    ['概率质量函数', 'PMF'], ['累积分布函数', 'CDF'], ['概率密度函数', 'PDF'],
+    ['生存函数', 'Survival'], ['危险率函数', 'Hazard'],
+    ['二项分布', 'Binomial'], ['泊松分布', 'Poisson'], ['负二项分布', 'Neg.Binom'],
+    ['几何分布', 'Geometric'], ['指数分布', 'Exponential'], ['伽马分布', 'Gamma'],
+    ['对数正态分布', 'Lognormal'], ['帕累托分布', 'Pareto'], ['威布尔分布', 'Weibull'],
+    ['正态分布', 'Normal'], ['卡方分布', 'Chi-sq'], ['t分布', 't-dist'],
+    ['零截断负二项', 'ZTNB'], ['零调整负二项', 'ZMNB'],
+    ['零截断', 'ZT'], ['零调整', 'ZM'], ['零膨胀', 'ZI'],
+    ['索赔次数', 'Claim Count'], ['索赔金额', 'Claim Amt'], ['索赔强度', 'Severity'],
+    ['累积索赔', 'Cum.Claim'], ['总索赔', 'Total Claim'],
+    ['事故年', 'Acc.Year'], ['进展年', 'Dev.Year'], ['准备金', 'Reserve'],
+    ['费率', 'Rate'], ['保费', 'Premium'], ['赔款', 'Loss'], ['纯保费', 'Pure Prem'],
+    ['均值', 'Mean'], ['方差', 'Var'], ['标准差', 'Std'], ['中位数', 'Median'],
+    ['偏度', 'Skew'], ['峰度', 'Kurt'], ['分位数', 'Quantile'],
+    ['参数', 'Param'], ['估计', 'Est'], ['拟合', 'Fit'], ['预测', 'Pred'],
+    ['观测值', 'Obs'], ['期望值', 'Exp'], ['残差', 'Resid'],
+    ['风险', 'Risk'], ['损失', 'Loss'], ['概率', 'Prob'], ['频率', 'Freq'],
+    ['信度', 'Cred'], ['先验', 'Prior'], ['后验', 'Posterior'],
+    ['回归', 'Reg'], ['分类', 'Class'], ['聚类', 'Clust'],
+    ['准确率', 'Acc'], ['误差', 'Error'], ['平方误差', 'MSE'],
+    ['时间', 'Time'], ['年份', 'Year'], ['月份', 'Month'], ['季度', 'Qtr'],
+    ['金额', 'Amt'], ['数量', 'Count'], ['比率', 'Ratio'], ['因子', 'Factor'],
+    ['分布', 'Dist'], ['函数', 'Func'], ['模型', 'Model'], ['数据', 'Data'],
+    ['图', 'Fig'], ['表', 'Tab'], ['例', 'Ex'], ['注', 'Note'],
+    ['尺度', 'Scale'], ['形状', 'Shape'], ['位置', 'Loc'],
+    ['直方图', 'Histogram'], ['密度曲线', 'Density'], ['散点图', 'Scatter'],
+    ['拟合优度', 'Goodness of Fit'], ['QQ图', 'QQ Plot'], ['PP图', 'PP Plot'],
+    ['经验分布', 'Empirical'], ['理论分布', 'Theoretical'],
+    ['对数似然', 'Log-Likelihood'], ['AIC', 'AIC'], ['BIC', 'BIC'],
+    ['置信区间', 'CI'], ['标准误', 'SE'], ['p值', 'p-value'],
+    ['极大似然估计', 'MLE'], ['矩估计', 'MoM'],
+    ['火灾损失', 'Fire Loss'], ['丹麦', 'Danish'],
+    ['实际', 'Actual'], ['理论', 'Theor'], ['样本', 'Sample'],
+    ['检验', 'Test'], ['统计量', 'Stat'], ['自由度', 'df'],
+    ['对比', ' vs '], ['频数', 'Freq'], ['累积', 'Cum'],
+    ['的', ' '], ['和', ' & '], ['与', ' & '], ['在', ' at '],
+    ['为', ' = '], ['中', ' in '], ['上', ' up '], ['下', ' down '],
+    ['x轴', 'x'], ['y轴', 'y'], ['x 轴', 'x'], ['y 轴', 'y'],
+  ];
+
+  function _translateRCode(code) {
+    if (!code) return code;
+    let translated = code;
+    for (const [cn, en] of _R_CN_EN_MAP) {
+      translated = translated.split(cn).join(en);
+    }
+    translated = translated.replace(/[\u4e00-\u9fff]+/g, '?');
+    return translated;
+  }
+
+  // 复制代码
+  function copyCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const text = codeBlock.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = btn.textContent;
+      btn.textContent = '✓ 已复制';
+      setTimeout(() => { btn.textContent = originalText; }, 2000);
+    }).catch(() => {
+      // fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      btn.textContent = '✓ 已复制';
+      setTimeout(() => { btn.textContent = '复制'; }, 2000);
+    });
+  }
+
+  // 存储所有代码块的原始代码（用于重置功能）
+  const _originalCode = new Map();
+
+  // 初始化：保存所有代码块的原始代码
+  function initCodeReset() {
+    document.querySelectorAll('.code-tab-content pre code').forEach(codeBlock => {
+      _originalCode.set(codeBlock, codeBlock.textContent);
+    });
+  }
+
+  // 重置代码块为原始代码
+  function resetCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const original = _originalCode.get(codeBlock);
+    if (original !== undefined) {
+      codeBlock.textContent = original;
+      // 显示短暂提示
+      const originalText = btn.textContent;
+      btn.textContent = '✓ 已重置';
+      btn.style.background = 'rgba(34,197,94,0.3)';
+      btn.style.color = '#4ade80';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 1500);
+    }
+  }
+
+  // 图片灯箱
+  function openLightbox(src) {
+    const lb = document.getElementById('lightbox');
+    document.getElementById('lightbox-img').src = src;
+    lb.classList.add('active');
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('active');
+  }
+
+  // WebR 代码运行
+  let webRReady = false;
+  let webRLoading = false;
+  let webRInstance = null;
+
+  async function initWebR() {
+    if (webRReady) return webRInstance;
+    if (webRLoading) {
+      while (webRLoading) { await new Promise(r => setTimeout(r, 100)); }
+      return webRInstance;
+    }
+    webRLoading = true;
+    if (typeof WebR === 'undefined') {
+      webRLoading = false;
+      throw new Error('WebR 未加载，请检查网络连接');
+    }
+    try {
+      webRInstance = new WebR.WebR();
+      await webRInstance.init();
+
+      // 1) canvas 设备：单步容错，失败不阻塞后续流程
+      try {
+        await webRInstance.evalRVoid('webr::canvas_install()');
+      } catch (e) {
+        console.warn('canvas_install 跳过（可能为 I/O read 错误，图形输出将不可用）:', e && e.message);
+      }
+
+      // 2) 预安装 R 包。WebR CRAN 镜像 (repo.r-wasm.org) 不一定能访问，
+      //    因此每个包单独 try/catch，全部失败也不会让初始化彻底失败。
+      //    <span class="hl">注意：</span>lightgbm/rgl/CASdatasets/DPpackage 等不在镜像中，预期会失败。
+      const requiredPackages = [
+        "fitdistrplus", "statmod", "MASS", "Metrics", "ModelMetrics",
+        "caret", "data.table", "ggplot2", "glmnet", "gridExtra",
+        "pdp", "psych", "randomForest", "reshape2", "rpart", "rpart.plot",
+        "copula", "gsl", "evd", "evir", "tseries", "actuar",
+        "goftest", "mgcv", "gamlss", "gamlss.dist", "urca",
+        "forecast", "vars", "fGarch", "ChainLadder", "survival",
+        "mixtools", "kernelshap", "DALEX"
+      ];
+      const installErrors = [];
+      for (const pkg of requiredPackages) {
+        try {
+          await webRInstance.evalRVoid(
+            `tryCatch({if (!require("${pkg}", quietly = TRUE)) webr::install("${pkg}")}, ` +
+            `error = function(e) message("install ${pkg} skipped: ", conditionMessage(e)))`
+          );
+        } catch (e) {
+          // 捕获 JS 层 I/O 错误（如 repo.r-wasm.org 不可达），跳过此包
+          installErrors.push(pkg);
+          console.warn(`R包 ${pkg} 预安装跳过:`, e && e.message);
+        }
+      }
+      if (installErrors.length) {
+        console.info('下列 R 包在 WebR 中未能预安装（可能不在 WebR CRAN 镜像内，' +
+                     '运行相应代码时会报错）：', installErrors.join(', '));
+      }
+
+      webRReady = true;
+    } finally {
+      webRLoading = false;
+    }
+    return webRInstance;
+  }
+
+  function _decodeHtmlEntities(text) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+  }
+
+  async function runRCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const outputDiv = btn.closest('.code-tab-content').querySelector('.code-output');
+    const code = _decodeHtmlEntities(codeBlock.textContent);
+
+    outputDiv.innerHTML = '<div class="output-running">⏳ 正在加载 R 环境（首次运行需较长时间，请耐心等待）...</div>';
+    outputDiv.classList.add('show');
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ 运行中';
+    btn.disabled = true;
+
+    try {
+      const webr = await initWebR();
+
+      // WebR的canvas设备不支持showtext等字体包，统一使用翻译兜底
+      const hasChinese = /[\u4e00-\u9fff]/.test(code);
+      const codeToRun = _translateRCode(code);
+
+      outputDiv.innerHTML = '<div class="output-running">▶ 执行代码...</div>';
+
+      const shelter = await new webr.Shelter();
+      let outputHTML = '';
+      const plotCanvases = [];
+
+      try {
+        const result = await shelter.captureR(codeToRun, {
+          withAutoprint: true,
+          captureStreams: true,
+          captureConditions: false,
+          captureGraphics: true
+        });
+
+        for (const item of result.output) {
+          if (item.type === 'stdout' || item.type === 'stderr') {
+            const cls = item.type === 'stderr' ? 'error' : '';
+            outputHTML += `<pre class="output-text ${cls}">${escapeHTML(item.data)}</pre>`;
+          }
+        }
+
+        if (result.images && result.images.length > 0) {
+          for (const imgBitmap of result.images) {
+            const canvas = document.createElement('canvas');
+            canvas.width = imgBitmap.width;
+            canvas.height = imgBitmap.height;
+            canvas.className = 'output-plot';
+            canvas.style.maxWidth = '100%';
+            canvas.style.height = 'auto';
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imgBitmap, 0, 0);
+            plotCanvases.push(canvas);
+          }
+        }
+      } finally {
+        shelter.purge();
+      }
+
+      if (!outputHTML && plotCanvases.length === 0) {
+        outputHTML = '<pre class="output-text">(代码执行完毕，无文本输出)</pre>';
+      }
+
+      const translateNotice = hasChinese
+        ? '<div class="output-notice" style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">[提示] WebR环境缺少中文字体，图表中的中文标签已自动翻译为英文</div>'
+        : '';
+
+      outputDiv.innerHTML = `<div class="output-header">R 输出：</div>${translateNotice}${outputHTML}`;
+      for (const c of plotCanvases) {
+        outputDiv.appendChild(c);
+      }
+    } catch (err) {
+      outputDiv.innerHTML = `<div class="output-error">❌ 错误: ${escapeHTML(err.message || String(err))}</div>`;
+      console.error('WebR 运行错误:', err);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // ===== Python (Pyodide) 运行支持 =====
+  let pyodideReady = false;
+  let pyodideLoading = false;
+  let pyodideInstance = null;
+
+  async function initPyodide() {
+    if (pyodideReady) return pyodideInstance;
+    if (pyodideLoading) {
+      while (pyodideLoading) { await new Promise(r => setTimeout(r, 100)); }
+      return pyodideInstance;
+    }
+    pyodideLoading = true;
+    if (typeof loadPyodide === 'undefined') {
+      pyodideLoading = false;
+      throw new Error('Pyodide 未加载，请检查网络连接');
+    }
+    try {
+      pyodideInstance = await loadPyodide();
+      pyodideReady = true;
+    } finally {
+      pyodideLoading = false;
+    }
+    return pyodideInstance;
+  }
+
+  // 确保代码块有输出区域
+  function ensureOutputDiv(btn) {
+    const content = btn.closest('.code-tab-content');
+    let outputDiv = content.querySelector('.code-output');
+    if (!outputDiv) {
+      outputDiv = document.createElement('div');
+      outputDiv.className = 'code-output';
+      content.appendChild(outputDiv);
+    }
+    return outputDiv;
+  }
+
+  async function runPythonCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const outputDiv = ensureOutputDiv(btn);
+    const code = _decodeHtmlEntities(codeBlock.textContent);
+
+    outputDiv.innerHTML = '<div class="output-running">⏳ 正在加载 Python 环境（首次运行需较长时间，请耐心等待）...</div>';
+    outputDiv.classList.add('show');
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ 运行中';
+    btn.disabled = true;
+
+    try {
+      const pyodide = await initPyodide();
+      outputDiv.innerHTML = '<div class="output-running">⏳ 加载依赖库（numpy, scipy, matplotlib）...</div>';
+
+      // 加载常用库
+      await pyodide.loadPackage(['numpy', 'scipy', 'matplotlib']);
+
+      // 重定向 stdout/stderr
+      let outputText = '';
+      pyodide.setStdout({ batched: (s) => { outputText += s + '\n'; } });
+      pyodide.setStderr({ batched: (s) => { outputText += s + '\n'; } });
+
+      // 配置 matplotlib 使用 Agg 后端，图形保存为 base64
+      // 策略：优先加载本地中文字体，失败则翻译中文为英文
+      const setupCode = `
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import io, base64
+import warnings
+import re
+
+# 抑制中文字体缺失的警告
+warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
+warnings.filterwarnings('ignore', message='.*missing from current font.*')
+
+# 中文术语英文翻译映射（按长度降序，避免短词误匹配）
+_CN_EN_MAP = [
+    ('概率质量函数', 'PMF'), ('累积分布函数', 'CDF'), ('概率密度函数', 'PDF'),
+    ('生存函数', 'Survival'), ('危险率函数', 'Hazard'),
+    ('二项分布', 'Binomial'), ('泊松分布', 'Poisson'), ('负二项分布', 'Neg.Binom'),
+    ('几何分布', 'Geometric'), ('指数分布', 'Exponential'), ('伽马分布', 'Gamma'),
+    ('对数正态分布', 'Lognormal'), ('帕累托分布', 'Pareto'), ('威布尔分布', 'Weibull'),
+    ('正态分布', 'Normal'), ('卡方分布', 'Chi-sq'), ('t分布', 't-dist'),
+    ('零截断负二项', 'ZTNB'), ('零调整负二项', 'ZMNB'),
+    ('零截断', 'ZT'), ('零调整', 'ZM'), ('零膨胀', 'ZI'),
+    ('索赔次数', 'Claim Count'), ('索赔金额', 'Claim Amt'), ('索赔强度', 'Severity'),
+    ('累积索赔', 'Cum.Claim'), ('总索赔', 'Total Claim'),
+    ('事故年', 'Acc.Year'), ('进展年', 'Dev.Year'), ('准备金', 'Reserve'),
+    ('费率', 'Rate'), ('保费', 'Premium'), ('赔款', 'Loss'), ('纯保费', 'Pure Prem'),
+    ('均值', 'Mean'), ('方差', 'Var'), ('标准差', 'Std'), ('中位数', 'Median'),
+    ('偏度', 'Skew'), ('峰度', 'Kurt'), ('分位数', 'Quantile'),
+    ('参数', 'Param'), ('估计', 'Est'), ('拟合', 'Fit'), ('预测', 'Pred'),
+    ('观测值', 'Obs'), ('期望值', 'Exp'), ('残差', 'Resid'),
+    ('风险', 'Risk'), ('损失', 'Loss'), ('概率', 'Prob'), ('频率', 'Freq'),
+    ('信度', 'Cred'), ('先验', 'Prior'), ('后验', 'Posterior'),
+    ('回归', 'Reg'), ('分类', 'Class'), ('聚类', 'Clust'),
+    ('训练', 'Train'), ('测试', 'Test'), ('验证', 'Valid'),
+    ('准确率', 'Acc'), ('误差', 'Error'), ('平方误差', 'MSE'),
+    ('时间', 'Time'), ('年份', 'Year'), ('月份', 'Month'), ('季度', 'Qtr'),
+    ('金额', 'Amt'), ('数量', 'Count'), ('比率', 'Ratio'), ('因子', 'Factor'),
+    ('分布', 'Dist'), ('函数', 'Func'), ('模型', 'Model'), ('数据', 'Data'),
+    ('图', 'Fig'), ('表', 'Tab'), ('例', 'Ex'), ('注', 'Note'),
+    ('的', ' '), ('和', ' & '), ('与', ' & '), ('在', ' at '), ('为', ' = '),
+    ('中', ' in '), ('上', ' up '), ('下', ' down '), ('前', ' fwd '), ('后', ' back '),
+    ('尺度', 'Scale'), ('形状', 'Shape'), ('位置', 'Loc'),
+    ('直方图', 'Histogram'), ('密度曲线', 'Density'), ('散点图', 'Scatter'),
+    ('拟合优度', 'Goodness of Fit'), ('QQ图', 'QQ Plot'), ('PP图', 'PP Plot'),
+    ('经验分布', 'Empirical'), ('理论分布', 'Theoretical'),
+    ('对数似然', 'Log-Likelihood'), ('AIC', 'AIC'), ('BIC', 'BIC'),
+    ('置信区间', 'CI'), ('标准误', 'SE'), ('p值', 'p-value'),
+    ('极大似然估计', 'MLE'), ('矩估计', 'MoM'),
+    ('火灾损失', 'Fire Loss'), ('丹麦', 'Danish'),
+    ('实际', 'Actual'), ('理论', 'Theor'), ('样本', 'Sample'),
+    ('检验', 'Test'), ('统计量', 'Stat'), ('自由度', 'df'),
+    ('对比', ' vs '), ('频数', 'Freq'), ('累积', 'Cum'),
+]
+
+def _translate_cn(text):
+    """将中文文本翻译为英文"""
+    if not isinstance(text, str):
+        return text
+    result = text
+    for cn, en in _CN_EN_MAP:
+        result = result.replace(cn, en)
+    result = re.sub(r'[\\u4e00-\\u9fff]', '?', result)
+    result = re.sub(r' +', ' ', result).strip()
+    return result
+
+_plots = []
+_font_loaded = False
+_font_prop = None
+
+def _apply_font_to_fig(fig, font_prop):
+    """将字体属性直接应用到figure中所有文本元素（绕过rcParams）"""
+    for ax in fig.get_axes():
+        if ax.title:
+            ax.title.set_fontproperties(font_prop)
+        if ax.xaxis.label:
+            ax.xaxis.label.set_fontproperties(font_prop)
+        if ax.yaxis.label:
+            ax.yaxis.label.set_fontproperties(font_prop)
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontproperties(font_prop)
+        for text in ax.texts:
+            text.set_fontproperties(font_prop)
+        legend = ax.get_legend()
+        if legend:
+            for text in legend.get_texts():
+                text.set_fontproperties(font_prop)
+    if fig._suptitle:
+        fig._suptitle.set_fontproperties(font_prop)
+
+def _translate_fig_text(fig):
+    """翻译figure中所有中文文本为英文"""
+    for ax in fig.get_axes():
+        if ax.get_title():
+            ax.set_title(_translate_cn(ax.get_title()))
+        if ax.get_xlabel():
+            ax.set_xlabel(_translate_cn(ax.get_xlabel()))
+        if ax.get_ylabel():
+            ax.set_ylabel(_translate_cn(ax.get_ylabel()))
+        legend = ax.get_legend()
+        if legend:
+            for text in legend.get_texts():
+                t = text.get_text()
+                if t:
+                    text.set_text(_translate_cn(t))
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            if label.get_text():
+                label.set_text(_translate_cn(label.get_text()))
+        for text in ax.texts:
+            t = text.get_text()
+            if t:
+                text.set_text(_translate_cn(t))
+    if fig._suptitle and fig._suptitle.get_text():
+        fig._suptitle.set_text(_translate_cn(fig._suptitle.get_text()))
+
+def _capture_show(*args, **kwargs):
+    for num in plt.get_fignums():
+        fig = plt.figure(num)
+        if _font_loaded and _font_prop:
+            _apply_font_to_fig(fig, _font_prop)
+        else:
+            _translate_fig_text(fig)
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+        buf.seek(0)
+        _plots.append(base64.b64encode(buf.read()).decode('utf-8'))
+        buf.close()
+    plt.close('all')
+
+plt.show = _capture_show
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+`;
+      await pyodide.runPythonAsync(setupCode);
+
+      // 加载本地中文字体（同源fetch，无CORS问题）
+      // 必须在setupCode之后执行，确保_font_loaded控制翻译逻辑
+      try {
+        const fontUrl = new URL('../../assets/fonts/NotoSansSC-Regular.otf', window.location.href).href;
+        const fontResp = await fetch(fontUrl);
+        if (fontResp.ok) {
+          const fontBuffer = await fontResp.arrayBuffer();
+          const fontBytes = new Uint8Array(fontBuffer);
+          pyodide.FS.writeFile('/tmp/cjk_font.otf', fontBytes);
+          await pyodide.runPythonAsync(`
+import os
+font_path = '/tmp/cjk_font.otf'
+if os.path.getsize(font_path) > 100000:
+    import matplotlib.font_manager as fm
+    fm.fontManager.addfont(font_path)
+    _font_prop = fm.FontProperties(fname=font_path)
+    _font_name = _font_prop.get_name()
+    _font_loaded = True
+    print(f'[提示] 中文字体加载成功: {_font_name}')
+else:
+    print('[提示] 字体文件异常，使用英文翻译模式')
+`);
+        } else {
+          console.log('本地字体获取失败，使用英文翻译模式');
+        }
+      } catch (fontErr) {
+        console.log('字体加载异常:', fontErr, '，使用英文翻译模式');
+      }
+
+      outputDiv.innerHTML = '<div class="output-running">▶ 执行代码...</div>';
+
+      // 运行用户代码
+      await pyodide.runPythonAsync(code);
+
+      // 获取图形
+      const plots = pyodide.globals.get('_plots').toJs();
+
+      let outputHTML = '';
+      if (outputText.trim()) {
+        outputHTML += `<pre class="output-text">${escapeHTML(outputText)}</pre>`;
+      }
+
+      if (plots && plots.length > 0) {
+        for (const imgBase64 of plots) {
+          outputHTML += `<img class="output-plot" src="data:image/png;base64,${imgBase64}" style="max-width:100%;height:auto;" />`;
+        }
+      }
+
+      if (!outputHTML) {
+        outputHTML = '<pre class="output-text">(代码执行完毕，无文本输出)</pre>';
+      }
+
+      outputDiv.innerHTML = `<div class="output-header">Python 输出：</div>${outputHTML}`;
+    } catch (err) {
+      outputDiv.innerHTML = `<div class="output-error">❌ 错误: ${escapeHTML(err.message || String(err))}</div>`;
+      console.error('Pyodide 运行错误:', err);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // ===== SAS 运行提示 =====
+  async function runSasCode(btn) {
+    const outputDiv = ensureOutputDiv(btn);
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const code = _decodeHtmlEntities(codeBlock.textContent);
+
+    outputDiv.innerHTML = `
+      <div class="output-header">SAS 运行提示：</div>
+      <div class="output-info">
+        <p><strong>&#9888; SAS 为商业软件，无法在浏览器中直接运行。</strong></p>
+        <p>请将代码复制到本地 SAS 环境中执行（如 SAS Studio、SAS EG 或 SAS Base）。</p>
+        <p style="margin-top:10px;color:var(--text-secondary);font-size:0.85rem;">&#128161; 提示：您可以切换到 R 或 Python 标签页，在浏览器中直接运行等效代码查看结果。</p>
+      </div>
+    `;
+    outputDiv.classList.add('show');
+  }
+
+  function escapeHTML(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // 滚动监听 - 高亮当前章节
+  document.addEventListener('DOMContentLoaded', function() {
+    // 初始化代码块重置功能
+    initCodeReset();
+
+    const navLinks = document.querySelectorAll('#sidebar a.nav-link');
+    // 收集所有带id的章节元素（section-card、h3、h4）
+    const headings = document.querySelectorAll('.section-card, .section-card h3[id], .section-card h4[id]');
+
+    function updateActiveNav() {
+      let current = '';
+      headings.forEach(h => {
+        const top = h.getBoundingClientRect().top;
+        if (top < 200) current = h.id;
+      });
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) {
+          link.classList.add('active');
+        }
+      });
+    }
+    window.addEventListener('scroll', updateActiveNav);
+
+    // 侧边栏切换（移动端）
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+      });
+      navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (window.innerWidth <= 768) sidebar.classList.remove('open');
+        });
+      });
+    }
+
+    // 主题初始化
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      const btn = document.querySelector('.theme-toggle');
+      if (btn) btn.innerHTML = '&#9728; 浅色模式';
+    }
+  });
+
+  // 主题切换
+  function toggleTheme() {
+    const html = document.documentElement;
+    const btn = document.querySelector('.theme-toggle');
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+      if (btn) btn.innerHTML = '&#127769; 深色模式';
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+      if (btn) btn.innerHTML = '&#9728; 浅色模式';
+    }
+  }
+
+</script>
+
+</body>
+</html>
