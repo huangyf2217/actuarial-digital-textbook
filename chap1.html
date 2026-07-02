@@ -1,0 +1,3247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第1章 损失分布基础 | 非寿险精算学模型与应用</title>
+
+<!-- MathJax -->
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$'],['\\(','\\)']],
+    displayMath: [['$$','$$'],['\\[','\\]']],
+    processEscapes: true,
+    tags: 'none'
+  },
+  svg: { fontCache: 'global' },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+
+<!-- Prism.js for code syntax highlighting -->
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-r.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sas.min.js"></script>
+
+<!-- WebR for running R code in browser (ES Module, loaded dynamically) -->
+<script type="module">
+  import('https://webr.r-wasm.org/v0.5.4/webr.mjs').then(({ WebR }) => {
+    window.WebR = { WebR };
+    console.log('WebR 模块已加载');
+  }).catch(err => {
+    console.warn('WebR 模块加载失败:', err);
+  });
+</script>
+
+<!-- Pyodide for running Python code in browser -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+
+<style>
+:root {
+  --bg: #f0f4f8;
+  --card-bg: #ffffff;
+  --text: #1a202c;
+  --text-muted: #64748b;
+  --primary: #2563eb;
+  --primary-light: #dbeafe;
+  --primary-dark: #1e40af;
+  --accent: #dc2626;
+  --border: #e2e8f0;
+  --code-bg: #1e1e1e;
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #cbd5e1;
+  --sidebar-active: #3b82f6;
+  --theorem-color: #7c3aed;
+  --theorem-bg: #f5f3ff;
+  --defn-color: #059669;
+  --defn-bg: #ecfdf5;
+  --example-color: #d97706;
+  --example-bg: #fffbeb;
+  --proof-color: #db2777;
+  --proof-bg: #fdf2f8;
+  --prop-color: #2563eb;
+  --prop-bg: #eff6ff;
+  --lemma-color: #9333ea;
+  --lemma-bg: #faf5ff;
+
+  --answer-color: #0891b2;
+  --answer-bg: #ecfeff;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --radius: 12px;
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --primary: #60a5fa;
+  --primary-light: #1e3a5f;
+  --primary-dark: #93c5fd;
+  --border: #334155;
+  --sidebar-bg: #020617;
+  --theorem-bg: #2e1065;
+  --defn-bg: #064e3b;
+  --example-bg: #451a03;
+  --proof-bg: #500724;
+  --answer-bg: #083344;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Segoe UI','PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.85;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ===== Header ===== */
+header {
+  position: fixed; top:0; left:0; right:0; height:64px; z-index:100;
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; padding: 0 24px;
+  gap: 16px;
+}
+header img.logo { height: 40px; border-radius: 6px; }
+header h1 { font-size: 1.15rem; font-weight: 700; flex: 1; color: var(--text); }
+header .subtitle { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+
+.theme-toggle {
+  background: none; border: 1px solid var(--border); border-radius: 20px;
+  padding: 8px 18px; cursor: pointer; font-size: 0.85rem; color: var(--text);
+  transition: all 0.3s; white-space: nowrap;
+}
+.theme-toggle:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+/* ===== Sidebar ===== */
+#sidebar {
+  position: fixed; top:64px; left:0; bottom:0; width:280px; z-index:90;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  overflow-y: auto;
+  padding: 16px 0;
+  transition: transform 0.3s;
+}
+#sidebar::-webkit-scrollbar { width: 6px; }
+#sidebar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+#sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+#sidebar nav { padding: 0 12px; }
+#sidebar .nav-section { margin-bottom: 8px; }
+#sidebar .nav-section-title {
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 12px 12px 6px; color: var(--sidebar-text); opacity: 0.5;
+  font-weight: 600;
+}
+#sidebar a {
+  display: block; padding: 7px 12px 7px 20px;
+  color: var(--sidebar-text); text-decoration: none;
+  font-size: 0.88rem; border-radius: 6px; margin: 2px 0;
+  transition: all 0.2s; border-left: 3px solid transparent;
+}
+#sidebar a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+#sidebar a.active {
+  background: rgba(59,130,246,0.15); color: #93c5fd;
+  border-left-color: var(--sidebar-active); font-weight: 500;
+}
+#sidebar a.sub { padding-left: 32px; font-size: 0.82rem; }
+#sidebar a.sub2 { padding-left: 48px; font-size: 0.78rem; opacity: 0.85; }
+
+/* ===== Main ===== */
+#main {
+  margin-left: 280px; margin-top: 64px; padding: 32px 40px 80px;
+  max-width: 920px; overflow-x: hidden;
+}
+
+/* ===== Section Cards ===== */
+.section-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 32px 36px; margin-bottom: 28px; box-shadow: var(--shadow-lg);
+  scroll-margin-top: 80px; overflow-x: auto;
+}
+.section-card h2 {
+  font-size: 1.6rem; margin-bottom: 20px; padding-bottom: 14px;
+  border-bottom: 3px solid var(--primary); color: var(--primary);
+  font-weight: 700;
+}
+.section-card h3 {
+  font-size: 1.3rem; margin: 28px 0 14px; color: var(--text);
+  font-weight: 600; padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.section-card h4 {
+  font-size: 1.1rem; margin: 20px 0 10px; color: var(--primary-dark);
+  font-weight: 600;
+}
+.section-card h5 {
+  font-size: 1rem; margin: 16px 0 8px; font-weight: 600;
+  color: var(--text);
+}
+
+/* ===== Content Elements ===== */
+.section-card p { margin-bottom: 14px; text-align: justify; }
+.section-card ul, .section-card ol { margin: 10px 0 14px 28px; }
+.section-card li { margin-bottom: 6px; }
+.section-card strong { color: var(--primary-dark); font-weight: 600; }
+
+.hl { color: var(--accent); font-weight: 500; }
+.key { color: var(--primary); font-weight: 600; }
+
+.highlight-box {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-left: 4px solid #f59e0b;
+  padding: 14px 18px; margin: 14px 0; border-radius: 6px;
+}
+
+[data-theme="dark"] .theorem-box.prop { background: rgba(37,99,235,0.1); }
+[data-theme="dark"] .theorem-box.lemma { background: rgba(147,51,234,0.1); }
+
+[data-theme="dark"] .highlight-box {
+  background: linear-gradient(135deg, #422006 0%, #451a03 100%);
+}
+
+/* ===== Theorem / Definition / Example Boxes ===== */
+.theorem-box {
+  border: 1px solid var(--border); border-left: 4px solid var(--theorem-color);
+  padding: 16px 20px; margin: 16px 0; border-radius: 8px;
+  background: var(--theorem-bg);
+}
+.theorem-box .label {
+  font-weight: 700; color: var(--theorem-color); margin-bottom: 8px;
+  display: block; font-size: 0.9rem;
+}
+.theorem-box.defn {
+  border-left-color: var(--defn-color);
+  background: var(--defn-bg);
+}
+.theorem-box.defn .label { color: var(--defn-color); }
+.theorem-box.exa {
+  border-left-color: var(--example-color);
+  background: var(--example-bg);
+}
+.theorem-box.exa .label { color: var(--example-color); }
+
+.theorem-box.prop {
+  border-left-color: #2563eb;
+  background: #eff6ff;
+}
+.theorem-box.prop .label { color: #2563eb; }
+.theorem-box.lemma {
+  border-left-color: #9333ea;
+  background: #faf5ff;
+}
+.theorem-box.lemma .label { color: #9333ea; }
+
+
+/* ===== Collapsible Sections ===== */
+.collapsible-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 10px 16px; border-radius: 8px;
+  cursor: pointer; font-size: 0.9rem; font-weight: 600;
+  transition: all 0.2s; border: 1px dashed; margin: 10px 0;
+}
+.collapsible-toggle .arrow { transition: transform 0.3s; font-size: 0.8rem; }
+.collapsible-toggle.open .arrow { transform: rotate(90deg); }
+
+.proof-toggle {
+  background: var(--proof-bg); border-color: var(--proof-color);
+  color: var(--proof-color);
+}
+.proof-toggle:hover { background: var(--proof-color); color: #fff; }
+
+.answer-toggle {
+  background: var(--answer-bg); border-color: var(--answer-color);
+  color: var(--answer-color);
+}
+.answer-toggle:hover { background: var(--answer-color); color: #fff; }
+
+.collapsible-content {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+  padding: 0 16px;
+}
+.collapsible-content.open {
+  max-height: 8000px; padding: 12px 16px;
+}
+
+/* ===== Code Blocks ===== */
+.code-tabs {
+  margin: 16px 0; border-radius: 10px; overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.code-tab-header {
+  display: flex; background: #2d2d2d;
+}
+.code-tab-btn {
+  padding: 10px 20px; background: transparent; border: none;
+  color: #999; cursor: pointer; font-size: 0.85rem; font-weight: 500;
+  transition: all 0.2s; border-bottom: 3px solid transparent;
+  display: flex; align-items: center; gap: 6px;
+}
+.code-tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.code-tab-btn.active { color: #fff; border-bottom-color: var(--primary); background: rgba(255,255,255,0.05); }
+.code-tab-btn .lang-dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+}
+.code-tab-btn[data-lang="r"] .lang-dot { background: #2563eb; }
+.code-tab-btn[data-lang="python"] .lang-dot { background: #eab308; }
+.code-tab-btn[data-lang="sas"] .lang-dot { background: #dc2626; }
+
+.code-tab-content { display: none; position: relative; overflow-x: auto; }
+.code-tab-content.active { display: block; }
+
+.code-actions {
+  position: absolute; top: 8px; right: 8px; z-index: 10;
+  display: flex; gap: 6px;
+}
+.code-btn {
+  background: rgba(255,255,255,0.1); border: none; color: #ccc;
+  padding: 5px 12px; border-radius: 5px; cursor: pointer;
+  font-size: 0.75rem; transition: all 0.2s;
+  display: flex; align-items: center; gap: 4px;
+}
+.code-btn:hover { background: rgba(255,255,255,0.25); color: #fff; }
+.code-btn.run-btn { background: rgba(34,197,94,0.2); color: #4ade80; }
+.code-btn.run-btn:hover { background: rgba(34,197,94,0.4); }
+.code-btn.copied { background: #10b981; color: #fff; }
+.code-btn.reset-btn { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.code-btn.reset-btn:hover { background: rgba(251,191,36,0.35); }
+
+pre[class*="language-"] {
+  margin: 0 !important; border-radius: 0 !important;
+  font-size: 0.85rem !important; padding: 16px !important;
+  max-height: 450px; overflow-y: auto;
+}
+
+/* 可编辑代码块样式 */
+pre[class*="language-"] code[contenteditable="true"] {
+  display: block; outline: none; white-space: pre;
+  border-left: 2px solid transparent; transition: border-color 0.2s;
+}
+pre[class*="language-"] code[contenteditable="true"]:focus {
+  border-left-color: #fbbf24; background: #1e1e1e;
+}
+pre[class*="language-"] code[contenteditable="true"]:hover {
+  border-left-color: rgba(251,191,36,0.3);
+}
+
+/* Code output area */
+.code-output {
+  background: #1a1a1a; color: #e0e0e0; padding: 12px 16px;
+  font-family: 'Consolas','Monaco','Courier New',monospace;
+  font-size: 0.82rem; line-height: 1.6; max-height: 300px;
+  overflow-y: auto; display: none; border-top: 1px solid #444;
+}
+.code-output.show { display: block; }
+.code-output .output-line { margin: 2px 0; white-space: pre-wrap; word-break: break-word; }
+.code-output .error { color: #f87171; }
+.code-output .info { color: #60a5fa; }
+.code-output .success { color: #4ade80; }
+.code-output .output-header {
+  color: #60a5fa; font-weight: 600; margin-bottom: 8px;
+  border-bottom: 1px solid #444; padding-bottom: 4px;
+}
+.code-output .output-running { color: #fbbf24; padding: 4px 0; }
+.code-output .output-error {
+  color: #f87171; background: rgba(248,113,113,0.1);
+  padding: 8px 12px; border-radius: 4px; margin: 4px 0;
+}
+.code-output .output-text {
+  background: transparent; color: #e0e0e0; padding: 2px 0;
+  margin: 0; white-space: pre-wrap; word-break: break-word;
+  font-family: 'Consolas','Monaco','Courier New',monospace;
+}
+.code-output .output-plot {
+  max-width: 100%; margin: 8px 0; border-radius: 4px;
+  background: #fff; padding: 4px;
+}
+.code-output .output-info {
+  background: rgba(96,165,250,0.08); padding: 12px 16px;
+  border-radius: 6px; border-left: 3px solid #60a5fa; margin: 8px 0;
+}
+.code-output .output-info p { margin: 4px 0; line-height: 1.7; }
+
+/* ===== Images ===== */
+.figure-wrapper {
+  text-align: center; margin: 24px 0; cursor: zoom-in;
+}
+.figure-wrapper img {
+  max-width: 100%; border-radius: 10px; box-shadow: var(--shadow-lg);
+  transition: transform 0.3s;
+}
+.figure-wrapper:hover img { transform: scale(1.02); }
+.figure-wrapper img.broken {
+  padding: 40px; background: var(--card-bg); opacity: 0.5;
+  border: 2px dashed var(--border);
+}
+.figure-wrapper .caption {
+  font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;
+  font-style: italic;
+}
+.figure-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0;
+}
+.figure-grid .figure-wrapper { margin: 0; }
+
+.lesson-video {
+  text-align: center; margin: 24px 0;
+}
+.lesson-video video {
+  display: block; width: 100%; max-width: 960px; height: auto; margin: 0 auto;
+  border-radius: 10px; box-shadow: var(--shadow-lg); background: #000;
+}
+.lesson-video figcaption {
+  font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;
+}
+
+/* Lightbox */
+#lightbox {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.92); z-index: 9999;
+  display: none; justify-content: center; align-items: center;
+  cursor: zoom-out;
+}
+#lightbox img { max-width: 92%; max-height: 92%; border-radius: 8px; }
+#lightbox.active { display: flex; }
+.lightbox-close {
+  position: absolute; top: 20px; right: 30px; color: #fff;
+  font-size: 40px; font-weight: bold; cursor: pointer; line-height: 1;
+}
+
+/* ===== Tables ===== */
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: center; }
+th { background: var(--primary-light); font-weight: 600; color: var(--primary-dark); }
+tr:nth-child(even) { background: rgba(0,0,0,0.02); }
+[data-theme="dark"] tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+
+/* ===== Math Display ===== */
+.math-display {
+  overflow-x: auto; padding: 8px 0; margin: 12px 0;
+}
+mjx-container { font-size: 1.05em !important; }
+
+/* ===== Back to Top ===== */
+#back-top {
+  position: fixed; bottom: 30px; right: 30px; width: 48px; height: 48px;
+  border-radius: 50%; background: var(--primary); color: #fff;
+  border: none; cursor: pointer; font-size: 1.3rem; z-index: 80;
+  display: none; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: transform 0.2s;
+}
+#back-top:hover { transform: translateY(-3px); }
+
+/* ===== WebR Status ===== */
+#webr-status {
+  position: fixed; bottom: 30px; left: 310px; z-index: 80;
+  background: var(--card-bg); padding: 8px 16px; border-radius: 20px;
+  box-shadow: var(--shadow); font-size: 0.8rem; color: var(--text-muted);
+  display: flex; align-items: center; gap: 8px;
+}
+#webr-status .dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;
+}
+#webr-status.ready .dot { background: #10b981; }
+#webr-status.loading .dot { background: #f59e0b; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ===== Mobile ===== */
+#sidebar-toggle {
+  display: none; background: none; border: none; font-size: 1.5rem;
+  color: var(--text); cursor: pointer;
+}
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-280px); }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left: 0; padding: 20px 16px 60px; }
+  #sidebar-toggle { display: block; }
+  .section-card { padding: 20px 16px; }
+  .figure-grid { grid-template-columns: 1fr; }
+  #webr-status { display: none; }
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.section-card { animation: fadeIn 0.4s ease; }
+
+/* ===== Learning Objectives ===== */
+.learning-objectives {
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(219,234,254,0.5) 100%);
+  border-radius: var(--radius); padding: 24px 28px; margin-bottom: 24px;
+  border-left: 5px solid var(--primary);
+}
+.learning-objectives h3 {
+  color: var(--primary-dark); margin-top: 0; border: none; padding: 0;
+}
+.learning-objectives ol { margin: 8px 0 0 24px; }
+.learning-objectives li { margin-bottom: 8px; }
+
+/* ===== Distribution Card ===== */
+.dist-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 0; margin: 24px 0; overflow: hidden;
+  box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+}
+.dist-card-header {
+  padding: 16px 24px; color: #fff; font-size: 1.2rem; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.dist-card-header .icon { font-size: 1.4rem; }
+.dist-card-body { padding: 24px 28px; }
+.dist-card-body h4 { margin-top: 0; }
+
+/* Color themes for distribution cards */
+.dist-binomial .dist-card-header { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.dist-poisson .dist-card-header { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.dist-nbinom .dist-card-header { background: linear-gradient(135deg, #ec4899, #be185d); }
+.dist-exponential .dist-card-header { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.dist-gamma .dist-card-header { background: linear-gradient(135deg, #10b981, #059669); }
+.dist-invgauss .dist-card-header { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.dist-pareto .dist-card-header { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.dist-lognormal .dist-card-header { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.dist-weibull .dist-card-header { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+
+/* ===== Practice Problems ===== */
+.practice-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 24px 28px; margin: 20px 0; box-shadow: var(--shadow);
+  border-left: 5px solid var(--example-color);
+}
+.practice-card h4 { color: var(--example-color); }
+
+/* ===== References ===== */
+.references ol { margin: 8px 0 0 24px; }
+.references li { margin-bottom: 10px; }
+.references em { color: var(--text-muted); }
+</style>
+<link href="bookdown-lite.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header>
+  <button id="sidebar-toggle">&#9776;</button>
+  <img src="uibe.jpg" alt="UIBE" class="logo" onerror="this.style.display='none'">
+  <div>
+    <h1>非寿险精算学模型与应用</h1>
+    <div class="subtitle">第1章 损失分布基础</div>
+  </div>
+  <a class="site-home-link" href="index.html">目录</a>
+  <button class="theme-toggle" onclick="toggleTheme()">&#127769; 深色模式</button>
+</header>
+
+<!-- ===== Sidebar ===== -->
+<aside id="sidebar">
+  <nav>
+        <div class="nav-section book-global-nav">
+      <div class="nav-section-title">全书</div>
+      <a href="index.html" class="nav-link">目录首页</a>
+      <a href="index.html" class="nav-link">目录首页</a>
+      <a href="chap2.html" class="nav-link">下一章</a>
+    </div><div class="nav-section">
+      <div class="nav-section-title">导览</div>
+      <a href="#sec-intro" class="nav-link active">学习目标</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">1.1 随机变量及其分布</div>
+      <a href="#sec-1-1" class="nav-link">1.1 随机变量及其分布</a>
+      <a href="#sec-1-1-1" class="nav-link sub">1.1.1 随机变量的描述</a>
+      <a href="#sec-1-1-2" class="nav-link sub">1.1.2 数字特征</a>
+      <a href="#sec-1-1-3" class="nav-link sub">1.1.3 母函数与矩母函数</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">1.2 常见离散型分布</div>
+      <a href="#sec-1-2" class="nav-link">1.2 离散型分布</a>
+      <a href="#sec-1-2-1" class="nav-link sub">1.2.1 二项分布</a>
+      <a href="#sec-1-2-2" class="nav-link sub">1.2.2 泊松分布</a>
+      <a href="#sec-1-2-3" class="nav-link sub">1.2.3 负二项分布</a>
+      <a href="#sec-1-2-4" class="nav-link sub">1.2.4 (a,b,0)与(a,b,1)类</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">1.3 常见连续型分布</div>
+      <a href="#sec-1-3" class="nav-link">1.3 连续型分布</a>
+      <a href="#sec-1-3-1" class="nav-link sub">1.3.1 指数分布</a>
+      <a href="#sec-1-3-2" class="nav-link sub">1.3.2 伽马分布</a>
+      <a href="#sec-1-3-3" class="nav-link sub">1.3.3 逆高斯分布</a>
+      <a href="#sec-1-3-4" class="nav-link sub">1.3.4 帕累托分布</a>
+      <a href="#sec-1-3-5" class="nav-link sub">1.3.5 对数正态分布</a>
+      <a href="#sec-1-3-6" class="nav-link sub">1.3.6 威布尔分布</a>
+      <a href="#sec-1-3-7" class="nav-link sub">1.3.7 分布间的关系</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">1.4 损失分布的变换</div>
+      <a href="#sec-1-4" class="nav-link">1.4 分布变换</a>
+      <a href="#sec-1-4-1" class="nav-link sub">1.4.1 对数变换和指数变换</a>
+      <a href="#sec-1-4-2" class="nav-link sub">1.4.2 组合分布</a>
+      <a href="#sec-1-4-3" class="nav-link sub">1.4.3 混合分布</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">1.5 分布拟合与参数估计</div>
+      <a href="#sec-1-5" class="nav-link">1.5 参数估计</a>
+      <a href="#sec-1-5-1" class="nav-link sub">1.5.1 矩估计</a>
+      <a href="#sec-1-5-2" class="nav-link sub">1.5.2 极大似然估计</a>
+      <a href="#sec-1-5-2-1" class="nav-link sub2">似然函数与极大似然思想</a>
+      <a href="#sec-1-5-2-2" class="nav-link sub2">极大似然估计的方差</a>
+      <a href="#sec-1-5-2-3" class="nav-link sub2">置信区间</a>
+      <a href="#sec-1-5-3" class="nav-link sub">1.5.3 拟合优度检验</a>
+      <a href="#sec-1-5-3-1" class="nav-link sub2">卡方拟合优度检验</a>
+      <a href="#sec-1-5-3-2" class="nav-link sub2">K-S检验</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">练习与附录</div>
+      <a href="#sec-summary" class="nav-link">本章小结</a>
+      <a href="#sec-1-6" class="nav-link">1.6 习题</a>
+      <a href="#sec-references" class="nav-link">参考文献</a>
+    </div>
+  </nav>
+</aside>
+
+<!-- ===== Main Content ===== -->
+<div id="main">
+
+<!-- ===== Learning Objectives ===== -->
+<div class="section-card" id="sec-intro">
+  <h2>本章学习目标</h2>
+  <div class="learning-objectives">
+    <ol>
+      <li>理解损失的随机性，以及描述随机变量的数学工具。</li>
+      <li>掌握常见的离散型、连续型分布及其性质。</li>
+      <li>利用随机变量变换的方法得到新的分布。</li>
+      <li>理解矩估计和极大似然估计方法的思想，并使用R语言进行实际编程操作。</li>
+      <li>应用统计推断方法选择合适的损失分布。</li>
+    </ol>
+  </div>
+  <p>在非寿险研究中，损失（例如索赔发生与否、索赔频率、每次事故的索赔金额、累积损失金额等）通常无法被准确预测，故可以用随机变量来表示。本章从随机变量及其分布的基本概念出发，系统介绍非寿险精算中常用的离散型和连续型分布，并讨论分布变换、参数估计和拟合优度检验等方法。</p>
+</div>
+
+<!-- ===== Section 1.1 ===== -->
+<div class="section-card" id="sec-1-1">
+  <h2>1.1 随机变量及其分布</h2>
+  <p>随机变量可以理解为一个不确定的、反映随机事件结果的数值，通常记为大写英文字母 $X, Y$ 等。根据取值范围，可分为<span class="hl">离散型随机变量</span>（取值范围为有限个或可列个）和<span class="hl">连续型随机变量</span>（可取某个区间中的一切值）。</p>
+
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline>
+      <source src="section1-movs/chap1_1.mp4" type="video/mp4">
+      您的浏览器不支持 HTML5 视频播放。
+    </video>
+    <figcaption>视频 1.1：随机变量的描述、数字特征与生成函数</figcaption>
+  </figure>
+
+  <h3 id="sec-1-1-1">1.1.1 随机变量的描述</h3>
+  <p>随机变量的取值规律可以运用累积分布函数、概率分布列/概率密度函数、生存函数等进行刻画。</p>
+
+  <div class="theorem-box defn">
+    <span class="label">累积分布函数（CDF）</span>
+    随机变量 $X$ 的累积分布函数定义为：
+    $$F(x) = \text{P}(X \le x), \quad -\infty < x < +\infty$$
+    分布函数具有：（1）单调性；（2）$\lim_{x\to -\infty}F(x)=0$，$\lim_{x\to +\infty}F(x)=1$；（3）右连续性。
+  </div>
+
+  <p>对于<strong>离散型随机变量</strong>，使用概率分布列描述其取每个具体值的概率：$p(x_i) = \text{P}(X = x_i)$。</p>
+
+  <p>对于<strong>连续型随机变量</strong>，使用概率密度函数（pdf）描述其取值规律。若存在非负可积函数 $f(x) \geq 0$，使 $F(x)=\int_{-\infty}^{x}f(t)\mathrm{d}t$，则称 $f(x)$ 为随机变量 $X$ 的概率密度函数。显然，$f(x)=F'(x)$，$\int_{-\infty}^{\infty} f(x) \mathrm{d}x = 1$。</p>
+
+  <div class="theorem-box defn">
+    <span class="label">生存函数</span>
+    给定随机变量 $X$ 及其分布函数 $F(x)$，其生存函数定义为：
+    $$S(x) = 1 - F(x) = \text{P}(X > x)$$
+    生存函数描述了随机变量 $X$ 的取值大于 $x$ 的概率。
+  </div>
+
+  <h3 id="sec-1-1-2">1.1.2 随机变量的数字特征</h3>
+
+  <h4>1. 数学期望</h4>
+  <p>数学期望反映随机变量的中心趋势。离散型：$\mathbb{E}X = \sum_{i}x_ip(x_i)$；连续型：$\mathbb{E}X = \int_{-\infty}^{\infty}xf(x)\mathrm{d}x$。</p>
+  <p>期望的运算性质：$\mathbb{E}(aX+b) = a\mathbb{E}(X) + b$；$\mathbb{E}(X + Y) = \mathbb{E}(X) + \mathbb{E}(Y)$；若 $X$ 与 $Y$ 不相关，则 $\mathbb{E}(XY) = \mathbb{E}(X)\mathbb{E}(Y)$。</p>
+
+  <h4>2. 方差</h4>
+  <p>方差衡量随机变量取值的离散程度：$\text{Var}(X) = \mathbb{E}[(X-\mathbb{E}X)^2] = \mathbb{E}(X^2)-\mathbb{E}^2(X)$。</p>
+
+  <h4>3. 有限期望值和平均超越值</h4>
+  <div class="theorem-box defn">
+    <span class="label">有限期望值</span>
+    描述存在赔偿限额 $d$ 时的期望损失：
+    $$\mathbb{E}(X \wedge d) = \int_{0}^{d} x f(x) \mathrm{d}x + d [1 - F(d)]$$
+    其中 $X \wedge d = \min(X, d)$。
+  </div>
+
+  <div class="theorem-box defn">
+    <span class="label">平均超越值</span>
+    描述存在免赔额 $u$ 时的期望损失：
+    $$e(u) = \mathbb{E}(X - u \mid X > u) = \frac{\int_{u}^{\infty} (x - u) f(x) \mathrm{d}x}{1 - F(u)}$$
+  </div>
+
+  <h4>4. 矩</h4>
+  <p>$k$ 阶原点矩：$\mu_k' = \mathbb{E}(X^k)$；$k$ 阶中心矩：$\mu_k = \mathbb{E}[(X - \mathbb{E}X)^k]$。期望是1阶原点矩，方差是2阶中心矩。</p>
+  <p>由此可定义：<strong>变异系数</strong> $\sigma/\mu$；<strong>偏度系数</strong> $skew(X) = \mu_3/\sigma^3$；<strong>峰度系数</strong> $kurt(X) = \mu_4/\sigma^4$。</p>
+
+  <h4>5. 分位数</h4>
+  <p>给定 $0 < q < 1$，随机变量 $X$ 的 $q$ 分位数 $x_q$ 定义为：$F(x_q) = q$。$q=0.5$ 时的分位数称为中位数。</p>
+
+  <h3 id="sec-1-1-3">1.1.3 概率母函数、矩母函数和累积量生成函数</h3>
+
+  <div class="theorem-box defn">
+    <span class="label">概率母函数（PGF）</span>
+    对于取值范围为 $\{0,1,2,\cdots\}$ 的随机变量 $X$：
+    $$P(z) = \mathbb{E}(z^X) = \sum_{x=0}^{\infty} z^x \cdot \text{P}(X=x)$$
+    当期望存在时，$\mathbb{E}(X) = P'(1)$；当方差存在时，$\text{Var}(X) = P''(1) + P'(1) - [P'(1)]^2$。
+  </div>
+
+  <div class="theorem-box defn">
+    <span class="label">矩母函数（MGF）</span>
+    $$M_X(t) = \mathbb{E}(e^{tX}) = \sum_{x}e^{tx} \cdot \text{P}(X=x) \quad \text{或} \quad \int e^{tx}f(x)\mathrm{d}x$$
+    对矩母函数求导可得各阶原点矩：$\mathbb{E}(X^k) = M_X^{(k)}(0)$。
+  </div>
+
+  <p><strong>累积量生成函数（CGF）</strong>定义为 $C_X(t) = \ln M_X(t)$。在0点处求导可得：$\mu = C_X'(0)$，$\sigma^2 = C_X''(0)$，$\mathbb{E}[(X-\mathbb{E}X)^3] = C_X'''(0)$。</p>
+</div>
+
+<!-- ===== Section 1.2 ===== -->
+<div class="section-card" id="sec-1-2">
+  <h2>1.2 常见的离散型分布</h2>
+  <p>在非寿险精算中，离散型分布广泛用于保险索赔次数的建模。本节介绍二项分布、泊松分布和负二项分布。</p>
+
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline>
+      <source src="section1-movs/chap1_2.mp4" type="video/mp4">
+      您的浏览器不支持 HTML5 视频播放。
+    </video>
+    <figcaption>视频 1.2：二项分布、泊松分布、负二项分布与 (a,b,0)/(a,b,1) 分布类</figcaption>
+  </figure>
+
+  <!-- 1.2.1 二项分布 -->
+  <h3 id="sec-1-2-1">1.2.1 二项分布（Binomial distribution）</h3>
+  <div class="dist-card dist-binomial">
+    <div class="dist-card-header"><span class="icon">B</span> 二项分布 $\text{B}(n, p)$</div>
+    <div class="dist-card-body">
+      <p>若随机变量 $N$ 服从参数为 $n$ 和 $p$ 的二项分布，记为 $\text{B}(n, p)$，其中 $n$ 为正整数且 $0 < p < 1$。当 $n = 1$ 时退化为伯努利分布。</p>
+
+      <div class="theorem-box">
+        <span class="label">概率分布列</span>
+        $$p_k = \binom{n}{k} p^k (1-p)^{n-k}, \quad k = 0, 1, \cdots, n$$
+        其中 $\binom{n}{k} = \frac{n!}{k!(n-k)!}$。
+      </div>
+
+      <div class="theorem-box">
+        <span class="label">数字特征</span>
+        $$\mathbb{E}(N) = np, \quad \text{Var}(N) = np(1-p)$$
+        $$P(z) = [1 + p(z-1)]^n$$
+      </div>
+
+      <h4>性质</h4>
+      <ol>
+        <li>可描述 $n$ 个独立同分布风险所组成的风险集合的索赔频率。</li>
+        <li>索赔频率存在极大值 $n$（如一次自然灾害造成的伤亡人数）。</li>
+        <li>$p = 0.5$ 时分布对称；$p < 0.5$ 时正偏；$p > 0.5$ 时负偏。</li>
+        <li>众数为 $[(n+1)p]$，若 $(n+1)p$ 为整数则具有双众数。</li>
+        <li><span class="hl">方差小于均值</span>——与泊松分布和负二项分布的主要区别。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="figure-wrapper" onclick="openLightbox('section1-figs/binomial.jpg')">
+    <img src="section1-figs/binomial.jpg" alt="二项分布的概率分布列和分布函数" onerror='this.classList.add("broken");this.alt="图片加载失败: binomial.jpg";'>
+    <div class="caption">图1.1 二项分布的概率分布列和分布函数</div>
+  </div>
+
+  <div class="code-tabs" id="code-binomial">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">## 二项分布的概率分布列和分布函数
+x &lt;- seq(0, 9, 1)
+
+# 概率分布列
+plot(x, dbinom(x, size = 9, prob = 0.1), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;k&quot;, ylab = &quot;p(k)&quot;)
+lines(x, dbinom(x, size = 9, prob = 0.2), col = 2, lty = 2)
+lines(x, dbinom(x, size = 9, prob = 0.3), col = 3, lty = 3)
+lines(x, dbinom(x, size = 9, prob = 0.5), col = 4, lty = 4)
+
+# 累积分布函数
+plot(x, pbinom(x, size = 9, prob = 0.1), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;k&quot;, ylab = &quot;F(k)&quot;)
+lines(x, pbinom(x, size = 9, prob = 0.2), col = 2, lty = 2)
+lines(x, pbinom(x, size = 9, prob = 0.3), col = 3, lty = 3)
+lines(x, pbinom(x, size = 9, prob = 0.5), col = 4, lty = 4)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+x = np.arange(0, 10)
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# 概率分布列
+for p, color, ls in [(0.1, &#x27;C0&#x27;, &#x27;-&#x27;), (0.2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                      (0.3, &#x27;C2&#x27;, &#x27;-.&#x27;), (0.5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    axes[0].plot(x, stats.binom.pmf(x, 9, p), color=color, ls=ls,
+                 label=f&#x27;p={p}&#x27;)
+axes[0].set_xlabel(&#x27;k&#x27;); axes[0].set_ylabel(&#x27;p(k)&#x27;)
+axes[0].set_title(&#x27;二项分布概率质量函数&#x27;); axes[0].legend()
+
+# 累积分布函数
+for p, color, ls in [(0.1, &#x27;C0&#x27;, &#x27;-&#x27;), (0.2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                      (0.3, &#x27;C2&#x27;, &#x27;-.&#x27;), (0.5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    axes[1].plot(x, stats.binom.cdf(x, 9, p), color=color, ls=ls,
+                 label=f&#x27;p={p}&#x27;)
+axes[1].set_xlabel(&#x27;k&#x27;); axes[1].set_ylabel(&#x27;F(k)&#x27;)
+axes[1].set_title(&#x27;二项分布累积分布函数&#x27;); axes[1].legend()
+plt.tight_layout(); plt.show()</code></pre>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">data binomial;
+  do k = 0 to 9;
+    p1 = pdf(&#x27;BINOMIAL&#x27;, k, 0.1, 9);
+    p2 = pdf(&#x27;BINOMIAL&#x27;, k, 0.2, 9);
+    p3 = pdf(&#x27;BINOMIAL&#x27;, k, 0.3, 9);
+    p4 = pdf(&#x27;BINOMIAL&#x27;, k, 0.5, 9);
+    cdf1 = cdf(&#x27;BINOMIAL&#x27;, k, 0.1, 9);
+    cdf2 = cdf(&#x27;BINOMIAL&#x27;, k, 0.2, 9);
+    cdf3 = cdf(&#x27;BINOMIAL&#x27;, k, 0.3, 9);
+    cdf4 = cdf(&#x27;BINOMIAL&#x27;, k, 0.5, 9);
+    output;
+  end;
+run;
+
+title &quot;二项分布概率质量函数&quot;;
+proc sgplot data=binomial;
+  series x=k y=p1 / legendlabel=&quot;p=0.1&quot;;
+  series x=k y=p2 / legendlabel=&quot;p=0.2&quot;;
+  series x=k y=p3 / legendlabel=&quot;p=0.3&quot;;
+  series x=k y=p4 / legendlabel=&quot;p=0.5&quot;;
+  yaxis label=&quot;p(k)&quot;;
+run;
+title;</code></pre>
+    </div>
+  </div>
+
+  <!-- 1.2.2 泊松分布 -->
+  <h3 id="sec-1-2-2">1.2.2 泊松分布（Poisson distribution）</h3>
+  <div class="dist-card dist-poisson">
+    <div class="dist-card-header"><span class="icon">P</span> 泊松分布 $\text{Poi}(\lambda)$</div>
+    <div class="dist-card-body">
+      <p>若随机变量 $N$ 服从参数为 $\lambda > 0$ 的泊松分布，记为 $\text{Poi}(\lambda)$。</p>
+
+      <div class="theorem-box">
+        <span class="label">概率分布列</span>
+        $$p_k = \frac{\lambda^k}{k!}e^{-\lambda}, \quad k = 0, 1, 2, \ldots$$
+      </div>
+
+      <div class="theorem-box">
+        <span class="label">数字特征</span>
+        $$\mathbb{E}(N) = \text{Var}(N) = \lambda$$
+        $$P(z) = \exp\{\lambda(z-1)\}$$
+      </div>
+
+      <h4>性质</h4>
+      <ol>
+        <li><span class="hl">均值和方差相等</span>，都等于参数 $\lambda$。</li>
+        <li><strong>可加性</strong>：若 $N_1 \sim \text{Poi}(\lambda_1)$，$N_2 \sim \text{Poi}(\lambda_2)$ 独立，则 $N_1+N_2 \sim \text{Poi}(\lambda_1+\lambda_2)$。</li>
+        <li><strong>可分解性</strong>：总索赔次数 $N \sim \text{Poi}(\lambda)$，按概率 $p_1, p_2$ 分解为两类独立的泊松变量。</li>
+        <li>$\lambda$ 较小时近似二项分布；$\lambda$ 较大时近似正态分布。</li>
+        <li>众数为 $[\lambda]$，若 $\lambda$ 为整数则具有双众数。</li>
+        <li>若事故发生时间间隔服从指数分布，则固定时间内事故次数服从泊松分布。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="figure-wrapper" onclick="openLightbox('section1-figs/poisson.jpg')">
+    <img src="section1-figs/poisson.jpg" alt="泊松分布的概率分布列和分布函数" onerror='this.classList.add("broken");this.alt="图片加载失败: poisson.jpg";'>
+    <div class="caption">图1.2 泊松分布的概率分布列和分布函数</div>
+  </div>
+
+  <div class="code-tabs" id="code-poisson">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">
+## 泊松分布的概率分布列和分布函数
+x &lt;- seq(0, 10, 1)
+
+# 概率分布列
+plot(x, dpois(x, lambda = 1), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;k&quot;, ylab = &quot;p(k)&quot;)
+lines(x, dpois(x, lambda = 2), col = 2, lty = 2)
+lines(x, dpois(x, lambda = 3), col = 3, lty = 3)
+lines(x, dpois(x, lambda = 5), col = 4, lty = 4)
+
+# 累积分布函数
+plot(x, ppois(x, lambda = 1), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;k&quot;, ylab = &quot;F(k)&quot;)
+lines(x, ppois(x, lambda = 2), col = 2, lty = 2)
+lines(x, ppois(x, lambda = 3), col = 3, lty = 3)
+lines(x, ppois(x, lambda = 5), col = 4, lty = 4)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+x = np.arange(0, 11)
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+for lam, color, ls in [(1, &#x27;C0&#x27;, &#x27;-&#x27;), (2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                        (3, &#x27;C2&#x27;, &#x27;-.&#x27;), (5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    axes[0].plot(x, stats.poisson.pmf(x, lam), color=color, ls=ls,
+                 label=f&#x27;λ={lam}&#x27;)
+axes[0].set_xlabel(&#x27;k&#x27;); axes[0].set_ylabel(&#x27;p(k)&#x27;)
+axes[0].set_title(&#x27;泊松分布概率质量函数&#x27;); axes[0].legend()
+
+for lam, color, ls in [(1, &#x27;C0&#x27;, &#x27;-&#x27;), (2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                        (3, &#x27;C2&#x27;, &#x27;-.&#x27;), (5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    axes[1].plot(x, stats.poisson.cdf(x, lam), color=color, ls=ls,
+                 label=f&#x27;λ={lam}&#x27;)
+axes[1].set_xlabel(&#x27;k&#x27;); axes[1].set_ylabel(&#x27;F(k)&#x27;)
+axes[1].set_title(&#x27;泊松分布累积分布函数&#x27;); axes[1].legend()
+plt.tight_layout(); plt.show()</code></pre>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">data poisson;
+  do k = 0 to 10;
+    p1 = pdf(&#x27;POISSON&#x27;, k, 1);
+    p2 = pdf(&#x27;POISSON&#x27;, k, 2);
+    p3 = pdf(&#x27;POISSON&#x27;, k, 3);
+    p4 = pdf(&#x27;POISSON&#x27;, k, 5);
+    output;
+  end;
+run;
+
+title &quot;泊松分布概率质量函数&quot;;
+proc sgplot data=poisson;
+  series x=k y=p1 / legendlabel=&quot;lambda=1&quot;;
+  series x=k y=p2 / legendlabel=&quot;lambda=2&quot;;
+  series x=k y=p3 / legendlabel=&quot;lambda=3&quot;;
+  series x=k y=p4 / legendlabel=&quot;lambda=5&quot;;
+  yaxis label=&quot;p(k)&quot;;
+run;
+title;</code></pre>
+    </div>
+  </div>
+
+  <!-- 1.2.3 负二项分布 -->
+  <h3 id="sec-1-2-3">1.2.3 负二项分布（Negative Binomial distribution）</h3>
+  <div class="dist-card dist-nbinom">
+    <div class="dist-card-header"><span class="icon">NB</span> 负二项分布 $\text{NB}(r, \beta)$</div>
+    <div class="dist-card-body">
+      <p>若随机变量 $N$ 服从参数为 $r > 0$ 和 $\beta > 0$ 的负二项分布，记为 $\text{NB}(r, \beta)$。</p>
+
+      <div class="theorem-box">
+        <span class="label">概率分布列</span>
+        $$p_k = \binom{k+r-1}{k} \left(\frac{1}{1+\beta}\right)^r \left(\frac{\beta}{1+\beta}\right)^k, \quad k = 0, 1, 2, \ldots$$
+      </div>
+
+      <div class="theorem-box">
+        <span class="label">数字特征</span>
+        $$\mathbb{E}(N) = r\beta, \quad \text{Var}(N) = r\beta(1+\beta)$$
+        $$P(z) = [1 - \beta(z-1)]^{-r}$$
+      </div>
+
+      <h4>性质</h4>
+      <ol>
+        <li>具有两个参数，概率函数具有更大的灵活性。</li>
+        <li><span class="hl">方差大于均值</span>——与泊松分布的重要差别。若观察值方差大于均值（过离散），负二项分布拟合更好。</li>
+        <li>是一种混合泊松分布：泊松参数服从伽马分布时，混合结果为负二项分布。</li>
+        <li>当索赔频率随时间线性增加时，适合使用负二项分布建模。</li>
+        <li>众数为 $[(r-1)\beta]$，若 $(r-1)\beta$ 为整数则具有双众数。</li>
+      </ol>
+
+      <p>当 $r = 1$ 时，负二项分布退化为<strong>几何分布</strong>：$p_k = p(1-p)^k, \quad k = 0, 1, 2, \ldots$</p>
+    </div>
+  </div>
+
+  <div class="figure-wrapper" onclick="openLightbox('section1-figs/nbinomial.jpg')">
+    <img src="section1-figs/nbinomial.jpg" alt="负二项分布的概率分布列和分布函数" onerror='this.classList.add("broken");this.alt="图片加载失败: nbinomial.jpg";'>
+    <div class="caption">图1.3 负二项分布的概率分布列和分布函数</div>
+  </div>
+
+  <div class="code-tabs" id="code-nbinom">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">
+## 负二项分布：size = r, prob = 1/(1+beta)
+x &lt;- seq(0, 10, 1)
+
+# 概率分布列
+plot(x, dnbinom(x, size = 2, prob = 1/(1+0.1)), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;k&quot;, ylab = &quot;p(k)&quot;)
+lines(x, dnbinom(x, size = 2, prob = 1/(1+0.2)), col = 2, lty = 2)
+lines(x, dnbinom(x, size = 2, prob = 1/(1+0.3)), col = 3, lty = 3)
+lines(x, dnbinom(x, size = 2, prob = 1/(1+0.5)), col = 4, lty = 4)
+
+# 累积分布函数
+plot(x, pnbinom(x, size = 2, prob = 1/(1+0.1)), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;k&quot;, ylab = &quot;F(k)&quot;)
+lines(x, pnbinom(x, size = 2, prob = 1/(1+0.2)), col = 2, lty = 2)
+lines(x, pnbinom(x, size = 2, prob = 1/(1+0.3)), col = 3, lty = 3)
+lines(x, pnbinom(x, size = 2, prob = 1/(1+0.5)), col = 4, lty = 4)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+x = np.arange(0, 11)
+fig, ax = plt.subplots(figsize=(8, 5))
+
+for beta, color, ls in [(0.1, &#x27;C0&#x27;, &#x27;-&#x27;), (0.2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                         (0.3, &#x27;C2&#x27;, &#x27;-.&#x27;), (0.5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    p = 1 / (1 + beta)
+    ax.plot(x, stats.nbinom.pmf(x, 2, p), color=color, ls=ls,
+            label=f&#x27;β={beta}&#x27;)
+ax.set_xlabel(&#x27;k&#x27;); ax.set_ylabel(&#x27;p(k)&#x27;)
+ax.set_title(&#x27;负二项分布概率质量函数&#x27;); ax.legend()
+plt.tight_layout(); plt.show()</code></pre>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">data negbinom;
+  do k = 0 to 10;
+    p1 = pdf(&#x27;NEGBINOMIAL&#x27;, k, 1/(1+0.1), 2);
+    p2 = pdf(&#x27;NEGBINOMIAL&#x27;, k, 1/(1+0.2), 2);
+    p3 = pdf(&#x27;NEGBINOMIAL&#x27;, k, 1/(1+0.3), 2);
+    p4 = pdf(&#x27;NEGBINOMIAL&#x27;, k, 1/(1+0.5), 2);
+    output;
+  end;
+run;
+
+title &quot;负二项分布概率质量函数&quot;;
+proc sgplot data=negbinom;
+  series x=k y=p1 / legendlabel=&quot;beta=0.1&quot;;
+  series x=k y=p2 / legendlabel=&quot;beta=0.2&quot;;
+  series x=k y=p3 / legendlabel=&quot;beta=0.3&quot;;
+  series x=k y=p4 / legendlabel=&quot;beta=0.5&quot;;
+  yaxis label=&quot;p(k)&quot;;
+run;
+title;</code></pre>
+    </div>
+  </div>
+
+  <!-- 1.2.4 (a,b,0)与(a,b,1)分布类 -->
+  <h3 id="sec-1-2-4">1.2.4 (a,b,0)与(a,b,1)分布类</h3>
+  <p>二项分布、泊松分布和负二项分布（几何分布）均属于 <strong>(a, b, 0)</strong> 分布类，其取值概率满足递归关系：</p>
+  <div class="theorem-box">
+    <span class="label">(a,b,0)递归关系</span>
+    $$p_k = \left(a + \frac{b}{k}\right)p_{k-1}, \quad k = 1, 2, \cdots$$
+  </div>
+
+  <table>
+    <tr><th>分布</th><th>$a$</th><th>$b$</th><th>$p_0$</th></tr>
+    <tr><td>二项分布</td><td>$-\frac{p}{1-p}$</td><td>$\frac{(n+1)p}{1-p}$</td><td>$(1-p)^n$</td></tr>
+    <tr><td>泊松分布</td><td>$0$</td><td>$\lambda$</td><td>$e^{-\lambda}$</td></tr>
+    <tr><td>负二项分布</td><td>$\frac{\beta}{1+\beta}$</td><td>$\frac{(r-1)\beta}{1+\beta}$</td><td>$(1+\beta)^{-r}$</td></tr>
+    <tr><td>几何分布</td><td>$\frac{\beta}{1+\beta}$</td><td>$0$</td><td>$(1+\beta)^{-1}$</td></tr>
+  </table>
+
+  <p>在非寿险实务中，常需对零点概率进行调整，得到 <strong>(a, b, 1)</strong> 分布类。其递推关系从 $p_1$ 开始计算，$p_0$ 需单独设定。</p>
+
+  <div class="theorem-box defn">
+    <span class="label">零截断分布 ZT-(a,b,1)</span>
+    令 $p_0 = 0$，零点概率被完全截断：
+    $$p_0^T = 0, \quad p_k^T = \frac{p_k}{1 - p_0}, \quad k = 1, 2, 3, \ldots$$
+  </div>
+
+  <div class="theorem-box defn">
+    <span class="label">零调整分布 ZM-(a,b,1)</span>
+    令 $0 < p_0 < 1$，将零点概率调整为任意值：
+    $$p_0^M \in (0,1), \quad p_k^M = \frac{1 - p_0^M}{1 - p_0} \cdot p_k, \quad k = 1, 2, 3, \ldots$$
+  </div>
+
+  <div class="theorem-box exa">
+    <span class="label">例 1.1</span>
+    在R软件中分别绘制零截断、零调整负二项分布的概率分布。
+  </div>
+
+  <div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">
+## 零截断负二项分布的概率
+x &lt;- 0:10
+p &lt;- dnbinom(x, 4, 0.7)       # 负二项分布的概率
+p0 &lt;- p[1]                    # 零点的概率
+pt1 &lt;- p[2:11] / (1 - p0)     # 零截断分布在非0点上的概率
+pt &lt;- c(0, pt1)               # 零截断分布的概率
+com &lt;- rbind(负二项 = p, 零截断负二项 = pt)
+barplot(com, beside = TRUE, names.arg = 0:10, legend.text = TRUE)
+
+## 零调整负二项分布的概率
+pm0 &lt;- 0.3                    # 调整后的零点概率
+pm1 &lt;- (1 - pm0) * p[2:11] / (1 - p0)
+pm &lt;- c(pm0, pm1)
+com &lt;- rbind(负二项 = p, 零调整负二项 = pm)
+barplot(com, beside = TRUE, names.arg = 0:10, legend.text = TRUE)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+x = np.arange(0, 11)
+p_nb = stats.nbinom.pmf(x, 4, 0.7)
+p0 = p_nb[0]
+
+# 零截断
+pt = np.zeros_like(p_nb)
+pt[1:] = p_nb[1:] / (1 - p0)
+
+# 零调整
+pm0 = 0.3
+pm = np.zeros_like(p_nb)
+pm[0] = pm0
+pm[1:] = (1 - pm0) * p_nb[1:] / (1 - p0)
+
+fig, ax = plt.subplots(figsize=(10, 5))
+width = 0.35
+ax.bar(x - width/2, p_nb, width, label=&#x27;负二项&#x27;, alpha=0.7)
+ax.bar(x + width/2, pt, width, label=&#x27;零截断负二项&#x27;, alpha=0.7)
+ax.set_xlabel(&#x27;k&#x27;); ax.set_ylabel(&#x27;概率&#x27;)
+ax.set_title(&#x27;负二项分布与零截断负二项分布&#x27;)
+ax.set_xticks(x); ax.legend()
+plt.tight_layout(); plt.show()</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Section 1.3 ===== -->
+<div class="section-card" id="sec-1-3">
+  <h2>1.3 常见的连续型分布</h2>
+  <p>连续型分布常用于描述索赔金额的取值规律。本节介绍指数分布、伽马分布、逆高斯分布、帕累托分布、对数正态分布和威布尔分布。</p>
+
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline>
+      <source src="section1-movs/chap1_3.mp4" type="video/mp4">
+      您的浏览器不支持 HTML5 视频播放。
+    </video>
+    <figcaption>视频 1.3：常见连续型损失分布及其性质</figcaption>
+  </figure>
+
+  <!-- 1.3.1 指数分布 -->
+  <h3 id="sec-1-3-1">1.3.1 指数分布（Exponential distribution）</h3>
+  <div class="dist-card dist-exponential">
+    <div class="dist-card-header"><span class="icon">E</span> 指数分布 $\text{Exp}(\lambda)$</div>
+    <div class="dist-card-body">
+      <div class="theorem-box">
+        <span class="label">密度函数与分布函数</span>
+        $$f(x) = \lambda e^{-\lambda x}, \quad x \geq 0$$
+        $$F(x) = 1 - e^{-\lambda x}, \quad x \geq 0$$
+      </div>
+
+      <div class="theorem-box">
+        <span class="label">数字特征</span>
+        $$\mathbb{E}(X) = \frac{1}{\lambda}, \quad \text{Var}(X) = \frac{1}{\lambda^2}$$
+        $$M(t) = \frac{\lambda}{\lambda - t}, \quad t < \lambda$$
+      </div>
+
+      <p>有限期望函数存在显式解：$\mathbb{E}[(X \wedge d)^k] = \frac{\gamma(k+1, \lambda d)}{\lambda^k} + d^k e^{-\lambda d}$。</p>
+
+      <h4>性质</h4>
+      <ol>
+        <li>变异系数等于1，众数等于0。</li>
+        <li>若索赔次数服从参数为 $\lambda$ 的泊松分布，则两个相邻损失发生的时间间隔服从参数为 $1/\lambda$ 的指数分布。</li>
+        <li><strong>无记忆性</strong>：$\text{P}(X \geq s+t \mid X\geq s) = \text{P}(X \geq t)$。</li>
+        <li>指数分布是伽马分布和威布尔分布中当 $\alpha = 1$（或 $\tau = 1$）时的特殊情况。</li>
+        <li>通常作为轻尾分布和厚尾分布的分水岭。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="figure-wrapper" onclick="openLightbox('section1-figs/exponential.jpg')">
+    <img src="section1-figs/exponential.jpg" alt="指数分布的概率密度函数" onerror='this.classList.add("broken");this.alt="图片加载失败: exponential.jpg";'>
+    <div class="caption">图1.4 指数分布的概率密度函数</div>
+  </div>
+
+  <div class="code-tabs" id="code-exp">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">
+## 指数分布的概率密度函数
+x &lt;- seq(0, 5, 0.01)
+plot(x, dexp(x, rate = 0.5), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;x&quot;, ylab = &quot;f(x)&quot;)
+lines(x, dexp(x, rate = 1), col = 2, lty = 2)
+lines(x, dexp(x, rate = 2), col = 3, lty = 3)
+lines(x, dexp(x, rate = 5), col = 4, lty = 4)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+x = np.linspace(0, 5, 500)
+fig, ax = plt.subplots(figsize=(8, 5))
+for rate, color, ls in [(0.5, &#x27;C0&#x27;, &#x27;-&#x27;), (1, &#x27;C1&#x27;, &#x27;--&#x27;),
+                         (2, &#x27;C2&#x27;, &#x27;-.&#x27;), (5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    ax.plot(x, stats.expon.pdf(x, scale=1/rate), color=color, ls=ls,
+            label=f&#x27;rate={rate}&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;指数分布概率密度函数&#x27;); ax.legend()
+plt.tight_layout(); plt.show()</code></pre>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">data exponential;
+  do x = 0 to 5 by 0.01;
+    f1 = pdf(&#x27;EXPONENTIAL&#x27;, x, 0.5);
+    f2 = pdf(&#x27;EXPONENTIAL&#x27;, x, 1);
+    f3 = pdf(&#x27;EXPONENTIAL&#x27;, x, 2);
+    f4 = pdf(&#x27;EXPONENTIAL&#x27;, x, 5);
+    output;
+  end;
+run;
+
+title &quot;指数分布概率密度函数&quot;;
+proc sgplot data=exponential;
+  series x=x y=f1 / legendlabel=&quot;rate=0.5&quot;;
+  series x=x y=f2 / legendlabel=&quot;rate=1&quot;;
+  series x=x y=f3 / legendlabel=&quot;rate=2&quot;;
+  series x=x y=f4 / legendlabel=&quot;rate=5&quot;;
+  yaxis label=&quot;f(x)&quot;;
+run;
+title;</code></pre>
+    </div>
+  </div>
+
+  <!-- 1.3.2 伽马分布 -->
+  <h3 id="sec-1-3-2">1.3.2 伽马分布（Gamma distribution）</h3>
+  <div class="dist-card dist-gamma">
+    <div class="dist-card-header"><span class="icon">Γ</span> 伽马分布 $\text{Ga}(\alpha, \lambda)$</div>
+    <div class="dist-card-body">
+      <div class="theorem-box">
+        <span class="label">密度函数</span>
+        $$f(x) = \frac{\lambda^\alpha}{\Gamma(\alpha)}x^{\alpha-1}e^{-\lambda x}, \quad x > 0$$
+        其中 $\Gamma(s)=\int_0^{\infty} t^{s-1}e^{-t}\mathrm{d}t$ 为伽马函数，$\alpha$ 为形状参数，$\lambda$ 为速率参数。
+      </div>
+
+      <p>令 $\theta = 1/\lambda$，可重参数化为 $f(x) = \frac{1}{\Gamma(\alpha) \theta^\alpha} x^{\alpha-1} e^{-x/\theta}$，记为 $\text{Ga}(\alpha, \theta)$，$\theta$ 为尺度参数。</p>
+
+      <div class="theorem-box">
+        <span class="label">数字特征</span>
+        $$\mathbb{E}(X) = \alpha \theta, \quad \text{Var}(X) = \alpha \theta^2$$
+        $$M(t) = (1-\theta t)^{-\alpha}, \quad t < 1/\theta$$
+      </div>
+
+      <p>有限期望函数：$\mathbb{E}[(X \wedge d)^k] = \frac{\theta^k \gamma(\alpha + k, d/\theta)}{\Gamma(\alpha)} + d^k \left[1-\frac{\gamma(\alpha,d/\theta)}{\Gamma(\alpha)}\right]$。</p>
+
+      <h4>性质</h4>
+      <ol>
+        <li>变异系数等于 $\alpha^{-0.5}$；当 $\alpha > 1$ 时，众数为 $(\alpha-1)\theta$。</li>
+        <li>伽马分布呈右偏（正偏）；当 $\alpha \to \infty$ 时，近似于正态分布。</li>
+        <li>固定尺度参数具有<strong>可加性</strong>：若 $X_1 \sim \text{Ga}(\alpha_1,\theta)$，$X_2 \sim \text{Ga}(\alpha_2,\theta)$ 独立，则 $X_1+X_2 \sim \text{Ga}(\alpha_1+\alpha_2,\theta)$。</li>
+        <li>伽马随机变量 $X$ 乘以常数 $r$ 后仍服从伽马分布，参数变为 $(\alpha, r\theta)$。</li>
+        <li>当 $\alpha = 1$ 时，伽马分布退化为指数分布。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="figure-grid">
+    <div class="figure-wrapper" onclick="openLightbox('section1-figs/gamma1.jpg')">
+      <img src="section1-figs/gamma1.jpg" alt="伽马分布（改变形状参数）" onerror='this.classList.add("broken");this.alt="图片加载失败: gamma1.jpg";'>
+      <div class="caption">图1.5 伽马分布（改变形状参数）</div>
+    </div>
+    <div class="figure-wrapper" onclick="openLightbox('section1-figs/gamma2.jpg')">
+      <img src="section1-figs/gamma2.jpg" alt="伽马分布（改变尺度参数）" onerror='this.classList.add("broken");this.alt="图片加载失败: gamma2.jpg";'>
+      <div class="caption">图1.6 伽马分布（改变尺度参数）</div>
+    </div>
+  </div>
+
+  <div class="code-tabs" id="code-gamma">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">
+## 伽马分布概率密度函数：改变形状参数
+x &lt;- seq(0, 4, 0.001)
+plot(x, dgamma(x, shape = 1, scale = 1), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;x&quot;, ylab = &quot;f(x)&quot;)
+lines(x, dgamma(x, shape = 2, scale = 1), col = 2, lty = 2)
+lines(x, dgamma(x, shape = 3, scale = 1), col = 3, lty = 3)
+lines(x, dgamma(x, shape = 0.5, scale = 1), col = 4, lty = 4)
+
+## 伽马分布概率密度函数：改变尺度参数
+plot(x, dgamma(x, shape = 1, scale = 1), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;x&quot;, ylab = &quot;f(x)&quot;)
+lines(x, dgamma(x, shape = 1, scale = 2), col = 2, lty = 2)
+lines(x, dgamma(x, shape = 1, scale = 3), col = 3, lty = 3)
+lines(x, dgamma(x, shape = 1, scale = 0.5), col = 4, lty = 4)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+x = np.linspace(0, 4, 1000)
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+for shape, color, ls in [(1, &#x27;C0&#x27;, &#x27;-&#x27;), (2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                          (3, &#x27;C2&#x27;, &#x27;-.&#x27;), (0.5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    axes[0].plot(x, stats.gamma.pdf(x, shape, scale=1), color=color, ls=ls,
+                 label=f&#x27;shape={shape}&#x27;)
+axes[0].set_xlabel(&#x27;x&#x27;); axes[0].set_ylabel(&#x27;f(x)&#x27;)
+axes[0].set_title(&#x27;伽马分布（改变形状参数）&#x27;); axes[0].legend()
+
+for scale, color, ls in [(1, &#x27;C0&#x27;, &#x27;-&#x27;), (2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                          (3, &#x27;C2&#x27;, &#x27;-.&#x27;), (0.5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    axes[1].plot(x, stats.gamma.pdf(x, 1, scale=scale), color=color, ls=ls,
+                 label=f&#x27;scale={scale}&#x27;)
+axes[1].set_xlabel(&#x27;x&#x27;); axes[1].set_ylabel(&#x27;f(x)&#x27;)
+axes[1].set_title(&#x27;伽马分布（改变尺度参数）&#x27;); axes[1].legend()
+plt.tight_layout(); plt.show()</code></pre>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">data gamma_dist;
+  do x = 0 to 4 by 0.001;
+    f1 = pdf(&#x27;GAMMA&#x27;, x, 1);
+    f2 = pdf(&#x27;GAMMA&#x27;, x, 2);
+    f3 = pdf(&#x27;GAMMA&#x27;, x, 3);
+    f4 = pdf(&#x27;GAMMA&#x27;, x, 0.5);
+    output;
+  end;
+run;
+
+title &quot;伽马分布（改变形状参数）&quot;;
+proc sgplot data=gamma_dist;
+  series x=x y=f1 / legendlabel=&quot;shape=1&quot;;
+  series x=x y=f2 / legendlabel=&quot;shape=2&quot;;
+  series x=x y=f3 / legendlabel=&quot;shape=3&quot;;
+  series x=x y=f4 / legendlabel=&quot;shape=0.5&quot;;
+  yaxis label=&quot;f(x)&quot;;
+run;
+title;</code></pre>
+    </div>
+  </div>
+
+  <!-- 1.3.3 逆高斯分布 -->
+  <h3 id="sec-1-3-3">1.3.3 逆高斯分布（Inverse Gaussian distribution）</h3>
+  <div class="dist-card dist-invgauss">
+    <div class="dist-card-header"><span class="icon">IG</span> 逆高斯分布 $\text{IG}(\mu, \lambda)$</div>
+    <div class="dist-card-body">
+      <div class="theorem-box">
+        <span class="label">密度函数</span>
+        $$f(x) = \sqrt{\frac{\lambda}{2\pi x^3}} \exp\left[-\frac{\lambda(x-\mu)^2}{2\mu^2 x}\right], \quad x > 0$$
+        其中 $\mu > 0$ 为均值参数，$\lambda > 0$ 为形状参数。令 $\sigma^2=1/\lambda$，可重参数化为 $\text{IG}(\mu,\sigma^2)$。
+      </div>
+
+      <div class="theorem-box">
+        <span class="label">数字特征</span>
+        $$\mathbb{E}(X) = \mu, \quad \text{Var}(X) = \frac{\mu^3}{\lambda}$$
+        $$M(t) = \exp\left[\frac{\lambda}{\mu}\left(1 - \sqrt{1 - \frac{2\mu^2 t}{\lambda}}\right)\right]$$
+      </div>
+
+      <h4>性质</h4>
+      <ol>
+        <li>变异系数为 $(\mu/\lambda)^{0.5}$，众数为 $\mu \left[(1+\frac{9\mu^2}{4\lambda^2})^{0.5} - \frac{3\mu}{2\lambda} \right]$。</li>
+        <li>当 $\lambda \to \infty$ 时，逆高斯分布近似于正态分布。</li>
+        <li>逆高斯分布呈右偏，尾部较伽马分布更厚。</li>
+        <li>逆高斯分布和伽马分布同属于广义逆高斯分布（GIG）的特例。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="figure-grid">
+    <div class="figure-wrapper" onclick="openLightbox('section1-figs/invgauss1.jpg')">
+      <img src="section1-figs/invgauss1.jpg" alt="逆高斯分布（改变均值参数）" onerror='this.classList.add("broken");this.alt="图片加载失败: invgauss1.jpg";'>
+      <div class="caption">图1.7 逆高斯分布（改变均值参数）</div>
+    </div>
+    <div class="figure-wrapper" onclick="openLightbox('section1-figs/invgauss2.jpg')">
+      <img src="section1-figs/invgauss2.jpg" alt="逆高斯分布（改变形状参数）" onerror='this.classList.add("broken");this.alt="图片加载失败: invgauss2.jpg";'>
+      <div class="caption">图1.8 逆高斯分布（改变形状参数）</div>
+    </div>
+  </div>
+
+  <div class="code-tabs" id="code-invgauss">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">
+## 逆高斯分布概率密度函数（需 statmod 包）
+x &lt;- seq(0, 5, 0.01)
+
+## 改变均值参数
+plot(x, dinvgauss(x, mean = 1, shape = 1), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;x&quot;, ylab = &quot;f(x)&quot;)
+lines(x, dinvgauss(x, mean = 2, shape = 1), col = 2, lty = 2)
+lines(x, dinvgauss(x, mean = 5, shape = 1), col = 3, lty = 3)
+lines(x, dinvgauss(x, mean = 0.5, shape = 1), col = 4, lty = 4)
+
+## 改变形状参数
+plot(x, dinvgauss(x, mean = 1, shape = 1), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;x&quot;, ylab = &quot;f(x)&quot;)
+lines(x, dinvgauss(x, mean = 1, shape = 2), col = 2, lty = 2)
+lines(x, dinvgauss(x, mean = 1, shape = 5), col = 3, lty = 3)
+lines(x, dinvgauss(x, mean = 1, shape = 0.5), col = 4, lty = 4)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+x = np.linspace(0.01, 5, 500)
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# 改变均值参数
+for mu, color, ls in [(1, &#x27;C0&#x27;, &#x27;-&#x27;), (2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                       (5, &#x27;C2&#x27;, &#x27;-.&#x27;), (0.5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    lam = 1
+    y = np.sqrt(lam/(2*np.pi*x**3)) * np.exp(-lam*(x-mu)**2/(2*mu**2*x))
+    axes[0].plot(x, y, color=color, ls=ls, label=f&#x27;mu={mu}&#x27;)
+axes[0].set_xlabel(&#x27;x&#x27;); axes[0].set_ylabel(&#x27;f(x)&#x27;)
+axes[0].set_title(&#x27;逆高斯分布（改变均值）&#x27;); axes[0].legend()
+
+# 改变形状参数
+for lam, color, ls in [(1, &#x27;C0&#x27;, &#x27;-&#x27;), (2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                        (5, &#x27;C2&#x27;, &#x27;-.&#x27;), (0.5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    mu = 1
+    y = np.sqrt(lam/(2*np.pi*x**3)) * np.exp(-lam*(x-mu)**2/(2*mu**2*x))
+    axes[1].plot(x, y, color=color, ls=ls, label=f&#x27;shape={lam}&#x27;)
+axes[1].set_xlabel(&#x27;x&#x27;); axes[1].set_ylabel(&#x27;f(x)&#x27;)
+axes[1].set_title(&#x27;逆高斯分布（改变形状）&#x27;); axes[1].legend()
+plt.tight_layout(); plt.show()</code></pre>
+    </div>
+  </div>
+
+  <!-- 1.3.4 帕累托分布 -->
+  <h3 id="sec-1-3-4">1.3.4 帕累托分布（Pareto distribution）</h3>
+  <div class="dist-card dist-pareto">
+    <div class="dist-card-header"><span class="icon">Pa</span> 帕累托分布 $\text{Pa}(\alpha, \lambda)$</div>
+    <div class="dist-card-body">
+      <div class="theorem-box">
+        <span class="label">分布函数与密度函数</span>
+        $$F(x) = 1 - \left(\frac{\lambda}{\lambda + x}\right)^\alpha, \quad x \geq 0$$
+        $$f(x) = \frac{\alpha \lambda^\alpha}{(\lambda + x)^{\alpha + 1}}, \quad x \geq 0$$
+        其中 $\alpha > 0$ 为形状参数，$\lambda > 0$ 为尺度参数。
+      </div>
+
+      <div class="theorem-box">
+        <span class="label">数字特征</span>
+        $$\mathbb{E}(X) = \frac{\lambda}{\alpha - 1}, \quad \alpha > 1$$
+        $$\text{Var}(X) = \frac{\alpha \lambda^2}{(\alpha - 1)^2 (\alpha - 2)}, \quad \alpha > 2$$
+      </div>
+
+      <p>有限期望函数（$k=1$ 时）：
+      $$\mathbb{E}[X \wedge d] = \begin{cases} \frac{\lambda}{\alpha-1} \left[ 1 - \left( \frac{\lambda}{\lambda+d} \right)^{\alpha-1} \right], & \alpha \neq 1 \\ -\lambda \ln \left( \frac{\lambda}{\lambda+d} \right), & \alpha = 1 \end{cases}$$</p>
+
+      <h4>性质</h4>
+      <ol>
+        <li>变异系数为 $\sqrt{\frac{\alpha}{\alpha-2}}$，众数等于0。</li>
+        <li>帕累托分布呈右偏，是典型的<strong>厚尾分布</strong>。</li>
+        <li>尾部概率 $\text{P}(X>x)=\left(\frac{\lambda}{\lambda + x}\right)^\alpha$，衰减速度由 $\alpha$ 决定，故 $\alpha$ 又称<strong>尾部指数</strong>。</li>
+        <li>当 $\alpha$ 较小时，尾部概率衰减较慢，极端值出现概率相对较高，分布的高阶矩可能不存在。</li>
+      </ol>
+
+      <p>帕累托分布对极端事件较为敏感，能够帮助保险公司评估和管理高风险事件的潜在大额损失（如飓风、洪水等巨灾事件）。</p>
+    </div>
+  </div>
+
+  <div class="figure-grid">
+    <div class="figure-wrapper" onclick="openLightbox('section1-figs/pareto1.jpg')">
+      <img src="section1-figs/pareto1.jpg" alt="帕累托分布（改变形状参数）" onerror='this.classList.add("broken");this.alt="图片加载失败: pareto1.jpg";'>
+      <div class="caption">图1.9 帕累托分布（改变形状参数）</div>
+    </div>
+    <div class="figure-wrapper" onclick="openLightbox('section1-figs/pareto2.jpg')">
+      <img src="section1-figs/pareto2.jpg" alt="帕累托分布（改变尺度参数）" onerror='this.classList.add("broken");this.alt="图片加载失败: pareto2.jpg";'>
+      <div class="caption">图1.10 帕累托分布（改变尺度参数）</div>
+    </div>
+  </div>
+
+  <div class="code-tabs" id="code-pareto">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">
+## 定义帕累托分布的概率密度函数
+pareto.pdf &lt;- function(x, alpha, lambda){
+  alpha * lambda^alpha / (lambda + x)^(alpha + 1)
+}
+
+## 帕累托分布概率密度函数：改变形状参数
+x &lt;- seq(0, 3, 0.01)
+plot(x, pareto.pdf(x, alpha = 1, lambda = 3), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;x&quot;, ylab = &quot;f(x)&quot;)
+lines(x, pareto.pdf(x, alpha = 2, lambda = 3), col = 2, lty = 2)
+lines(x, pareto.pdf(x, alpha = 5, lambda = 3), col = 3, lty = 3)
+lines(x, pareto.pdf(x, alpha = 0.5, lambda = 3), col = 4, lty = 4)
+
+## 帕累托分布概率密度函数：改变尺度参数
+plot(x, pareto.pdf(x, alpha = 2, lambda = 1), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;x&quot;, ylab = &quot;f(x)&quot;)
+lines(x, pareto.pdf(x, alpha = 2, lambda = 2), col = 2, lty = 2)
+lines(x, pareto.pdf(x, alpha = 2, lambda = 5), col = 3, lty = 3)
+lines(x, pareto.pdf(x, alpha = 2, lambda = 0.5), col = 4, lty = 4)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+import matplotlib.pyplot as plt
+
+def pareto_pdf(x, alpha, lam):
+    return alpha * lam**alpha / (lam + x)**(alpha + 1)
+
+x = np.linspace(0, 3, 300)
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+for alpha, color, ls in [(1, &#x27;C0&#x27;, &#x27;-&#x27;), (2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                          (5, &#x27;C2&#x27;, &#x27;-.&#x27;), (0.5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    axes[0].plot(x, pareto_pdf(x, alpha, 3), color=color, ls=ls,
+                 label=f&#x27;α={alpha}&#x27;)
+axes[0].set_xlabel(&#x27;x&#x27;); axes[0].set_ylabel(&#x27;f(x)&#x27;)
+axes[0].set_title(&#x27;帕累托分布（改变形状参数）&#x27;); axes[0].legend()
+
+for lam, color, ls in [(1, &#x27;C0&#x27;, &#x27;-&#x27;), (2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                        (5, &#x27;C2&#x27;, &#x27;-.&#x27;), (0.5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    axes[1].plot(x, pareto_pdf(x, 2, lam), color=color, ls=ls,
+                 label=f&#x27;λ={lam}&#x27;)
+axes[1].set_xlabel(&#x27;x&#x27;); axes[1].set_ylabel(&#x27;f(x)&#x27;)
+axes[1].set_title(&#x27;帕累托分布（改变尺度参数）&#x27;); axes[1].legend()
+plt.tight_layout(); plt.show()</code></pre>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">/* SAS没有内置帕累托PDF，使用DATA步自定义 */
+data pareto;
+  do x = 0 to 3 by 0.01;
+    f1 = 1 * 3**1 / (3 + x)**(1 + 1);
+    f2 = 2 * 3**2 / (3 + x)**(2 + 1);
+    f3 = 5 * 3**5 / (3 + x)**(5 + 1);
+    f4 = 0.5 * 3**0.5 / (3 + x)**(0.5 + 1);
+    output;
+  end;
+run;
+
+title &quot;帕累托分布（改变形状参数）&quot;;
+proc sgplot data=pareto;
+  series x=x y=f1 / legendlabel=&quot;alpha=1&quot;;
+  series x=x y=f2 / legendlabel=&quot;alpha=2&quot;;
+  series x=x y=f3 / legendlabel=&quot;alpha=5&quot;;
+  series x=x y=f4 / legendlabel=&quot;alpha=0.5&quot;;
+  yaxis label=&quot;f(x)&quot;;
+run;
+title;</code></pre>
+    </div>
+  </div>
+
+  <!-- 1.3.5 对数正态分布 -->
+  <h3 id="sec-1-3-5">1.3.5 对数正态分布（Log-normal distribution）</h3>
+  <div class="dist-card dist-lognormal">
+    <div class="dist-card-header"><span class="icon">LN</span> 对数正态分布 $\text{LN}(\mu, \sigma^2)$</div>
+    <div class="dist-card-body">
+      <p>若 $\ln X$ 服从正态分布 $\text{N}(\mu,\sigma^2)$，则 $X$ 服从对数正态分布，记为 $X \sim \text{LN}(\mu,\sigma^2)$。</p>
+
+      <div class="theorem-box">
+        <span class="label">密度函数与分布函数</span>
+        $$f(x) = \frac{1}{\sqrt{2\pi} \sigma x}\exp\left[-\frac{1}{2}\left(\frac{\ln x - \mu}{\sigma}\right)^2\right], \quad x > 0$$
+        $$F(x) = \Phi\left(\frac{\ln x - \mu}{\sigma}\right), \quad x > 0$$
+        其中 $\Phi(\cdot)$ 是标准正态分布的分布函数。
+      </div>
+
+      <div class="theorem-box">
+        <span class="label">数字特征</span>
+        $$\mathbb{E}(X) = \exp\left(\mu + \frac{\sigma^2}{2}\right), \quad \text{Var}(X) = \left[\exp(\sigma^2) - 1\right]\exp\left(2\mu + \sigma^2\right)$$
+        $$\mathbb{E}(X^k) = \exp\left(k\mu + \frac{1}{2}k^2 \sigma^2\right)$$
+      </div>
+
+      <h4>性质</h4>
+      <ol>
+        <li>变异系数等于 $[\exp(\sigma^2) - 1]^{0.5}$，仅与 $\sigma$ 有关。众数为 $\exp(\mu-\sigma^2)$。</li>
+        <li>对数正态分布可通过正态分布的指数变换得到，正态分布可通过对数正态分布的对数变换得到。</li>
+        <li>对数正态分布呈右偏，尾部较伽马分布、逆高斯分布更厚。</li>
+        <li>均值和方差是参数 $(\mu,\sigma^2)$ 的增函数。固定 $\mu$，当 $\sigma \to 0$ 时，均值收敛于 $e^\mu$，方差收敛于0。</li>
+        <li>给定正实数 $r,t$，若 $X \sim \text{LN}(\mu,\sigma)$，则 $Y = rX^t$ 服从参数为 $(t\mu + \ln r, t^2 \sigma)$ 的对数正态分布。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="figure-grid">
+    <div class="figure-wrapper" onclick="openLightbox('section1-figs/lognormal1.jpg')">
+      <img src="section1-figs/lognormal1.jpg" alt="对数正态分布（改变均值参数）" onerror='this.classList.add("broken");this.alt="图片加载失败: lognormal1.jpg";'>
+      <div class="caption">图1.11 对数正态分布（改变均值参数）</div>
+    </div>
+    <div class="figure-wrapper" onclick="openLightbox('section1-figs/lognormal2.jpg')">
+      <img src="section1-figs/lognormal2.jpg" alt="对数正态分布（改变方差参数）" onerror='this.classList.add("broken");this.alt="图片加载失败: lognormal2.jpg";'>
+      <div class="caption">图1.12 对数正态分布（改变方差参数）</div>
+    </div>
+  </div>
+
+  <div class="code-tabs" id="code-lognormal">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">
+## 对数正态分布概率密度函数：改变均值参数
+x &lt;- seq(0, 7, 0.01)
+plot(x, dlnorm(x, meanlog = 1, sdlog = 0.5), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;x&quot;, ylab = &quot;f(x)&quot;)
+lines(x, dlnorm(x, meanlog = 1, sdlog = 3), col = 2, lty = 2)
+lines(x, dlnorm(x, meanlog = 1, sdlog = 10), col = 3, lty = 3)
+lines(x, dlnorm(x, meanlog = 1, sdlog = 1), col = 4, lty = 4)
+
+## 对数正态分布概率密度函数：改变方差参数
+plot(x, dlnorm(x, meanlog = 1, sdlog = 0.5), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;x&quot;, ylab = &quot;f(x)&quot;)
+lines(x, dlnorm(x, meanlog = 1, sdlog = 3), col = 2, lty = 2)
+lines(x, dlnorm(x, meanlog = 1, sdlog = 10), col = 3, lty = 3)
+lines(x, dlnorm(x, meanlog = 1, sdlog = 1), col = 4, lty = 4)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+x = np.linspace(0, 7, 500)
+fig, ax = plt.subplots(figsize=(8, 5))
+for sdlog, color, ls in [(0.5, &#x27;C0&#x27;, &#x27;-&#x27;), (1, &#x27;C1&#x27;, &#x27;--&#x27;),
+                          (3, &#x27;C2&#x27;, &#x27;-.&#x27;), (10, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    ax.plot(x, stats.lognorm.pdf(x, s=sdlog, scale=np.exp(1)),
+            color=color, ls=ls, label=f&#x27;sdlog={sdlog}&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;对数正态分布&#x27;); ax.legend()
+plt.tight_layout(); plt.show()</code></pre>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">data lognormal;
+  do x = 0 to 7 by 0.01;
+    f1 = pdf(&#x27;LOGNORMAL&#x27;, x, 1, 0.5);
+    f2 = pdf(&#x27;LOGNORMAL&#x27;, x, 1, 1);
+    f3 = pdf(&#x27;LOGNORMAL&#x27;, x, 1, 3);
+    f4 = pdf(&#x27;LOGNORMAL&#x27;, x, 1, 10);
+    output;
+  end;
+run;
+
+title &quot;对数正态分布&quot;;
+proc sgplot data=lognormal;
+  series x=x y=f1 / legendlabel=&quot;sdlog=0.5&quot;;
+  series x=x y=f2 / legendlabel=&quot;sdlog=1&quot;;
+  series x=x y=f3 / legendlabel=&quot;sdlog=3&quot;;
+  series x=x y=f4 / legendlabel=&quot;sdlog=10&quot;;
+  yaxis label=&quot;f(x)&quot;;
+run;
+title;</code></pre>
+    </div>
+  </div>
+
+  <!-- 1.3.6 威布尔分布 -->
+  <h3 id="sec-1-3-6">1.3.6 威布尔分布（Weibull distribution）</h3>
+  <div class="dist-card dist-weibull">
+    <div class="dist-card-header"><span class="icon">W</span> 威布尔分布 $\text{W}(\tau, \theta)$</div>
+    <div class="dist-card-body">
+      <div class="theorem-box">
+        <span class="label">分布函数与密度函数</span>
+        $$F(x) = 1 - \exp\left[-\left(\frac{x}{\theta}\right)^\tau\right], \quad x \geq 0$$
+        $$f(x) = \frac{\tau}{\theta^\tau} x^{\tau-1} \exp\left[-\left(\frac{x}{\theta}\right)^\tau\right], \quad x \geq 0$$
+        其中 $\tau > 0$ 为形状参数，$\theta > 0$ 为尺度参数。
+      </div>
+
+      <div class="theorem-box">
+        <span class="label">数字特征</span>
+        $$\mathbb{E}(X) = \theta \cdot \Gamma\left(1 + \frac{1}{\tau}\right)$$
+        $$\text{Var}(X) = \theta^2 \left[\Gamma\left(1 + \frac{2}{\tau}\right) - \Gamma^2\left(1 + \frac{1}{\tau}\right)\right]$$
+        $$\mathbb{E}(X^k) = \theta^k \Gamma\left(1 + \frac{k}{\tau}\right), \quad k > -\tau$$
+      </div>
+
+      <p>威布尔分布可认为是对指数分布的推广。当 $\tau=1$ 时，威布尔分布等价于指数分布；通常取 $0<\tau<1$，此时威布尔分布的尾部较指数分布更厚。</p>
+
+      <h4>性质</h4>
+      <ol>
+        <li>当 $\tau \leq 1$ 时，众数等于0；当 $\tau > 1$ 时，众数为 $\theta\left(\frac{\tau-1}{\tau}\right)^{1/\tau}$。</li>
+        <li>若 $X \sim \text{W}(\tau,\theta)$，则 $rX \sim \text{W}(\tau, r\theta)$。</li>
+        <li>威布尔分布属于广义指数分布。</li>
+        <li>威布尔分布在 $\tau = 3.6$ 时近似对称，$\tau > 3.6$ 时右偏，$\tau < 3.6$ 时左偏。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="figure-grid">
+    <div class="figure-wrapper" onclick="openLightbox('section1-figs/weibull1.jpg')">
+      <img src="section1-figs/weibull1.jpg" alt="威布尔分布（改变形状参数）" onerror='this.classList.add("broken");this.alt="图片加载失败: weibull1.jpg";'>
+      <div class="caption">图1.13 威布尔分布（改变形状参数）</div>
+    </div>
+    <div class="figure-wrapper" onclick="openLightbox('section1-figs/weibull2.jpg')">
+      <img src="section1-figs/weibull2.jpg" alt="威布尔分布（改变尺度参数）" onerror='this.classList.add("broken");this.alt="图片加载失败: weibull2.jpg";'>
+      <div class="caption">图1.14 威布尔分布（改变尺度参数）</div>
+    </div>
+  </div>
+
+  <div class="code-tabs" id="code-weibull">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">
+## 威布尔分布概率密度函数：改变形状参数
+x &lt;- seq(0, 3, 0.01)
+plot(x, dweibull(x, shape = 1, scale = 1), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;x&quot;, ylab = &quot;f(x)&quot;)
+lines(x, dweibull(x, shape = 2, scale = 1), col = 2, lty = 2)
+lines(x, dweibull(x, shape = 3, scale = 1), col = 3, lty = 3)
+lines(x, dweibull(x, shape = 0.5, scale = 1), col = 4, lty = 4)
+
+## 威布尔分布概率密度函数：改变尺度参数
+plot(x, dweibull(x, shape = 1, scale = 1), type = &quot;l&quot;, col = 1, lty = 1,
+     xlab = &quot;x&quot;, ylab = &quot;f(x)&quot;)
+lines(x, dweibull(x, shape = 1, scale = 2), col = 2, lty = 2)
+lines(x, dweibull(x, shape = 1, scale = 3), col = 3, lty = 3)
+lines(x, dweibull(x, shape = 1, scale = 0.5), col = 4, lty = 4)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+x = np.linspace(0, 3, 500)
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+for shape, color, ls in [(1, &#x27;C0&#x27;, &#x27;-&#x27;), (2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                          (3, &#x27;C2&#x27;, &#x27;-.&#x27;), (0.5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    axes[0].plot(x, stats.weibull_min.pdf(x, shape, scale=1),
+                 color=color, ls=ls, label=f&#x27;shape={shape}&#x27;)
+axes[0].set_xlabel(&#x27;x&#x27;); axes[0].set_ylabel(&#x27;f(x)&#x27;)
+axes[0].set_title(&#x27;威布尔分布（改变形状参数）&#x27;); axes[0].legend()
+
+for scale, color, ls in [(1, &#x27;C0&#x27;, &#x27;-&#x27;), (2, &#x27;C1&#x27;, &#x27;--&#x27;),
+                          (3, &#x27;C2&#x27;, &#x27;-.&#x27;), (0.5, &#x27;C3&#x27;, &#x27;:&#x27;)]:
+    axes[1].plot(x, stats.weibull_min.pdf(x, 1, scale=scale),
+                 color=color, ls=ls, label=f&#x27;scale={scale}&#x27;)
+axes[1].set_xlabel(&#x27;x&#x27;); axes[1].set_ylabel(&#x27;f(x)&#x27;)
+axes[1].set_title(&#x27;威布尔分布（改变尺度参数）&#x27;); axes[1].legend()
+plt.tight_layout(); plt.show()</code></pre>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">data weibull;
+  do x = 0 to 3 by 0.01;
+    f1 = pdf(&#x27;WEIBULL&#x27;, x, 1, 1);
+    f2 = pdf(&#x27;WEIBULL&#x27;, x, 2, 1);
+    f3 = pdf(&#x27;WEIBULL&#x27;, x, 3, 1);
+    f4 = pdf(&#x27;WEIBULL&#x27;, x, 0.5, 1);
+    output;
+  end;
+run;
+
+title &quot;威布尔分布（改变形状参数）&quot;;
+proc sgplot data=weibull;
+  series x=x y=f1 / legendlabel=&quot;shape=1&quot;;
+  series x=x y=f2 / legendlabel=&quot;shape=2&quot;;
+  series x=x y=f3 / legendlabel=&quot;shape=3&quot;;
+  series x=x y=f4 / legendlabel=&quot;shape=0.5&quot;;
+  yaxis label=&quot;f(x)&quot;;
+run;
+title;</code></pre>
+    </div>
+  </div>
+
+  <!-- 1.3.7 分布谱系关系 -->
+  <h3 id="sec-1-3-7">1.3.7 常见连续型分布与广义伽马、贝塔分布间的关系</h3>
+  <p>在非寿险精算模型中，理解常见连续型分布与广义伽马分布（GG）、广义贝塔分布（GB）之间的关系非常重要。广义伽马分布和广义贝塔分布可以看作是分布族中的"母分布"，许多常见分布都是它们的特例。</p>
+
+  <div class="theorem-box defn">
+    <span class="label">广义伽马分布（GG）</span>
+    $$f(x; a, d, p) = \frac{p/a^d}{\Gamma(d/p)} x^{d-1} e^{-(x/a)^p}, \quad x > 0$$
+    其中 $d>0, p>0$ 是形状参数，$a$ 是尺度参数。
+  </div>
+
+  <p>许多常见分布是广义伽马分布的特例：</p>
+  <ul>
+    <li><strong>指数分布</strong>：当 $p = d = 1$ 时。</li>
+    <li><strong>伽马分布</strong>：当 $p = 1$ 时。</li>
+    <li><strong>威布尔分布</strong>：当 $d = p$ 时。</li>
+  </ul>
+
+  <div class="theorem-box defn">
+    <span class="label">第二类广义贝塔分布（GB2）</span>
+    $$f(x; a,b,p,q) = \frac{1}{\text{B}(p,q)} \frac{|a|x^{ap-1}}{b^{ap} [1+(x/b)^a]^{p+q}}, \quad x > 0$$
+  </div>
+
+  <p>广义伽马分布是GB2的极限情况：$\text{GG}(a,\beta,p) = \lim_{q \to \infty} \text{GB2}(a,b=q^{1/a}\beta,p,q)$。</p>
+
+  <div class="figure-wrapper" onclick="openLightbox('section1-figs/dist_relation.jpg')">
+    <img src="section1-figs/dist_relation.jpg" alt="连续分布谱系图：广义伽马、广义贝塔分布视角" onerror='this.classList.add("broken");this.alt="图片加载失败: dist_relation.jpg";'>
+    <div class="caption">图1.15 连续分布谱系图：广义伽马、广义贝塔分布视角</div>
+  </div>
+
+  <div class="figure-wrapper" onclick="openLightbox('section1-figs/dist_relation2.jpg')">
+    <img src="section1-figs/dist_relation2.jpg" alt="连续分布谱系图：GB2视角" onerror='this.classList.add("broken");this.alt="图片加载失败: dist_relation2.jpg";'>
+    <div class="caption">图1.16 连续分布谱系图：GB2视角</div>
+  </div>
+</div>
+
+<!-- ===== Section 1.4 ===== -->
+<div class="section-card" id="sec-1-4">
+  <h2>1.4 损失分布的变换</h2>
+  <p>在非寿险精算中，对数变换和指数变换是两种常见的随机变量变换方式。这些变换常用于调整数据的分布形态，使其更符合分析模型的假设要求。</p>
+
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline>
+      <source src="section1-movs/chap1_4.mp4" type="video/mp4">
+      您的浏览器不支持 HTML5 视频播放。
+    </video>
+    <figcaption>视频 1.4：随机变量变换、组合分布与混合分布</figcaption>
+  </figure>
+
+  <h3 id="sec-1-4-1">1.4.1 对数变换和指数变换</h3>
+
+  <p>对数变换是一种常用的非线性变换，对随机变量 $X$ 取对数，得到新的随机变量 $Y = \ln(X)$。根据概率密度函数的变换公式：</p>
+
+  <div class="theorem-box">
+    <span class="label">密度函数变换公式</span>
+    $$f_Y(y) = f_X(x(y)) \left| \frac{dx}{dy} \right|$$
+  </div>
+
+  <p>考虑对数变换的逆变换 $X = e^Y$，易解得 $\frac{dx}{dy} = e^y$，代入上式可知 $Y$ 的密度函数为：</p>
+  <div class="math-display">$$f_Y(y) = f_X(e^y) \cdot e^y$$</div>
+
+  <p>$Y$ 的分布函数可以通过定义直接求解：$F_Y(y) = \text{P}(Y \leq y) = \text{P}(\ln X \leq y) = \text{P}(X \leq e^y) = F_X(e^y)$。</p>
+
+  <div class="theorem-box exa">
+    <span class="label">例 1.2</span>
+    若随机变量 $X$ 服从参数为 $\lambda$ 的指数分布，即 $X \sim \text{Exp}(\lambda)$，计算对数变换后随机变量 $Y = \ln X$ 的分布。
+
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)">
+      <span>点击查看解答</span>
+      <span class="arrow">▶</span>
+    </button>
+    <div class="collapsible-content">
+      <p>已知 $f_X(x) = \lambda e^{-\lambda x},\ x \geq 0$，代入密度函数变换公式，可得 $Y$ 的概率密度函数为：</p>
+      <div class="math-display">$$f_Y(y) = \lambda e^y e^{-\lambda e^y}, \quad y \in \mathbb{R}$$</div>
+      <p>注意，随机变量 $Y$ 的取值范围为 $y \in \mathbb{R}$。该结果表明，对数变换可以将原本定义在非负实数上的随机变量转换为定义在整个实数轴上的随机变量。</p>
+    </div>
+  </div>
+
+  <p>指数变换也有类似结果。记 $X$ 为原始的随机变量，经过指数变换可以得到新的随机变量 $Y = e^X$。若 $X$ 具有密度函数和分布函数 $f_X(\cdot), F_X(\cdot)$，则 $Y$ 的分布满足：</p>
+  <div class="math-display">$$f_Y(y) = \frac{1}{y} f_X(\ln y), \quad F_Y(y) = F_X(\ln y)$$</div>
+
+  <p>由前所述，正态分布经过指数变换可以得到对数正态分布，而对数正态分布经过对数变换可以得到正态分布。</p>
+
+  <h3 id="sec-1-4-2">1.4.2 组合分布（composite distribution）</h3>
+  <p>组合分布泛指一类通过对多个分布进行拼接得到的复杂分布类，通常被用于描述具有多重特性的数据（例如损失中既存在大量小额赔付，又存在大额极端赔付的情况）。其核心思想是用不同的分布分别刻画不同区间的数据，再将它们组合在一起形成一个整体分布。</p>
+
+  <div class="theorem-box defn">
+    <span class="label">组合分布</span>
+    对于一个在 $[0,+\infty)$ 上取值的随机变量 $X$，以 $c_0 = 0 < c_1 < \cdots < c_{r-1} < c_r = +\infty$ 作为分界点，将随机变量的取值范围划分成 $r$ 个互不相交的区间。应用 $f_i(\cdot)$ 分别描述区间 $[c_{i-1},c_i)$ 上的数据，则组合分布的概率密度函数为：
+    $$f(x) = \frac{p_i f_i(x)}{A_i}, \quad x \in [c_{i-1}, c_i), \quad i = 1, 2, \cdots, r$$
+    其中 $p_i \geq 0$ 为权重系数，且 $\sum_{i=1}^{r} p_i = 1$；$A_i = F_i(c_i) - F_i(c_{i-1})$。
+  </div>
+
+  <p>为使组合分布的密度函数在分界点处保持连续，可以添加条件：$p_i \frac{f_i(c_i)}{A_i} = p_{i+1} \frac{f_{i+1}(c_i)}{A_{i+1}}$。若令 $f'(c_i^-) = f'(c_i^+)$，可进一步增强光滑性。在某些简化情况下，也可以放宽连续性要求，此时被称为<strong>剪接模型（splicing models）</strong>。</p>
+
+  <div class="theorem-box exa">
+    <span class="label">例 1.3</span>
+    若使用 $\text{Exp}(1)$ 描述区间 $[0, 2)$ 上的数据；使用 $\text{Gamma}(2, 1)$ 描述区间 $[2, 4)$ 上的数据；使用 $\text{Pareto}(2, 2)$ 描述区间 $[4, \infty)$ 上的数据。请构造组合分布 $f(x)$，且 $f(x)$ 在分界点 $x = 2$ 和 $x = 4$ 处是连续的。
+
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)">
+      <span>点击查看解答</span>
+      <span class="arrow">▶</span>
+    </button>
+    <div class="collapsible-content">
+      <p>已知三种分布的概率密度函数分别为：$f_1(x) = e^{-x}$，$f_2(x) = xe^{-x}$，$f_3(x) = \frac{8}{(x+2)^3}$。</p>
+      <p>首先计算每个区间内的积分 $A_i$：</p>
+      <div class="math-display">$$A_1 = \int_0^2 e^{-x} \mathrm{d}x = 1 - e^{-2} \approx 0.8647$$
+      $$A_2 = \int_2^4 x e^{-x} \mathrm{d}x \approx 0.3144$$
+      $$A_3 = \int_4^\infty \frac{8}{(x+2)^3} \mathrm{d}x \approx 0.1111$$</div>
+      <p>为使组合分布的密度函数连续，需要解以下方程组：</p>
+      <div class="math-display">$$\begin{cases} \frac{p_1}{0.8647} \cdot e^{-2} = \frac{p_2}{0.3144} \cdot 2e^{-2} \\ \frac{p_2}{0.3144} \cdot 4e^{-4} = \frac{p_3}{0.1111} \cdot \frac{8}{6^3} \\ p_1 + p_2 + p_3 = 1 \end{cases}$$</div>
+      <p>最终解得权重值：$p_1 \approx 0.7640$，$p_2 \approx 0.1389$，$p_3 \approx 0.0971$。</p>
+      <p>因此，新的组合分布可以表示为：</p>
+      <div class="math-display">$$f(x) = \begin{cases} 0.8835 \cdot e^{-x}, & x \in [0, 2) \\ 0.4418 \cdot x e^{-x}, & x \in [2, 4) \\ 0.8740 \cdot \frac{8}{(x + 2)^3}, & x \in [4, \infty) \end{cases}$$</div>
+    </div>
+  </div>
+
+  <h3 id="sec-1-4-3">1.4.3 混合分布（mixture distribution）</h3>
+  <p>混合是另一种构造复杂分布的方法，通过将多个不同的分布按照一定的权重进行加权，得到新的分布。混合分布由若干个"成分分布"构成，每个成分的贡献通过相应的权重控制。在非寿险精算中，混合分布常用于刻画具有异质性的损失数据。</p>
+
+  <div class="theorem-box defn">
+    <span class="label">混合分布</span>
+    假设一个混合分布由 $k$ 个成分构成，每个成分对应的分布函数和密度函数记为 $F_i(\cdot)$ 和 $f_i(\cdot)$，则混合分布的形式为：
+    $$f(x) = \omega_1 f_1(x) + \omega_2 f_2(x) + \cdots + \omega_k f_k(x)$$
+    $$F(x) = \omega_1 F_1(x) + \omega_2 F_2(x) + \cdots + \omega_k F_k(x)$$
+    其中 $\omega_i \geq 0$ 是成分权重，且 $\sum_{i=1}^k \omega_i = 1$。
+  </div>
+
+  <div class="theorem-box exa">
+    <span class="label">例 1.4</span>
+    已知两个对数正态分布的参数分别为 $(1, 2^2)$ 和 $(3, 4^2)$，按权重 $\omega_1 = 0.3,\ \omega_2 = 0.7$ 进行混合，画出混合分布的概率密度函数。
+  </div>
+
+  <div class="code-tabs" id="code-mixture">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">
+## 定义混合分布的概率密度函数
+f &lt;- function(x){
+  0.3 * dlnorm(x, meanlog = 1, sdlog = 2) + 0.7 * dlnorm(x, meanlog = 3, sdlog = 4)
+}
+
+curve(f, xlim = c(0, 1), ylim = c(0, 2), lty = 1, lwd = 2, col = 2)
+curve(dlnorm(x, meanlog = 1, sdlog = 2), lty = 2, add = TRUE)
+curve(dlnorm(x, meanlog = 3, sdlog = 4), lty = 3, add = TRUE)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+x = np.linspace(0.001, 1, 1000)
+f_mix = 0.3 * stats.lognorm.pdf(x, s=2, scale=np.exp(1)) + \
+        0.7 * stats.lognorm.pdf(x, s=4, scale=np.exp(3))
+f1 = stats.lognorm.pdf(x, s=2, scale=np.exp(1))
+f2 = stats.lognorm.pdf(x, s=4, scale=np.exp(3))
+
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, f_mix, &#x27;r-&#x27;, lw=2, label=&#x27;混合分布&#x27;)
+ax.plot(x, f1, &#x27;b--&#x27;, label=&#x27;LN(1,2)&#x27;)
+ax.plot(x, f2, &#x27;g-.&#x27;, label=&#x27;LN(3,4)&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;混合分布&#x27;); ax.legend()
+ax.set_ylim(0, 2)
+plt.tight_layout(); plt.show()</code></pre>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">/* 例1.4：混合分布的概率密度函数 */
+data mixture;
+  do x = 0 to 1 by 0.001;
+    f_mix = 0.3 * pdf(&#x27;LOGNORMAL&#x27;, x, 1, 2) + 0.7 * pdf(&#x27;LOGNORMAL&#x27;, x, 3, 4);
+    f1 = pdf(&#x27;LOGNORMAL&#x27;, x, 1, 2);
+    f2 = pdf(&#x27;LOGNORMAL&#x27;, x, 3, 4);
+    output;
+  end;
+run;
+
+title &quot;混合分布的概率密度函数&quot;;
+proc sgplot data=mixture;
+  series x=x y=f_mix / legendlabel=&quot;混合分布&quot; lineattrs=(thickness=2 color=red);
+  series x=x y=f1 / legendlabel=&quot;LN(1,2)&quot;;
+  series x=x y=f2 / legendlabel=&quot;LN(3,4)&quot;;
+  yaxis label=&quot;f(x)&quot; min=0 max=2;
+run;
+title;</code></pre>
+    </div>
+  </div>
+
+  <div class="figure-wrapper" onclick="openLightbox('section1-figs/mixture.jpg')">
+    <img src="section1-figs/mixture.jpg" alt="混合分布的概率密度函数" onerror='this.classList.add("broken");this.alt="图片加载失败: mixture.jpg";'>
+    <div class="caption">图1.17 混合分布的概率密度函数</div>
+  </div>
+
+  <p>对混合分布进行推广。假设 $X$ 的分布形状与参数值 $\Theta$ 有关，$\Theta$ 是一个离散型随机变量，概率分布为 $\text{P}(\Theta = \theta_i) = \omega_i$，则 $X$ 的分布可以表示为：</p>
+  <div class="math-display">$$f_X(x) = \sum_{i=1}^k P(\Theta = \theta_i) f_{X\vert\Theta}(x\vert \theta_i) = \sum_{i=1}^k w_i f_{X\vert\Theta}(x\vert \theta_i)$$</div>
+
+  <p>当参数 $\Theta$ 为连续型随机变量且具有概率密度函数 $f_\Theta(\theta)$ 时，$X$ 的分布可用积分表示为：$f_X(x) = \int_{-\infty}^\infty f_\Theta(\theta) f_{X\vert\Theta}(x\vert\theta) d\theta$。</p>
+
+  <div class="theorem-box exa">
+    <span class="label">例 1.5（指数-伽马混合 = 帕累托）</span>
+    假设保单组合中每个个体的损失都服从指数分布 $X_i \sim \text{Exp}(\lambda_i)$。对于大型保单组合，所有保单持有人的平均损失 $\lambda$ 可以视为一个随机变量，假定 $\lambda \sim \text{Ga}(\alpha,\delta)$。求混合后的损失分布。
+
+    <button class="collapsible-toggle proof-toggle" onclick="toggleCollapsible(this)">
+      <span>点击查看证明</span>
+      <span class="arrow">▶</span>
+    </button>
+    <div class="collapsible-content">
+      <p>记 $X$ 表示保单组合中的某个个体的损失，由此产生的损失分布即为混合分布，相应的概率密度函数为：</p>
+      <div class="math-display">$$f_X(x) = \int_0^\infty f_\Lambda(\lambda) f_{X|\Lambda}(x|\lambda) \mathrm{d}\lambda = \int_0^\infty \frac{\delta^\alpha}{\Gamma(\alpha)} \lambda^{\alpha-1} e^{-\delta\lambda} \cdot \lambda e^{-\lambda x} \mathrm{d}\lambda$$</div>
+      <p>整理被积函数为 $\text{Ga}(\alpha + 1, x+\delta)$ 分布的形式：</p>
+      <div class="math-display">$$f_X(x) = \frac{\delta^\alpha}{\Gamma(\alpha)} \cdot \frac{\Gamma(\alpha+1)}{(x+\delta)^{\alpha+1}} \int_0^\infty \frac{(x+\delta)^{\alpha+1}}{\Gamma(\alpha+1)} \lambda^\alpha e^{-(x+\delta)\lambda} \mathrm{d}\lambda$$</div>
+      <p>积分结果等于1，因此得到：</p>
+      <div class="math-display">$$f_X(x) = \frac{\alpha \delta^\alpha}{(x+\delta)^{\alpha+1}}, \quad x > 0$$</div>
+      <p>上式为帕累托分布 $\text{Pa}(\alpha, \delta)$ 的概率密度函数。即如果损失服从参数为 $\lambda$ 的指数分布，并且 $\lambda \sim \text{Ga}(\alpha,\delta)$，则混合后的损失分布就是 $\text{Pa}(\alpha, \delta)$。</p>
+    </div>
+  </div>
+
+  <div class="theorem-box exa">
+    <span class="label">例 1.6（伽马-伽马混合 = 广义帕累托）</span>
+    当 $X \sim \text{Ga}(k,\lambda)$ 且 $k=1$ 时，损失分布退化成 $\text{Exp}(\lambda)$，由例1.5可知混合结果为帕累托分布。当 $k$ 取一般数时，伽马-伽马混合分布的结果为何种分布？
+
+    <button class="collapsible-toggle proof-toggle" onclick="toggleCollapsible(this)">
+      <span>点击查看证明</span>
+      <span class="arrow">▶</span>
+    </button>
+    <div class="collapsible-content">
+      <p>对于一般的 $k$，可类似求得 $X$ 的概率密度函数为：</p>
+      <div class="math-display">$$f_X(x) = \int_0^\infty \frac{\delta^\alpha}{\Gamma(\alpha)} \lambda^{\alpha-1} e^{-\delta\lambda} \cdot \frac{\lambda^k}{\Gamma(k)} x^{k-1} e^{-\lambda x} \mathrm{d}\lambda = \frac{\delta^\alpha x^{k-1}}{\Gamma(\alpha)\Gamma(k)} \int_0^\infty \lambda^{\alpha+k-1} e^{-(\delta+x)\lambda} \mathrm{d}\lambda$$</div>
+      <p>将被积函数整理成 $\text{Ga}(\alpha+k, x+\delta)$ 分布的形式，积分结果等于1，因此得到：</p>
+      <div class="math-display">$$f_X(x) = \frac{\Gamma(\alpha+k)}{\Gamma(\alpha)\Gamma(k)} \frac{\delta^\alpha x^{k-1}}{(\delta+x)^{(\alpha+k)}}$$</div>
+      <p>上式为广义帕累托分布 $\text{Pa}(\alpha, \delta, k)$ 的概率密度函数。</p>
+    </div>
+  </div>
+
+  <p>典型的混合分布还包括<strong>泊松-伽马混合分布</strong>，即假设泊松分布的参数 $\lambda$ 服从伽马分布，混合后的结果为负二项分布。</p>
+</div>
+
+<!-- ===== Section 1.5 ===== -->
+<div class="section-card" id="sec-1-5">
+  <h2>1.5 分布拟合与参数估计</h2>
+  <p>在分布拟合中，问题可以表述为：假定随机变量 $X$ 服从某分布 $F(x;\theta)$，其中 $\theta$ 是分布中的未知参数。若已知 $(X_1, X_2, \dots, X_n)$ 是来自该分布的一组简单随机样本，需要从数据中估计参数值 $\hat{\theta}$。</p>
+
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline>
+      <source src="section1-movs/chap1_5.mp4" type="video/mp4">
+      您的浏览器不支持 HTML5 视频播放。
+    </video>
+    <figcaption>视频 1.5：矩估计、极大似然估计与拟合优度检验</figcaption>
+  </figure>
+
+  <h3 id="sec-1-5-1">1.5.1 矩估计</h3>
+  <p>矩估计法（moment estimation，ME）是一种通过样本矩近似总体矩来估计分布参数的方法。给定一组样本 $(x_1, x_2, \dots, x_n)$，分布的样本矩可以计算为：</p>
+  <div class="math-display">$$\hat{\mu}_k' = \frac{1}{n} \sum_{i=1}^n x_i^k, \quad \hat{\mu}_k = \frac{1}{n} \sum_{i=1}^n (x_i-\bar{x})^k$$</div>
+
+  <p>若分布的参数 $\theta$ 可以表示为某些总体矩的函数 $\theta = g(\mu_1',\cdots,\mu_r'; \mu_2,\cdots,\mu_s)$，通过计算对应的样本矩，并用其替代参数中的总体矩，得到估计量 $\hat{\theta} = g(\hat{\mu}_1',\cdots,\hat{\mu}_r'; \hat{\mu}_1,\cdots,\hat{\mu}_s)$，称为参数 $\theta$ 的矩估计量。</p>
+
+  <p>例如对伽马分布 $\text{Ga}(\alpha,\theta)$，用样本均值 $\bar{x}$ 替代数学期望、用样本方差 $s_n^2$ 替代方差，即可得到关系：</p>
+  <div class="math-display">$$\begin{cases} \bar{x} = \alpha \theta \\ s_n^2 = \alpha \theta^2 \end{cases} \Rightarrow \hat{\alpha} = \frac{\bar{x}^2}{s_n^2}, \quad \hat{\theta} = \frac{s_n^2}{\bar{x}}$$</div>
+
+  <h3 id="sec-1-5-2">1.5.2 极大似然估计</h3>
+
+  <h4 id="sec-1-5-2-1">1. 似然函数与极大似然思想</h4>
+  <p>极大似然估计法（maximum likelihood estimation，MLE）是一种通过最大化样本数据的似然函数来估计分布参数的方法。当样本观察值已知、而模型参数 $\boldsymbol{\theta}$ 未知时，似然函数为：</p>
+  <div class="math-display">$$L(\boldsymbol{\theta}) = \prod_{i=1}^{n} f(x_i; \boldsymbol{\theta}), \quad l(\boldsymbol{\theta}) = \ln L(\boldsymbol{\theta}) = \sum_{i=1}^n \ln f(x_i; \boldsymbol{\theta})$$</div>
+
+  <p>极大似然法是对似然函数求极大化，即 $\hat{\boldsymbol{\theta}} = \arg\max_{\boldsymbol{\theta} \in \Theta} L(\boldsymbol{\theta})$。对于单参数场景，若 $l(\theta)$ 可以对参数 $\theta$ 求导，则极大似然估计 $\hat{\theta}$ 应满足 $\frac{\mathrm{d}}{\mathrm{d} \theta}l(\hat{\theta}) = 0$。</p>
+
+  <div class="theorem-box exa">
+    <span class="label">例 1.7（指数分布的MLE）</span>
+    保险公司用指数分布来研究遭受事故的车辆维修费用。已知1000台车辆的样本的平均维修费用是2200英镑，求平均费用 $1/\lambda$ 的极大似然估计。
+
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)">
+      <span>点击查看解答</span>
+      <span class="arrow">▶</span>
+    </button>
+    <div class="collapsible-content">
+      <p>记 $X_1, X_2, \ldots, X_n$ 表示个体维修费用（$n=1000$），$X_i \sim \text{Exp}(\lambda)$。似然函数为：</p>
+      <div class="math-display">$$L = \prod_{i=1}^n \lambda e^{-\lambda x_i} = \lambda^n e^{-\lambda n\bar{x}}$$</div>
+      <p>对数似然函数：$\ln L = n\ln \lambda - \lambda n\bar{x}$。求导并令导函数等于0：</p>
+      <div class="math-display">$$\frac{\mathrm{d}}{\mathrm{d} \lambda}\ln L = \frac{n}{\lambda} - n\bar{x} = 0 \Rightarrow \hat{\lambda} = \frac{1}{\bar{x}} = \frac{1}{2200}$$</div>
+      <p>因此，平均成本的极大似然估计为 $1/\hat{\lambda} = 2200$，恰好等于样本均值。</p>
+    </div>
+  </div>
+
+  <div class="theorem-box exa">
+    <span class="label">例 1.8（对数正态分布的MLE）</span>
+    对数正态分布的参数估计是直接的，因为 $\mu$ 和 $\sigma^2$ 可以通过对数变换，在正态分布下进行估计。记 $X \sim \text{LN}(\mu,\sigma^2)$，$x_1, x_2, \ldots, x_n$ 为样本观察值，令 $y_i = \ln x_i$。由于正态分布 $Y \sim \text{N}(\mu,\sigma^2)$ 的极大似然估计分别为样本均值和样本方差（分母为 $n$），则在对数正态分布下 $\mu$ 和 $\sigma^2$ 的极大似然估计为 $\bar{y}$ 和 $s_y^2$。
+  </div>
+
+  <p>以下给出了应用R软件 <code>fitdistrplus</code> 程序包拟合伽马分布的过程。</p>
+
+  <div class="code-tabs" id="code-mle-gamma">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">
+set.seed(123)  # 设置随机种子以保证结果可重复
+x &lt;- rgamma(100, 2, 2.5)  # 从Ga(2, 2.5)中抽取100个随机数
+
+## 极大似然法估计参数
+fit1 &lt;- fitdist(x, &#x27;gamma&#x27;, method = &#x27;mle&#x27;)
+fit1  # 形状参数估计值约为2.19，速率参数估计值约为3.18
+plot(fit1)
+
+## 矩估计法估计参数
+fit2 &lt;- fitdist(x, &#x27;gamma&#x27;, method = &#x27;mme&#x27;)
+
+## 分位数法估计参数
+fit3 &lt;- fitdist(x, &#x27;gamma&#x27;, method = &#x27;qme&#x27;, probs = c(1/3, 2/3))
+
+## 最小距离法估计参数
+fit4 &lt;- fitdist(x, &#x27;gamma&#x27;, method = &#x27;mge&#x27;, gof = &#x27;CvM&#x27;)
+
+summary(fit1)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+np.random.seed(123)
+x = np.random.gamma(shape=2, scale=1/2.5, size=100)
+
+# MLE
+shape_mle, loc_mle, scale_mle = stats.gamma.fit(x, floc=0)
+print(f&quot;伽马分布MLE: shape={shape_mle:.4f}, scale={scale_mle:.4f}, rate={1/scale_mle:.4f}&quot;)
+
+# 矩估计
+xbar = np.mean(x)
+s2 = np.var(x, ddof=1)
+shape_mme = xbar**2 / s2
+scale_mme = s2 / xbar
+print(f&quot;伽马分布MME: shape={shape_mme:.4f}, scale={scale_mme:.4f}&quot;)
+
+# 绘图
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.hist(x, bins=20, density=True, alpha=0.5, label=&#x27;数据&#x27;)
+xx = np.linspace(0, max(x), 200)
+ax.plot(xx, stats.gamma.pdf(xx, shape_mle, scale=scale_mle),
+        &#x27;r-&#x27;, lw=2, label=&#x27;MLE拟合&#x27;)
+ax.plot(xx, stats.gamma.pdf(xx, shape_mme, scale=scale_mme),
+        &#x27;b--&#x27;, lw=2, label=&#x27;MME拟合&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;伽马分布拟合&#x27;); ax.legend()
+plt.tight_layout(); plt.show()</code></pre>
+    </div>
+  </div>
+
+  <div class="figure-wrapper" onclick="openLightbox('section1-figs/mle.jpg')">
+    <img src="section1-figs/mle.jpg" alt="fitdistrplus的极大似然估计结果" onerror='this.classList.add("broken");this.alt="图片加载失败: mle.jpg";'>
+    <div class="caption">图1.18 fitdistrplus的极大似然估计结果</div>
+  </div>
+
+  <p>上图展示了四种统计图形，通常用于评估数据与特定理论分布的拟合程度：</p>
+  <ol>
+    <li><strong>经验与理论密度函数图</strong>：直方图表示样本数据的经验分布，红线表示拟合的理论概率密度函数。若两者形状接近，表明拟合效果较好。</li>
+    <li><strong>分位数-分位数图（Q-Q图）</strong>：理论分布的分位数与实际数据的分位数对比。若数据点近似呈对角线，表明拟合的效果较好。</li>
+    <li><strong>经验与理论累积分布函数图</strong>：实际数据的经验CDF与拟合的理论CDF对比。若两条曲线相互重叠，表明拟合的效果较好。</li>
+    <li><strong>概率-概率图（P-P图）</strong>：理论分布的累积概率与实际数据的累积概率对比。若数据点近似呈对角线，表明拟合的效果较好。</li>
+  </ol>
+
+  <div class="theorem-box exa">
+    <span class="label">例 1.9（威布尔分布的百分位数估计）</span>
+    假定 $X \sim \text{W}(c,\gamma)$，样本的下四分位数为401，上四分位数为2836.75，用百分位数法估计威布尔分布的参数。
+
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)">
+      <span>点击查看解答</span>
+      <span class="arrow">▶</span>
+    </button>
+    <div class="collapsible-content">
+      <p>根据威布尔的分布函数，可建立关于 $c$ 和 $\gamma$ 的方程组：</p>
+      <div class="math-display">$$\begin{cases} F(401) = 1-\exp(-c \cdot 401^\gamma) = 0.25 \\ F(2836.75) = 1-\exp(-c \cdot 2836.75^\gamma) = 0.75 \end{cases}$$</div>
+      <p>解得参数的百分位数估计值 $\tilde{\gamma} = 0.8038$，$\tilde{c} = 0.002326$。注意 $\tilde{\gamma} < 1$，表明此时具有比指数分布更厚的尾部。</p>
+    </div>
+  </div>
+
+  <h4 id="sec-1-5-2-2">2. 极大似然估计的方差</h4>
+  <p>若 $f(x; \theta)$ 满足正则条件，则当 $n \to \infty$ 时，参数的极大似然估计量 $\hat{\theta}_n$ 渐进服从正态分布 $\text{N}(\theta, [I(\theta)]^{-1})$。其中 $I(\theta)$ 称为 <strong>Fisher信息量</strong>：</p>
+  <div class="math-display">$$I(\theta) = - \mathbb{E} \left[ \frac{\mathrm{d}^2}{\mathrm{d}\theta^2} l(\theta) \right] = \mathbb{E} \left[ \left(\frac{\mathrm{d}}{\mathrm{d}\theta} l(\theta) \right)^2 \right]$$</div>
+
+  <p>当待估参数个数大于1时，极大似然估计量渐进服从多元正态分布，协方差矩阵等于Fisher信息矩阵的逆。</p>
+
+  <div class="theorem-box">
+    <span class="label">Delta方法</span>
+    记 $\hat{\boldsymbol{\theta}}_n$ 渐进服从多元正态分布，均值为 $\boldsymbol{\theta}$、协方差矩阵为 $\boldsymbol{\Sigma}/n$。令 $g(\cdot)$ 是可微函数，则 $G_n = g(\hat{\boldsymbol{\theta}}_n)$ 也渐进服从多元正态分布，均值为 $g(\boldsymbol{\theta})$、协方差矩阵为 $(A^T \boldsymbol{\Sigma} A)/n$，其中 $A = (\frac{\mathrm{d}g}{\mathrm{d}\theta_1}, \cdots, \frac{\mathrm{d}g}{\mathrm{d}\theta_r})^T$。对单参数模型，$g(\hat{\theta})$ 渐进服从正态分布，方差为 $[g'(\theta)]^2 \cdot \text{Var}(\hat{\theta})$。
+  </div>
+
+  <h4 id="sec-1-5-2-3">3. 置信区间</h4>
+  <p>当极大似然估计量 $\hat{\boldsymbol{\theta}}$ 渐进服从正态分布时，可以为每个参数 $\theta_j$ 构造独立的置信区间，例如置信水平 $100(1-\alpha)\%$ 的区间为 $\hat{\theta}_j \pm z_{1-\alpha/2} \cdot \sqrt{\text{Var}(\hat{\theta}_j)}$。基于似然的方法，可构造置信域 $\{\boldsymbol{\theta}: l(\boldsymbol{\theta}) \geq c\}$，其中 $c = l(\hat{\boldsymbol{\theta}}) - 0.5 \cdot \chi_{1-\alpha}^2(r)$。</p>
+
+  <h3 id="sec-1-5-3">1.5.3 拟合优度检验</h3>
+
+  <h4 id="sec-1-5-3-1">1. 卡方拟合优度检验</h4>
+  <p>卡方拟合优度检验主要思想是将数据分组后，比较每组观测频率与理论频率的差异。原假设为 $H_0$：随机变量 $X$ 的分布为 $F(x;\theta)$。</p>
+
+  <p>将实数轴划分为若干个子区间 $(c_{j-1},c_j]$，应用分布函数计算理论概率 $p_j = F(c_j; \hat{\theta}) - F(c_{j-1}; \hat{\theta})$，理论频数 $E_j = np_j$。记 $O_j$ 为落入各区间的样本数量，则卡方检验统计量为：</p>
+  <div class="math-display">$$\chi^2 = \sum_{j=1}^r \frac{(O_j-E_j)^2}{E_j}$$</div>
+
+  <p>当样本量 $n$ 足够大时，检验统计量应收敛于自由度 $k = r-1-m$ 的卡方分布（$m$ 为需要估计的参数个数）。需要注意，卡方拟合优度检验要求每个区间的期望频数 $E_j \geq 5$。</p>
+
+  <div class="theorem-box exa">
+    <span class="label">例 1.10（维修费用的卡方检验）</span>
+    假设例1.7中的维修成本观察值可以被划分为以下区间，检验指数分布是否能够有效拟合该样本的损失。
+
+    <table>
+      <tr><th>维修费用区间</th><th>频数</th></tr>
+      <tr><td>$(0, 1000]$</td><td>250</td></tr>
+      <tr><td>$(1000, 2000]$</td><td>300</td></tr>
+      <tr><td>$(2000, 3000]$</td><td>250</td></tr>
+      <tr><td>$(3000, 4000]$</td><td>150</td></tr>
+      <tr><td>$(4000, 5000]$</td><td>100</td></tr>
+      <tr><td>$(5000, \infty)$</td><td>0</td></tr>
+    </table>
+
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)">
+      <span>点击查看解答</span>
+      <span class="arrow">▶</span>
+    </button>
+    <div class="collapsible-content">
+      <p>假设维修费用服从指数分布，利用估计值 $\hat{\lambda} = 1/2200$，可以计算每个区间上的理论概率。例如，个体观察值落入区间 $(2000,3000]$ 的概率为：</p>
+      <div class="math-display">$$\int_{2000}^{3000} \lambda e^{-\lambda x} \mathrm{d}x = e^{-2000\lambda} - e^{-3000\lambda} = 0.1472$$</div>
+      <p>该区间的理论频数为 $1000 \times 0.1472 = 147.2$。其他区间的理论频数分别为：365.3, 231.8, 147.2, 93.4, 59.3, 103.0。</p>
+      <p>计算卡方统计量：</p>
+      <div class="math-display">$$\chi^2 = \frac{(250-365.3)^2}{365.3} + \frac{(300-231.8)^2}{231.8} + \cdots + \frac{(0-103.0)^2}{103.0} = 293.48$$</div>
+      <p>总共6个区间，存在1个待估参数，故检验统计量的自由度应为 $6-1-1=4$。而卡方检验统计量的值远大于14.86（自由度为4的卡方分布的99.5%分位数），故有很大把握拒绝原假设 $H_0$，认为维修成本不服从指数分布。</p>
+    </div>
+  </div>
+
+  <div class="code-tabs" id="code-chisq">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">
+## 卡方拟合优度检验：维修费用数据
+lower &lt;- c(0, 1000, 2000, 3000, 4000, 5000)
+upper &lt;- c(1000, 2000, 3000, 4000, 5000, Inf)
+freq  &lt;- c(250, 300, 250, 150, 100, 0)
+
+## 指数分布的极大似然估计
+f1 &lt;- function(a) {-sum(freq * log(pexp(upper, a) - pexp(lower, a)))}
+m1 &lt;- optimize(f1, c(1e-5, 1e-3))
+
+## 计算理论分布
+q &lt;- pexp(upper, m1$minimum) - pexp(lower, m1$minimum)
+n &lt;- sum(freq) * q
+
+## 作卡方检验
+chisq.test(freq, p = q)
+
+## 泊松分布拟合检验
+X &lt;- 0:6
+Y &lt;- c(7, 10, 12, 8, 3, 2, 0)
+q &lt;- ppois(X, mean(rep(X, Y)))
+n &lt;- length(Y)
+p &lt;- rep(0, n)
+p[1] &lt;- q[1]
+p[n] &lt;- 1 - q[n-1]
+for (i in 2:(n-1)) {
+  p[i] &lt;- q[i] - q[i-1]
+}
+chisq.test(Y, p = p)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">import numpy as np
+from scipy import stats
+
+# 卡方拟合优度检验：维修费用数据
+lower = np.array([0, 1000, 2000, 3000, 4000, 5000])
+upper = np.array([1000, 2000, 3000, 4000, 5000, np.inf])
+freq = np.array([250, 300, 250, 150, 100, 0])
+
+# 指数分布MLE
+midpoints = np.array([500, 1500, 2500, 3500, 4500, 5500])
+n_total = freq.sum()
+xbar = np.sum(freq * midpoints) / n_total
+lambda_hat = 1 / xbar
+
+# 期望频数
+p_exp = stats.expon.cdf(upper, scale=1/lambda_hat) - \
+        stats.expon.cdf(lower, scale=1/lambda_hat)
+exp_freq = n_total * p_exp
+
+# 卡方统计量
+chi_sq = np.sum((freq - exp_freq)**2 / exp_freq)
+df = len(freq) - 1 - 1
+p_value = 1 - stats.chi2.cdf(chi_sq, df)
+print(f&quot;卡方拟合优度检验（指数分布）:&quot;)
+print(f&quot;  lambda_hat = {lambda_hat:.6f}&quot;)
+print(f&quot;  chi_sq = {chi_sq:.4f}, df = {df}, p-value = {p_value:.4f}&quot;)
+
+# 泊松分布检验
+X = np.arange(0, 7)
+Y = np.array([7, 10, 12, 8, 3, 2, 0])
+lambda_hat_pois = np.sum(X * Y) / np.sum(Y)
+
+p_pois = np.zeros(len(Y))
+p_pois[0] = stats.poisson.cdf(0, lambda_hat_pois)
+p_pois[-1] = 1 - stats.poisson.cdf(len(Y)-2, lambda_hat_pois)
+for i in range(1, len(Y)-1):
+    p_pois[i] = stats.poisson.cdf(X[i], lambda_hat_pois) - \
+                stats.poisson.cdf(X[i]-1, lambda_hat_pois)
+
+exp_freq_pois = np.sum(Y) * p_pois
+chi_sq_pois = np.sum((Y - exp_freq_pois)**2 / exp_freq_pois)
+df_pois = len(Y) - 1 - 1
+p_value_pois = 1 - stats.chi2.cdf(chi_sq_pois, df_pois)
+print(f&quot;\n卡方拟合优度检验（泊松分布）:&quot;)
+print(f&quot;  lambda_hat = {lambda_hat_pois:.4f}&quot;)
+print(f&quot;  chi_sq = {chi_sq_pois:.4f}, df = {df_pois}, p-value = {p_value_pois:.4f}&quot;)</code></pre>
+    </div>
+  </div>
+
+  <h4 id="sec-1-5-3-2">2. K-S检验</h4>
+  <p>K-S检验（Kolmogorov-Smirnov tests）是一种适用于连续型分布的检验方法，通过对累积分布函数进行比较，判断一组样本是否来自某个特定分布。给定样本 $(X_1, X_2, \cdots, X_n)$，其经验分布函数为：</p>
+  <div class="math-display">$$F_n(x) = \begin{cases} 0, & x < X_{(1)} \\ k/n, & X_{(k)} \leq x < X_{(k+1)} \\ 1, & x \geq X_{(n)} \end{cases}$$</div>
+
+  <p>对于单样本K-S检验，其检验统计量为 $D_n = \sup_{-\infty < x < +\infty} |F_n(x) - F_0(x)|$。当 $D_n$ 的值较小时，可以认为 $F_n(\cdot)$ 与 $F_0(\cdot)$ 相等；否则应拒绝原假设。K-S检验的临界值 $D_{n,\alpha}$ 依赖于样本量 $n$ 以及检验的显著性水平 $\alpha$。</p>
+</div>
+
+<!-- ===== 本章汇总 ===== -->
+<div class="section-card" id="sec-summary">
+  <h2>本章小结</h2>
+
+  <h3>离散型分布比较</h3>
+  <table>
+    <thead>
+      <tr><th>分布</th><th>概率分布列</th><th>$E(X)$</th><th>$\text{Var}(X)$</th><th>与均值关系</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>二项 $\text{B}(n,p)$</td><td>$C_n^k p^k(1-p)^{n-k}$</td><td>$np$</td><td>$np(1-p)$</td><td>方差 &lt; 均值</td></tr>
+      <tr><td>泊松 $\text{Poi}(\lambda)$</td><td>$\frac{\lambda^k e^{-\lambda}}{k!}$</td><td>$\lambda$</td><td>$\lambda$</td><td>方差 = 均值</td></tr>
+      <tr><td>负二项 $\text{NB}(r,\beta)$</td><td>$C_{k+r-1}^k (\frac{1}{1+\beta})^r(\frac{\beta}{1+\beta})^k$</td><td>$r\beta$</td><td>$r\beta(1+\beta)$</td><td>方差 &gt; 均值</td></tr>
+    </tbody>
+  </table>
+
+  <h3>连续型分布比较</h3>
+  <table>
+    <thead>
+      <tr><th>分布</th><th>密度函数</th><th>$E(X)$</th><th>$\text{Var}(X)$</th><th>矩母函数</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>指数 $\text{Exp}(\lambda)$</td><td>$\lambda e^{-\lambda x}$</td><td>$1/\lambda$</td><td>$1/\lambda^2$</td><td>$\frac{\lambda}{\lambda-t}$</td></tr>
+      <tr><td>伽马 $\text{Ga}(\alpha,\lambda)$</td><td>$\frac{\lambda^\alpha}{\Gamma(\alpha)} x^{\alpha-1} e^{-\lambda x}$</td><td>$\alpha/\lambda$</td><td>$\alpha/\lambda^2$</td><td>$(\frac{\lambda}{\lambda-t})^\alpha$</td></tr>
+      <tr><td>对数正态 $\text{LN}(\mu,\sigma^2)$</td><td>$\frac{1}{x\sigma\sqrt{2\pi}} e^{-\frac{(\ln x-\mu)^2}{2\sigma^2}}$</td><td>$e^{\mu+\sigma^2/2}$</td><td>$(e^{\sigma^2}-1)e^{2\mu+\sigma^2}$</td><td>不存在</td></tr>
+      <tr><td>帕累托 $\text{Pa}(\alpha,\delta)$</td><td>$\frac{\alpha\delta^\alpha}{(x+\delta)^{\alpha+1}}$</td><td>$\frac{\delta}{\alpha-1}$</td><td>$\frac{\alpha\delta^2}{(\alpha-1)^2(\alpha-2)}$</td><td>不存在</td></tr>
+      <tr><td>Weibull $\text{Wei}(c,\gamma)$</td><td>$c\gamma x^{\gamma-1}e^{-cx^\gamma}$</td><td>$\frac{\Gamma(1+1/\gamma)}{c^{1/\gamma}}$</td><td>复杂</td><td>不存在</td></tr>
+    </tbody>
+  </table>
+
+  <h3>分布变换方法</h3>
+  <table>
+    <thead>
+      <tr><th>变换类型</th><th>方法</th><th>示例</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>线性变换</td><td>$Y=aX+b$</td><td>正态 → 正态</td></tr>
+      <tr><td>对数变换</td><td>$Y=\ln X$</td><td>对数正态 → 正态</td></tr>
+      <tr><td>指数变换</td><td>$Y=e^X$</td><td>正态 → 对数正态</td></tr>
+      <tr><td>混合分布</td><td>参数视为随机变量</td><td>指数+伽马 → 帕累托</td></tr>
+      <tr><td>组合分布</td><td>分段拼接</td><td>不同区间用不同分布</td></tr>
+    </tbody>
+  </table>
+
+  <h3>参数估计方法比较</h3>
+  <table>
+    <thead>
+      <tr><th>方法</th><th>原理</th><th>优点</th><th>缺点</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>矩估计</td><td>样本矩=总体矩</td><td>计算简单</td><td>不一定最优</td></tr>
+      <tr><td>极大似然估计</td><td>最大化似然函数</td><td>渐近最优</td><td>计算可能复杂</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ===== Section 1.6 ===== -->
+<div class="section-card" id="sec-1-6">
+  <h2>1.6 习题</h2>
+
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline>
+      <source src="section1-movs/chap1_6.mp4" type="video/mp4">
+      您的浏览器不支持 HTML5 视频播放。
+    </video>
+    <figcaption>视频 1.6：本章典型习题讲解</figcaption>
+  </figure>
+
+  <ol class="exercises">
+    <li>设随机变量 $X$ 服从参数为 $\lambda$ 的泊松分布。已知 $P(X=1) = P(X=2)$，求 $P(X=0)$ 和 $E(X)$。</li>
+    <li>设随机变量 $X$ 服从参数为 $(r, p)$ 的负二项分布。求 $E(X)$ 和 $\text{Var}(X)$，并证明当 $r \to \infty$ 且 $rp \to \lambda$ 时，负二项分布收敛于泊松分布。</li>
+    <li>设 $X \sim \text{Exp}(\lambda)$，求 $E(X^k)$ 和 $\text{Var}(X)$。并证明指数分布具有无记忆性。</li>
+    <li>设 $X \sim \text{Ga}(\alpha, \theta)$，求 $E(X)$、$\text{Var}(X)$ 和矩母函数 $M(t)$。</li>
+    <li>设 $X \sim \text{Pa}(\alpha, \theta)$，求 $E(X)$ 和 $\text{Var}(X)$。当 $\alpha \leq 1$ 时，$E(X)$ 是否存在？</li>
+    <li>设 $X \sim \text{LN}(\mu, \sigma^2)$，求 $E(X)$ 和 $\text{Var}(X)$。</li>
+    <li>设 $X \sim \text{W}(c, \gamma)$，求 $E(X)$ 和 $\text{Var}(X)$。当 $\gamma = 1$ 时，威布尔分布退化为何种分布？</li>
+    <li>设 $X \sim \text{IG}(\mu, \lambda)$，求 $E(X)$ 和 $\text{Var}(X)$。</li>
+    <li>设 $X_1, X_2, \ldots, X_n$ 是来自指数分布 $\text{Exp}(\lambda)$ 的简单随机样本，求 $\lambda$ 的极大似然估计和矩估计。</li>
+    <li>设 $X_1, X_2, \ldots, X_n$ 是来自伽马分布 $\text{Ga}(\alpha, \theta)$ 的简单随机样本，求 $\alpha$ 和 $\theta$ 的矩估计。</li>
+    <li>设 $X_1, X_2, \ldots, X_n$ 是来自帕累托分布 $\text{Pa}(\alpha, \theta)$ 的简单随机样本，求 $\alpha$ 和 $\theta$ 的极大似然估计（$\theta$ 已知）。</li>
+    <li>某保险公司记录了100起交通事故的理赔额，样本均值为3200元，样本标准差为2400元。试用矩估计法拟合伽马分布，并估计参数。</li>
+    <li>设某保单组合在一年内的索赔次数服从泊松分布，观察到1000份保单中有200份发生索赔。求索赔频率的极大似然估计。</li>
+    <li>设 $X \sim \text{Exp}(\lambda)$，令 $Y = X^2$。求 $Y$ 的概率密度函数。</li>
+    <li>设 $X \sim \text{N}(\mu, \sigma^2)$，令 $Y = e^X$。证明 $Y$ 服从对数正态分布，并求其参数。</li>
+    <li>设 $X_1 \sim \text{Exp}(\lambda_1)$ 和 $X_2 \sim \text{Exp}(\lambda_2)$ 相互独立，求 $Y = \min(X_1, X_2)$ 的分布。</li>
+    <li>设 $X_1, X_2, \ldots, X_n$ 独立同分布且 $X_i \sim \text{Exp}(\lambda)$，求 $Y = X_1 + X_2 + \cdots + X_n$ 的分布。</li>
+    <li>某保险公司收集了200份车险索赔数据，使用卡方拟合优度检验判断其是否服从对数正态分布。已知将数据分为8组，拟合后计算得到卡方统计量为12.5。在显著性水平0.05下，是否拒绝原假设？</li>
+    <li>设 $X \sim \text{Ga}(\alpha, \theta)$，令 $Y = 1/X$。求 $Y$ 的分布，并指出其属于何种分布族。</li>
+    <li>某保单的损失额 $X$ 服从混合分布：以概率0.6服从 $\text{Exp}(0.01)$，以概率0.4服从 $\text{Exp}(0.02)$。求 $E(X)$ 和 $\text{Var}(X)$。</li>
+  </ol>
+</div>
+
+<!-- ===== References ===== -->
+<div class="section-card" id="sec-references">
+  <h2>参考文献</h2>
+  <ol class="references">
+    <li>Klugman, S. A., Panjer, H. H., & Willmot, G. E. (2019). <em>Loss Models: From Data to Decisions</em> (5th ed.). Wiley.</li>
+    <li>Boland, P. J. (2007). <em>Statistical and Probabilistic Methods in Actuarial Science</em>. Chapman & Hall/CRC.</li>
+    <li>孟生旺, 袁卫. (2020). 《非寿险精算学》. 中国人民大学出版社.</li>
+    <li>孟生旺. (2015). 《回归模型》. 中国人民大学出版社.</li>
+    <li>王静龙, 汤旦林, 等. (2008). 《统计学原理》. 高等教育出版社.</li>
+    <li>Frees, E. W. (2009). <em>Regression Modeling with Actuarial and Financial Applications</em>. Cambridge University Press.</li>
+    <li>Werner, G., & Modlin, C. (2016). <em>Basic Ratemaking</em> (5th ed.). Casualty Actuarial Society.</li>
+    <li>R Core Team. (2024). <em>R: A Language and Environment for Statistical Computing</em>. R Foundation for Statistical Computing, Vienna, Austria.</li>
+    <li>Delignette-Muller, M. L., & Dutang, C. (2015). fitdistrplus: An R Package for Fitting Distributions. <em>Journal of Statistical Software</em>, 64(4), 1-34.</li>
+    <li>Kolmogorov, A. (1933). Sulla determinazione empirica di una legge di distribuzione. <em>Giornale dell'Istituto Italiano degli Attuari</em>, 4, 83-91.</li>
+  </ol>
+</div>
+
+<!-- ===== Footer ===== -->
+<div class="footer">
+  <p>非寿险精算学模型与应用 · 第一章 损失分布基础</p>
+  <p>© 2024 保险学院 · 统计与精算学系</p>
+  <nav class="book-pager" aria-label="章节导航">
+    <span class="book-prev book-disabled">上一章</span>
+    <a class="book-home" href="index.html">目录</a>
+    <a class="book-next" href="chap2.html">下一章：第2章 风险模型</a>
+  </nav>
+</div>
+
+<!-- ===== Lightbox ===== -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close">&times;</span>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- ===== Scripts ===== -->
+<script>
+  // 折叠面板
+  function toggleCollapsible(btn) {
+    const content = btn.nextElementSibling;
+    const arrow = btn.querySelector('.arrow');
+    const label = btn.querySelector('span:first-child');
+    const isOpen = content.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+    arrow.textContent = isOpen ? '▼' : '▶';
+    if (label) {
+      if (isOpen && label.textContent.includes('查看')) {
+        label.textContent = label.textContent.replace('点击查看', '点击收起');
+      } else if (!isOpen && label.textContent.includes('收起')) {
+        label.textContent = label.textContent.replace('点击收起', '点击查看');
+      }
+    }
+  }
+
+  // 代码标签页切换
+  function switchTab(btn) {
+    const tabs = btn.parentElement;
+    const container = tabs.parentElement;
+    const targetLang = btn.dataset.lang;
+    tabs.querySelectorAll('.code-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    container.querySelectorAll('.code-tab-content').forEach(c => {
+      if (c.dataset.lang === targetLang) {
+        c.classList.add('active');
+      } else {
+        c.classList.remove('active');
+      }
+    });
+  }
+
+  // R代码中文字符串翻译（webR缺少中文字体时的兜底方案）
+  const _R_CN_EN_MAP = [
+    ['概率质量函数', 'PMF'], ['累积分布函数', 'CDF'], ['概率密度函数', 'PDF'],
+    ['生存函数', 'Survival'], ['危险率函数', 'Hazard'],
+    ['二项分布', 'Binomial'], ['泊松分布', 'Poisson'], ['负二项分布', 'Neg.Binom'],
+    ['几何分布', 'Geometric'], ['指数分布', 'Exponential'], ['伽马分布', 'Gamma'],
+    ['对数正态分布', 'Lognormal'], ['帕累托分布', 'Pareto'], ['威布尔分布', 'Weibull'],
+    ['正态分布', 'Normal'], ['卡方分布', 'Chi-sq'], ['t分布', 't-dist'],
+    ['零截断负二项', 'ZTNB'], ['零调整负二项', 'ZMNB'],
+    ['零截断', 'ZT'], ['零调整', 'ZM'], ['零膨胀', 'ZI'],
+    ['索赔次数', 'Claim Count'], ['索赔金额', 'Claim Amt'], ['索赔强度', 'Severity'],
+    ['累积索赔', 'Cum.Claim'], ['总索赔', 'Total Claim'],
+    ['事故年', 'Acc.Year'], ['进展年', 'Dev.Year'], ['准备金', 'Reserve'],
+    ['费率', 'Rate'], ['保费', 'Premium'], ['赔款', 'Loss'], ['纯保费', 'Pure Prem'],
+    ['均值', 'Mean'], ['方差', 'Var'], ['标准差', 'Std'], ['中位数', 'Median'],
+    ['偏度', 'Skew'], ['峰度', 'Kurt'], ['分位数', 'Quantile'],
+    ['参数', 'Param'], ['估计', 'Est'], ['拟合', 'Fit'], ['预测', 'Pred'],
+    ['观测值', 'Obs'], ['期望值', 'Exp'], ['残差', 'Resid'],
+    ['风险', 'Risk'], ['损失', 'Loss'], ['概率', 'Prob'], ['频率', 'Freq'],
+    ['信度', 'Cred'], ['先验', 'Prior'], ['后验', 'Posterior'],
+    ['回归', 'Reg'], ['分类', 'Class'], ['聚类', 'Clust'],
+    ['准确率', 'Acc'], ['误差', 'Error'], ['平方误差', 'MSE'],
+    ['时间', 'Time'], ['年份', 'Year'], ['月份', 'Month'], ['季度', 'Qtr'],
+    ['金额', 'Amt'], ['数量', 'Count'], ['比率', 'Ratio'], ['因子', 'Factor'],
+    ['分布', 'Dist'], ['函数', 'Func'], ['模型', 'Model'], ['数据', 'Data'],
+    ['图', 'Fig'], ['表', 'Tab'], ['例', 'Ex'], ['注', 'Note'],
+    ['尺度', 'Scale'], ['形状', 'Shape'], ['位置', 'Loc'],
+    ['直方图', 'Histogram'], ['密度曲线', 'Density'], ['散点图', 'Scatter'],
+    ['拟合优度', 'Goodness of Fit'], ['QQ图', 'QQ Plot'], ['PP图', 'PP Plot'],
+    ['经验分布', 'Empirical'], ['理论分布', 'Theoretical'],
+    ['对数似然', 'Log-Likelihood'], ['AIC', 'AIC'], ['BIC', 'BIC'],
+    ['置信区间', 'CI'], ['标准误', 'SE'], ['p值', 'p-value'],
+    ['极大似然估计', 'MLE'], ['矩估计', 'MoM'],
+    ['火灾损失', 'Fire Loss'], ['丹麦', 'Danish'],
+    ['实际', 'Actual'], ['理论', 'Theor'], ['样本', 'Sample'],
+    ['检验', 'Test'], ['统计量', 'Stat'], ['自由度', 'df'],
+    ['对比', ' vs '], ['频数', 'Freq'], ['累积', 'Cum'],
+    ['的', ' '], ['和', ' & '], ['与', ' & '], ['在', ' at '],
+    ['为', ' = '], ['中', ' in '], ['上', ' up '], ['下', ' down '],
+    ['x轴', 'x'], ['y轴', 'y'], ['x 轴', 'x'], ['y 轴', 'y'],
+  ];
+
+  function _translateRCode(code) {
+    if (!code) return code;
+    let translated = code;
+    for (const [cn, en] of _R_CN_EN_MAP) {
+      translated = translated.split(cn).join(en);
+    }
+    translated = translated.replace(/[\u4e00-\u9fff]+/g, '?');
+    return translated;
+  }
+
+  // 复制代码
+  function copyCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const text = codeBlock.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = btn.textContent;
+      btn.textContent = '✓ 已复制';
+      setTimeout(() => { btn.textContent = originalText; }, 2000);
+    }).catch(() => {
+      // fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      btn.textContent = '✓ 已复制';
+      setTimeout(() => { btn.textContent = '复制'; }, 2000);
+    });
+  }
+
+  // 存储所有代码块的原始代码（用于重置功能）
+  const _originalCode = new Map();
+
+  // 初始化：保存所有代码块的原始代码
+  function initCodeReset() {
+    document.querySelectorAll('.code-tab-content pre code').forEach(codeBlock => {
+      _originalCode.set(codeBlock, codeBlock.textContent);
+    });
+  }
+
+  // 重置代码块为原始代码
+  function resetCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const original = _originalCode.get(codeBlock);
+    if (original !== undefined) {
+      codeBlock.textContent = original;
+      // 显示短暂提示
+      const originalText = btn.textContent;
+      btn.textContent = '✓ 已重置';
+      btn.style.background = 'rgba(34,197,94,0.3)';
+      btn.style.color = '#4ade80';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 1500);
+    }
+  }
+
+  // 图片灯箱
+  function openLightbox(src) {
+    const lb = document.getElementById('lightbox');
+    document.getElementById('lightbox-img').src = src;
+    lb.classList.add('active');
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('active');
+  }
+
+  // WebR 代码运行
+  let webRReady = false;
+  let webRLoading = false;
+  let webRInstance = null;
+
+  async function initWebR() {
+    if (webRReady) return webRInstance;
+    if (webRLoading) {
+      while (webRLoading) { await new Promise(r => setTimeout(r, 100)); }
+      return webRInstance;
+    }
+    webRLoading = true;
+    if (typeof WebR === 'undefined') {
+      webRLoading = false;
+      throw new Error('WebR 未加载，请检查网络连接');
+    }
+    try {
+      webRInstance = new WebR.WebR();
+      await webRInstance.init();
+
+      // 1) canvas 设备：单步容错，失败不阻塞后续流程
+      try {
+        await webRInstance.evalRVoid('webr::canvas_install()');
+      } catch (e) {
+        console.warn('canvas_install 跳过（可能为 I/O read 错误，图形输出将不可用）:', e && e.message);
+      }
+
+      // 2) 预安装 R 包。WebR CRAN 镜像 (repo.r-wasm.org) 不一定能访问，
+      //    因此每个包单独 try/catch，全部失败也不会让初始化彻底失败。
+      //    注意：lightgbm/rgl/CASdatasets/DPpackage 等不在镜像中，预期会失败。
+      const requiredPackages = [
+        "fitdistrplus", "statmod", "MASS", "Metrics", "ModelMetrics",
+        "caret", "data.table", "ggplot2", "glmnet", "gridExtra",
+        "pdp", "psych", "randomForest", "reshape2", "rpart", "rpart.plot",
+        "copula", "gsl", "evd", "evir", "tseries", "actuar",
+        "goftest", "mgcv", "gamlss", "gamlss.dist", "urca",
+        "forecast", "vars", "fGarch", "ChainLadder", "survival",
+        "mixtools", "kernelshap", "DALEX"
+      ];
+      const installErrors = [];
+      for (const pkg of requiredPackages) {
+        try {
+          await webRInstance.evalRVoid(
+            `tryCatch({if (!require("${pkg}", quietly = TRUE)) webr::install("${pkg}")}, ` +
+            `error = function(e) message("install ${pkg} skipped: ", conditionMessage(e)))`
+          );
+        } catch (e) {
+          // 捕获 JS 层 I/O 错误（如 repo.r-wasm.org 不可达），跳过此包
+          installErrors.push(pkg);
+          console.warn(`R包 ${pkg} 预安装跳过:`, e && e.message);
+        }
+      }
+      if (installErrors.length) {
+        console.info('下列 R 包在 WebR 中未能预安装（可能不在 WebR CRAN 镜像内，' +
+                     '运行相应代码时会报错）：', installErrors.join(', '));
+      }
+
+      webRReady = true;
+    } finally {
+      webRLoading = false;
+    }
+    return webRInstance;
+  }
+
+  function _decodeHtmlEntities(text) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+  }
+
+  async function runRCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const outputDiv = btn.closest('.code-tab-content').querySelector('.code-output');
+    const code = _decodeHtmlEntities(codeBlock.textContent);
+
+    outputDiv.innerHTML = '<div class="output-running">⏳ 正在加载 R 环境（首次运行需较长时间，请耐心等待）...</div>';
+    outputDiv.classList.add('show');
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ 运行中';
+    btn.disabled = true;
+
+    try {
+      const webr = await initWebR();
+
+      // WebR的canvas设备不支持showtext等字体包，统一使用翻译兜底
+      const hasChinese = /[\u4e00-\u9fff]/.test(code);
+      const codeToRun = _translateRCode(code);
+
+      outputDiv.innerHTML = '<div class="output-running">▶ 执行代码...</div>';
+
+      const shelter = await new webr.Shelter();
+      let outputHTML = '';
+      const plotCanvases = [];
+
+      try {
+        const result = await shelter.captureR(codeToRun, {
+          withAutoprint: true,
+          captureStreams: true,
+          captureConditions: false,
+          captureGraphics: true
+        });
+
+        for (const item of result.output) {
+          if (item.type === 'stdout' || item.type === 'stderr') {
+            const cls = item.type === 'stderr' ? 'error' : '';
+            outputHTML += `<pre class="output-text ${cls}">${escapeHTML(item.data)}</pre>`;
+          }
+        }
+
+        if (result.images && result.images.length > 0) {
+          for (const imgBitmap of result.images) {
+            const canvas = document.createElement('canvas');
+            canvas.width = imgBitmap.width;
+            canvas.height = imgBitmap.height;
+            canvas.className = 'output-plot';
+            canvas.style.maxWidth = '100%';
+            canvas.style.height = 'auto';
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imgBitmap, 0, 0);
+            plotCanvases.push(canvas);
+          }
+        }
+      } finally {
+        shelter.purge();
+      }
+
+      if (!outputHTML && plotCanvases.length === 0) {
+        outputHTML = '<pre class="output-text">(代码执行完毕，无文本输出)</pre>';
+      }
+
+      const translateNotice = hasChinese
+        ? '<div class="output-notice" style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">[提示] WebR环境缺少中文字体，图表中的中文标签已自动翻译为英文</div>'
+        : '';
+
+      outputDiv.innerHTML = `<div class="output-header">R 输出：</div>${translateNotice}${outputHTML}`;
+      for (const c of plotCanvases) {
+        outputDiv.appendChild(c);
+      }
+    } catch (err) {
+      outputDiv.innerHTML = `<div class="output-error">❌ 错误: ${escapeHTML(err.message || String(err))}</div>`;
+      console.error('WebR 运行错误:', err);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // ===== Python (Pyodide) 运行支持 =====
+  let pyodideReady = false;
+  let pyodideLoading = false;
+  let pyodideInstance = null;
+
+  async function initPyodide() {
+    if (pyodideReady) return pyodideInstance;
+    if (pyodideLoading) {
+      while (pyodideLoading) { await new Promise(r => setTimeout(r, 100)); }
+      return pyodideInstance;
+    }
+    pyodideLoading = true;
+    if (typeof loadPyodide === 'undefined') {
+      pyodideLoading = false;
+      throw new Error('Pyodide 未加载，请检查网络连接');
+    }
+    try {
+      pyodideInstance = await loadPyodide();
+      pyodideReady = true;
+    } finally {
+      pyodideLoading = false;
+    }
+    return pyodideInstance;
+  }
+
+  // 确保代码块有输出区域
+  function ensureOutputDiv(btn) {
+    const content = btn.closest('.code-tab-content');
+    let outputDiv = content.querySelector('.code-output');
+    if (!outputDiv) {
+      outputDiv = document.createElement('div');
+      outputDiv.className = 'code-output';
+      content.appendChild(outputDiv);
+    }
+    return outputDiv;
+  }
+
+  async function runPythonCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const outputDiv = ensureOutputDiv(btn);
+    const code = _decodeHtmlEntities(codeBlock.textContent);
+
+    outputDiv.innerHTML = '<div class="output-running">⏳ 正在加载 Python 环境（首次运行需较长时间，请耐心等待）...</div>';
+    outputDiv.classList.add('show');
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ 运行中';
+    btn.disabled = true;
+
+    try {
+      const pyodide = await initPyodide();
+      outputDiv.innerHTML = '<div class="output-running">⏳ 加载依赖库（numpy, scipy, matplotlib）...</div>';
+
+      // 加载常用库
+      await pyodide.loadPackage(['numpy', 'scipy', 'matplotlib']);
+
+      // 重定向 stdout/stderr
+      let outputText = '';
+      pyodide.setStdout({ batched: (s) => { outputText += s + '\n'; } });
+      pyodide.setStderr({ batched: (s) => { outputText += s + '\n'; } });
+
+      // 配置 matplotlib 使用 Agg 后端，图形保存为 base64
+      // 策略：优先加载本地中文字体，失败则翻译中文为英文
+      const setupCode = `
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import io, base64
+import warnings
+import re
+
+# 抑制中文字体缺失的警告
+warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
+warnings.filterwarnings('ignore', message='.*missing from current font.*')
+
+# 中文术语英文翻译映射（按长度降序，避免短词误匹配）
+_CN_EN_MAP = [
+    ('概率质量函数', 'PMF'), ('累积分布函数', 'CDF'), ('概率密度函数', 'PDF'),
+    ('生存函数', 'Survival'), ('危险率函数', 'Hazard'),
+    ('二项分布', 'Binomial'), ('泊松分布', 'Poisson'), ('负二项分布', 'Neg.Binom'),
+    ('几何分布', 'Geometric'), ('指数分布', 'Exponential'), ('伽马分布', 'Gamma'),
+    ('对数正态分布', 'Lognormal'), ('帕累托分布', 'Pareto'), ('威布尔分布', 'Weibull'),
+    ('正态分布', 'Normal'), ('卡方分布', 'Chi-sq'), ('t分布', 't-dist'),
+    ('零截断负二项', 'ZTNB'), ('零调整负二项', 'ZMNB'),
+    ('零截断', 'ZT'), ('零调整', 'ZM'), ('零膨胀', 'ZI'),
+    ('索赔次数', 'Claim Count'), ('索赔金额', 'Claim Amt'), ('索赔强度', 'Severity'),
+    ('累积索赔', 'Cum.Claim'), ('总索赔', 'Total Claim'),
+    ('事故年', 'Acc.Year'), ('进展年', 'Dev.Year'), ('准备金', 'Reserve'),
+    ('费率', 'Rate'), ('保费', 'Premium'), ('赔款', 'Loss'), ('纯保费', 'Pure Prem'),
+    ('均值', 'Mean'), ('方差', 'Var'), ('标准差', 'Std'), ('中位数', 'Median'),
+    ('偏度', 'Skew'), ('峰度', 'Kurt'), ('分位数', 'Quantile'),
+    ('参数', 'Param'), ('估计', 'Est'), ('拟合', 'Fit'), ('预测', 'Pred'),
+    ('观测值', 'Obs'), ('期望值', 'Exp'), ('残差', 'Resid'),
+    ('风险', 'Risk'), ('损失', 'Loss'), ('概率', 'Prob'), ('频率', 'Freq'),
+    ('信度', 'Cred'), ('先验', 'Prior'), ('后验', 'Posterior'),
+    ('回归', 'Reg'), ('分类', 'Class'), ('聚类', 'Clust'),
+    ('训练', 'Train'), ('测试', 'Test'), ('验证', 'Valid'),
+    ('准确率', 'Acc'), ('误差', 'Error'), ('平方误差', 'MSE'),
+    ('时间', 'Time'), ('年份', 'Year'), ('月份', 'Month'), ('季度', 'Qtr'),
+    ('金额', 'Amt'), ('数量', 'Count'), ('比率', 'Ratio'), ('因子', 'Factor'),
+    ('分布', 'Dist'), ('函数', 'Func'), ('模型', 'Model'), ('数据', 'Data'),
+    ('图', 'Fig'), ('表', 'Tab'), ('例', 'Ex'), ('注', 'Note'),
+    ('的', ' '), ('和', ' & '), ('与', ' & '), ('在', ' at '), ('为', ' = '),
+    ('中', ' in '), ('上', ' up '), ('下', ' down '), ('前', ' fwd '), ('后', ' back '),
+    ('尺度', 'Scale'), ('形状', 'Shape'), ('位置', 'Loc'),
+    ('直方图', 'Histogram'), ('密度曲线', 'Density'), ('散点图', 'Scatter'),
+    ('拟合优度', 'Goodness of Fit'), ('QQ图', 'QQ Plot'), ('PP图', 'PP Plot'),
+    ('经验分布', 'Empirical'), ('理论分布', 'Theoretical'),
+    ('对数似然', 'Log-Likelihood'), ('AIC', 'AIC'), ('BIC', 'BIC'),
+    ('置信区间', 'CI'), ('标准误', 'SE'), ('p值', 'p-value'),
+    ('极大似然估计', 'MLE'), ('矩估计', 'MoM'),
+    ('火灾损失', 'Fire Loss'), ('丹麦', 'Danish'),
+    ('实际', 'Actual'), ('理论', 'Theor'), ('样本', 'Sample'),
+    ('检验', 'Test'), ('统计量', 'Stat'), ('自由度', 'df'),
+    ('对比', ' vs '), ('频数', 'Freq'), ('累积', 'Cum'),
+]
+
+def _translate_cn(text):
+    """将中文文本翻译为英文"""
+    if not isinstance(text, str):
+        return text
+    result = text
+    for cn, en in _CN_EN_MAP:
+        result = result.replace(cn, en)
+    result = re.sub(r'[\\u4e00-\\u9fff]', '?', result)
+    result = re.sub(r' +', ' ', result).strip()
+    return result
+
+_plots = []
+_font_loaded = False
+_font_prop = None
+
+def _apply_font_to_fig(fig, font_prop):
+    """将字体属性直接应用到figure中所有文本元素（绕过rcParams）"""
+    for ax in fig.get_axes():
+        if ax.title:
+            ax.title.set_fontproperties(font_prop)
+        if ax.xaxis.label:
+            ax.xaxis.label.set_fontproperties(font_prop)
+        if ax.yaxis.label:
+            ax.yaxis.label.set_fontproperties(font_prop)
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontproperties(font_prop)
+        for text in ax.texts:
+            text.set_fontproperties(font_prop)
+        legend = ax.get_legend()
+        if legend:
+            for text in legend.get_texts():
+                text.set_fontproperties(font_prop)
+    if fig._suptitle:
+        fig._suptitle.set_fontproperties(font_prop)
+
+def _translate_fig_text(fig):
+    """翻译figure中所有中文文本为英文"""
+    for ax in fig.get_axes():
+        if ax.get_title():
+            ax.set_title(_translate_cn(ax.get_title()))
+        if ax.get_xlabel():
+            ax.set_xlabel(_translate_cn(ax.get_xlabel()))
+        if ax.get_ylabel():
+            ax.set_ylabel(_translate_cn(ax.get_ylabel()))
+        legend = ax.get_legend()
+        if legend:
+            for text in legend.get_texts():
+                t = text.get_text()
+                if t:
+                    text.set_text(_translate_cn(t))
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            if label.get_text():
+                label.set_text(_translate_cn(label.get_text()))
+        for text in ax.texts:
+            t = text.get_text()
+            if t:
+                text.set_text(_translate_cn(t))
+    if fig._suptitle and fig._suptitle.get_text():
+        fig._suptitle.set_text(_translate_cn(fig._suptitle.get_text()))
+
+def _capture_show(*args, **kwargs):
+    for num in plt.get_fignums():
+        fig = plt.figure(num)
+        if _font_loaded and _font_prop:
+            _apply_font_to_fig(fig, _font_prop)
+        else:
+            _translate_fig_text(fig)
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+        buf.seek(0)
+        _plots.append(base64.b64encode(buf.read()).decode('utf-8'))
+        buf.close()
+    plt.close('all')
+
+plt.show = _capture_show
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+`;
+      await pyodide.runPythonAsync(setupCode);
+
+      // 加载本地中文字体（同源fetch，无CORS问题）
+      // 必须在setupCode之后执行，确保_font_loaded控制翻译逻辑
+      try {
+        const fontUrl = new URL('../../assets/fonts/NotoSansSC-Regular.otf', window.location.href).href;
+        const fontResp = await fetch(fontUrl);
+        if (fontResp.ok) {
+          const fontBuffer = await fontResp.arrayBuffer();
+          const fontBytes = new Uint8Array(fontBuffer);
+          pyodide.FS.writeFile('/tmp/cjk_font.otf', fontBytes);
+          await pyodide.runPythonAsync(`
+import os
+font_path = '/tmp/cjk_font.otf'
+if os.path.getsize(font_path) > 100000:
+    import matplotlib.font_manager as fm
+    fm.fontManager.addfont(font_path)
+    _font_prop = fm.FontProperties(fname=font_path)
+    _font_name = _font_prop.get_name()
+    _font_loaded = True
+    print(f'[提示] 中文字体加载成功: {_font_name}')
+else:
+    print('[提示] 字体文件异常，使用英文翻译模式')
+`);
+        } else {
+          console.log('本地字体获取失败，使用英文翻译模式');
+        }
+      } catch (fontErr) {
+        console.log('字体加载异常:', fontErr, '，使用英文翻译模式');
+      }
+
+      outputDiv.innerHTML = '<div class="output-running">▶ 执行代码...</div>';
+
+      // 运行用户代码
+      await pyodide.runPythonAsync(code);
+
+      // 获取图形
+      const plots = pyodide.globals.get('_plots').toJs();
+
+      let outputHTML = '';
+      if (outputText.trim()) {
+        outputHTML += `<pre class="output-text">${escapeHTML(outputText)}</pre>`;
+      }
+
+      if (plots && plots.length > 0) {
+        for (const imgBase64 of plots) {
+          outputHTML += `<img class="output-plot" src="data:image/png;base64,${imgBase64}" style="max-width:100%;height:auto;" />`;
+        }
+      }
+
+      if (!outputHTML) {
+        outputHTML = '<pre class="output-text">(代码执行完毕，无文本输出)</pre>';
+      }
+
+      outputDiv.innerHTML = `<div class="output-header">Python 输出：</div>${outputHTML}`;
+    } catch (err) {
+      outputDiv.innerHTML = `<div class="output-error">❌ 错误: ${escapeHTML(err.message || String(err))}</div>`;
+      console.error('Pyodide 运行错误:', err);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // ===== SAS 运行提示 =====
+  async function runSasCode(btn) {
+    const outputDiv = ensureOutputDiv(btn);
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const code = _decodeHtmlEntities(codeBlock.textContent);
+
+    outputDiv.innerHTML = `
+      <div class="output-header">SAS 运行提示：</div>
+      <div class="output-info">
+        <p><strong>&#9888; SAS 为商业软件，无法在浏览器中直接运行。</strong></p>
+        <p>请将代码复制到本地 SAS 环境中执行（如 SAS Studio、SAS EG 或 SAS Base）。</p>
+        <p style="margin-top:10px;color:var(--text-secondary);font-size:0.85rem;">&#128161; 提示：您可以切换到 R 或 Python 标签页，在浏览器中直接运行等效代码查看结果。</p>
+      </div>
+    `;
+    outputDiv.classList.add('show');
+  }
+
+  function escapeHTML(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // 滚动监听 - 高亮当前章节
+  document.addEventListener('DOMContentLoaded', function() {
+    // 初始化代码块重置功能
+    initCodeReset();
+
+    const navLinks = document.querySelectorAll('#sidebar a.nav-link');
+    // 收集所有带id的章节元素（section-card、h3、h4）
+    const headings = document.querySelectorAll('.section-card, .section-card h3[id], .section-card h4[id]');
+
+    function updateActiveNav() {
+      let current = '';
+      headings.forEach(h => {
+        const top = h.getBoundingClientRect().top;
+        if (top < 200) current = h.id;
+      });
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) {
+          link.classList.add('active');
+        }
+      });
+    }
+    window.addEventListener('scroll', updateActiveNav);
+
+    // 侧边栏切换（移动端）
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+      });
+      navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (window.innerWidth <= 768) sidebar.classList.remove('open');
+        });
+      });
+    }
+
+    // 主题初始化
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      const btn = document.querySelector('.theme-toggle');
+      if (btn) btn.innerHTML = '&#9728; 浅色模式';
+    }
+  });
+
+  // 主题切换
+  function toggleTheme() {
+    const html = document.documentElement;
+    const btn = document.querySelector('.theme-toggle');
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+      if (btn) btn.innerHTML = '&#127769; 深色模式';
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+      if (btn) btn.innerHTML = '&#9728; 浅色模式';
+    }
+  }
+</script>
+</body>
+</html>
