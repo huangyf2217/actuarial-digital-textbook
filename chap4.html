@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第4章 费率厘定 | 非寿险精算学模型与应用</title>
+
+<!-- MathJax -->
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$'],['\\(','\\)']],
+    displayMath: [['$$','$$'],['\\[','\\]']],
+    processEscapes: true,
+    tags: 'none'
+  },
+  svg: { fontCache: 'global' },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+
+<!-- Prism.js for code syntax highlighting -->
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-r.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sas.min.js"></script>
+
+<!-- WebR for running R code in browser (ES Module, loaded dynamically) -->
+<script type="module">
+  import('https://webr.r-wasm.org/v0.5.4/webr.mjs').then(({ WebR }) => {
+    window.WebR = { WebR };
+    console.log('WebR 模块已加载');
+  }).catch(err => {
+    console.warn('WebR 模块加载失败:', err);
+  });
+</script>
+
+<!-- Pyodide for running Python code in browser -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+
+<style>
+:root {
+  --bg: #f0f4f8;
+  --card-bg: #ffffff;
+  --text: #1a202c;
+  --text-muted: #64748b;
+  --primary: #2563eb;
+  --primary-light: #dbeafe;
+  --primary-dark: #1e40af;
+  --accent: #dc2626;
+  --border: #e2e8f0;
+  --code-bg: #1e1e1e;
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #cbd5e1;
+  --sidebar-active: #3b82f6;
+  --theorem-color: #7c3aed;
+  --theorem-bg: #f5f3ff;
+  --defn-color: #059669;
+  --defn-bg: #ecfdf5;
+  --example-color: #d97706;
+  --example-bg: #fffbeb;
+  --proof-color: #db2777;
+  --proof-bg: #fdf2f8;
+  --prop-color: #2563eb;
+  --prop-bg: #eff6ff;
+  --lemma-color: #9333ea;
+  --lemma-bg: #faf5ff;
+
+  --answer-color: #0891b2;
+  --answer-bg: #ecfeff;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --radius: 12px;
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --primary: #60a5fa;
+  --primary-light: #1e3a5f;
+  --primary-dark: #93c5fd;
+  --border: #334155;
+  --sidebar-bg: #020617;
+  --theorem-bg: #2e1065;
+  --defn-bg: #064e3b;
+  --example-bg: #451a03;
+  --proof-bg: #500724;
+  --answer-bg: #083344;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Segoe UI','PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.85;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ===== Header ===== */
+header {
+  position: fixed; top:0; left:0; right:0; height:64px; z-index:100;
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; padding: 0 24px;
+  gap: 16px;
+}
+header img.logo { height: 40px; border-radius: 6px; }
+header h1 { font-size: 1.15rem; font-weight: 700; flex: 1; color: var(--text); }
+header .subtitle { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+
+.theme-toggle {
+  background: none; border: 1px solid var(--border); border-radius: 20px;
+  padding: 8px 18px; cursor: pointer; font-size: 0.85rem; color: var(--text);
+  transition: all 0.3s; white-space: nowrap;
+}
+.theme-toggle:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+/* ===== Sidebar ===== */
+#sidebar {
+  position: fixed; top:64px; left:0; bottom:0; width:280px; z-index:90;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  overflow-y: auto;
+  padding: 16px 0;
+  transition: transform 0.3s;
+}
+#sidebar::-webkit-scrollbar { width: 6px; }
+#sidebar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+#sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+#sidebar nav { padding: 0 12px; }
+#sidebar .nav-section { margin-bottom: 8px; }
+#sidebar .nav-section-title {
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 12px 12px 6px; color: var(--sidebar-text); opacity: 0.5;
+  font-weight: 600;
+}
+#sidebar a {
+  display: block; padding: 7px 12px 7px 20px;
+  color: var(--sidebar-text); text-decoration: none;
+  font-size: 0.88rem; border-radius: 6px; margin: 2px 0;
+  transition: all 0.2s; border-left: 3px solid transparent;
+}
+#sidebar a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+#sidebar a.active {
+  background: rgba(59,130,246,0.15); color: #93c5fd;
+  border-left-color: var(--sidebar-active); font-weight: 500;
+}
+#sidebar a.sub { padding-left: 32px; font-size: 0.82rem; }
+#sidebar a.sub2 { padding-left: 48px; font-size: 0.78rem; opacity: 0.85; }
+
+/* ===== Main ===== */
+#main {
+  margin-left: 280px; margin-top: 64px; padding: 32px 40px 80px;
+  max-width: 920px; overflow-x: hidden;
+}
+
+/* ===== Section Cards ===== */
+.section-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 32px 36px; margin-bottom: 28px; box-shadow: var(--shadow-lg);
+  scroll-margin-top: 80px; overflow-x: auto;
+}
+.section-card h2 {
+  font-size: 1.6rem; margin-bottom: 20px; padding-bottom: 14px;
+  border-bottom: 3px solid var(--primary); color: var(--primary);
+  font-weight: 700;
+}
+.section-card h3 {
+  font-size: 1.3rem; margin: 28px 0 14px; color: var(--text);
+  font-weight: 600; padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.section-card h4 {
+  font-size: 1.1rem; margin: 20px 0 10px; color: var(--primary-dark);
+  font-weight: 600;
+}
+.section-card h5 {
+  font-size: 1rem; margin: 16px 0 8px; font-weight: 600;
+  color: var(--text);
+}
+
+/* ===== Content Elements ===== */
+.section-card p { margin-bottom: 14px; text-align: justify; }
+.section-card ul, .section-card ol { margin: 10px 0 14px 28px; }
+.section-card li { margin-bottom: 6px; }
+.section-card strong { color: var(--primary-dark); font-weight: 600; }
+
+.hl { color: var(--accent); font-weight: 500; }
+.key { color: var(--primary); font-weight: 600; }
+
+.highlight-box {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-left: 4px solid #f59e0b;
+  padding: 14px 18px; margin: 14px 0; border-radius: 6px;
+}
+
+[data-theme="dark"] .theorem-box.prop { background: rgba(37,99,235,0.1); }
+[data-theme="dark"] .theorem-box.lemma { background: rgba(147,51,234,0.1); }
+
+[data-theme="dark"] .highlight-box {
+  background: linear-gradient(135deg, #422006 0%, #451a03 100%);
+}
+
+/* ===== Theorem / Definition / Example Boxes ===== */
+.theorem-box {
+  border: 1px solid var(--border); border-left: 4px solid var(--theorem-color);
+  padding: 16px 20px; margin: 16px 0; border-radius: 8px;
+  background: var(--theorem-bg);
+}
+.theorem-box .label {
+  font-weight: 700; color: var(--theorem-color); margin-bottom: 8px;
+  display: block; font-size: 0.9rem;
+}
+.theorem-box.defn {
+  border-left-color: var(--defn-color);
+  background: var(--defn-bg);
+}
+.theorem-box.defn .label { color: var(--defn-color); }
+.theorem-box.exa {
+  border-left-color: var(--example-color);
+  background: var(--example-bg);
+}
+.theorem-box.exa .label { color: var(--example-color); }
+
+.theorem-box.prop {
+  border-left-color: #2563eb;
+  background: #eff6ff;
+}
+.theorem-box.prop .label { color: #2563eb; }
+.theorem-box.lemma {
+  border-left-color: #9333ea;
+  background: #faf5ff;
+}
+.theorem-box.lemma .label { color: #9333ea; }
+
+
+/* ===== Collapsible Sections ===== */
+.collapsible-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 10px 16px; border-radius: 8px;
+  cursor: pointer; font-size: 0.9rem; font-weight: 600;
+  transition: all 0.2s; border: 1px dashed; margin: 10px 0;
+}
+.collapsible-toggle .arrow { transition: transform 0.3s; font-size: 0.8rem; }
+.collapsible-toggle.open .arrow { transform: rotate(90deg); }
+
+.proof-toggle {
+  background: var(--proof-bg); border-color: var(--proof-color);
+  color: var(--proof-color);
+}
+.proof-toggle:hover { background: var(--proof-color); color: #fff; }
+
+.answer-toggle {
+  background: var(--answer-bg); border-color: var(--answer-color);
+  color: var(--answer-color);
+}
+.answer-toggle:hover { background: var(--answer-color); color: #fff; }
+
+.collapsible-content {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+  padding: 0 16px;
+}
+.collapsible-content.open {
+  max-height: 8000px; padding: 12px 16px;
+}
+
+/* ===== Code Blocks ===== */
+.code-tabs {
+  margin: 16px 0; border-radius: 10px; overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.code-tab-header {
+  display: flex; background: #2d2d2d;
+}
+.code-tab-btn {
+  padding: 10px 20px; background: transparent; border: none;
+  color: #999; cursor: pointer; font-size: 0.85rem; font-weight: 500;
+  transition: all 0.2s; border-bottom: 3px solid transparent;
+  display: flex; align-items: center; gap: 6px;
+}
+.code-tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.code-tab-btn.active { color: #fff; border-bottom-color: var(--primary); background: rgba(255,255,255,0.05); }
+.code-tab-btn .lang-dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+}
+.code-tab-btn[data-lang="r"] .lang-dot { background: #2563eb; }
+.code-tab-btn[data-lang="python"] .lang-dot { background: #eab308; }
+.code-tab-btn[data-lang="sas"] .lang-dot { background: #dc2626; }
+
+.code-tab-content { display: none; position: relative; overflow-x: auto; }
+.code-tab-content.active { display: block; }
+
+.code-actions {
+  position: absolute; top: 8px; right: 8px; z-index: 10;
+  display: flex; gap: 6px;
+}
+.code-btn {
+  background: rgba(255,255,255,0.1); border: none; color: #ccc;
+  padding: 5px 12px; border-radius: 5px; cursor: pointer;
+  font-size: 0.75rem; transition: all 0.2s;
+  display: flex; align-items: center; gap: 4px;
+}
+.code-btn:hover { background: rgba(255,255,255,0.25); color: #fff; }
+.code-btn.run-btn { background: rgba(34,197,94,0.2); color: #4ade80; }
+.code-btn.run-btn:hover { background: rgba(34,197,94,0.4); }
+.code-btn.copied { background: #10b981; color: #fff; }
+.code-btn.reset-btn { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.code-btn.reset-btn:hover { background: rgba(251,191,36,0.35); }
+
+pre[class*="language-"] {
+  margin: 0 !important; border-radius: 0 !important;
+  font-size: 0.85rem !important; padding: 16px !important;
+  max-height: 450px; overflow-y: auto;
+}
+
+/* 可编辑代码块样式 */
+pre[class*="language-"] code[contenteditable="true"] {
+  display: block; outline: none; white-space: pre;
+  border-left: 2px solid transparent; transition: border-color 0.2s;
+}
+pre[class*="language-"] code[contenteditable="true"]:focus {
+  border-left-color: #fbbf24; background: #1e1e1e;
+}
+pre[class*="language-"] code[contenteditable="true"]:hover {
+  border-left-color: rgba(251,191,36,0.3);
+}
+
+/* Code output area */
+.code-output {
+  background: #1a1a1a; color: #e0e0e0; padding: 12px 16px;
+  font-family: 'Consolas','Monaco','Courier New',monospace;
+  font-size: 0.82rem; line-height: 1.6; max-height: 300px;
+  overflow-y: auto; display: none; border-top: 1px solid #444;
+}
+.code-output.show { display: block; }
+.code-output .output-line { margin: 2px 0; white-space: pre-wrap; word-break: break-word; }
+.code-output .error { color: #f87171; }
+.code-output .info { color: #60a5fa; }
+.code-output .success { color: #4ade80; }
+.code-output .output-header {
+  color: #60a5fa; font-weight: 600; margin-bottom: 8px;
+  border-bottom: 1px solid #444; padding-bottom: 4px;
+}
+.code-output .output-running { color: #fbbf24; padding: 4px 0; }
+.code-output .output-error {
+  color: #f87171; background: rgba(248,113,113,0.1);
+  padding: 8px 12px; border-radius: 4px; margin: 4px 0;
+}
+.code-output .output-text {
+  background: transparent; color: #e0e0e0; padding: 2px 0;
+  margin: 0; white-space: pre-wrap; word-break: break-word;
+  font-family: 'Consolas','Monaco','Courier New',monospace;
+}
+.code-output .output-plot {
+  max-width: 100%; margin: 8px 0; border-radius: 4px;
+  background: #fff; padding: 4px;
+}
+.code-output .output-info {
+  background: rgba(96,165,250,0.08); padding: 12px 16px;
+  border-radius: 6px; border-left: 3px solid #60a5fa; margin: 8px 0;
+}
+.code-output .output-info p { margin: 4px 0; line-height: 1.7; }
+
+/* ===== Images ===== */
+.figure-wrapper {
+  text-align: center; margin: 24px 0; cursor: zoom-in;
+}
+.figure-wrapper img {
+  max-width: 100%; border-radius: 10px; box-shadow: var(--shadow-lg);
+  transition: transform 0.3s;
+}
+.figure-wrapper:hover img { transform: scale(1.02); }
+.figure-wrapper img.broken {
+  padding: 40px; background: var(--card-bg); opacity: 0.5;
+  border: 2px dashed var(--border);
+}
+.figure-wrapper .caption {
+  font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;
+  font-style: italic;
+}
+.figure-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0;
+}
+.figure-grid .figure-wrapper { margin: 0; }
+
+.lesson-video { text-align: center; margin: 24px 0; }
+.lesson-video video {
+  display: block; width: 100%; max-width: 960px; height: auto; margin: 0 auto;
+  border-radius: 10px; box-shadow: var(--shadow-lg); background: #000;
+}
+.lesson-video figcaption { font-size: 0.85rem; color: var(--text-muted); margin-top: 10px; }
+
+/* Lightbox */
+#lightbox {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.92); z-index: 9999;
+  display: none; justify-content: center; align-items: center;
+  cursor: zoom-out;
+}
+#lightbox img { max-width: 92%; max-height: 92%; border-radius: 8px; }
+#lightbox.active { display: flex; }
+.lightbox-close {
+  position: absolute; top: 20px; right: 30px; color: #fff;
+  font-size: 40px; font-weight: bold; cursor: pointer; line-height: 1;
+}
+
+/* ===== Tables ===== */
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: center; }
+th { background: var(--primary-light); font-weight: 600; color: var(--primary-dark); }
+tr:nth-child(even) { background: rgba(0,0,0,0.02); }
+[data-theme="dark"] tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+
+/* ===== Math Display ===== */
+.math-display {
+  overflow-x: auto; padding: 8px 0; margin: 12px 0;
+}
+mjx-container { font-size: 1.05em !important; }
+
+/* ===== Back to Top ===== */
+#back-top {
+  position: fixed; bottom: 30px; right: 30px; width: 48px; height: 48px;
+  border-radius: 50%; background: var(--primary); color: #fff;
+  border: none; cursor: pointer; font-size: 1.3rem; z-index: 80;
+  display: none; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: transform 0.2s;
+}
+#back-top:hover { transform: translateY(-3px); }
+
+/* ===== WebR Status ===== */
+#webr-status {
+  position: fixed; bottom: 30px; left: 310px; z-index: 80;
+  background: var(--card-bg); padding: 8px 16px; border-radius: 20px;
+  box-shadow: var(--shadow); font-size: 0.8rem; color: var(--text-muted);
+  display: flex; align-items: center; gap: 8px;
+}
+#webr-status .dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;
+}
+#webr-status.ready .dot { background: #10b981; }
+#webr-status.loading .dot { background: #f59e0b; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ===== Mobile ===== */
+#sidebar-toggle {
+  display: none; background: none; border: none; font-size: 1.5rem;
+  color: var(--text); cursor: pointer;
+}
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-280px); }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left: 0; padding: 20px 16px 60px; }
+  #sidebar-toggle { display: block; }
+  .section-card { padding: 20px 16px; }
+  .figure-grid { grid-template-columns: 1fr; }
+  #webr-status { display: none; }
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.section-card { animation: fadeIn 0.4s ease; }
+
+/* ===== Learning Objectives ===== */
+.learning-objectives {
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(219,234,254,0.5) 100%);
+  border-radius: var(--radius); padding: 24px 28px; margin-bottom: 24px;
+  border-left: 5px solid var(--primary);
+}
+.learning-objectives h3 {
+  color: var(--primary-dark); margin-top: 0; border: none; padding: 0;
+}
+.learning-objectives ol { margin: 8px 0 0 24px; }
+.learning-objectives li { margin-bottom: 8px; }
+
+/* ===== Distribution Card ===== */
+.dist-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 0; margin: 24px 0; overflow: hidden;
+  box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+}
+.dist-card-header {
+  padding: 16px 24px; color: #fff; font-size: 1.2rem; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.dist-card-header .icon { font-size: 1.4rem; }
+.dist-card-body { padding: 24px 28px; }
+.dist-card-body h4 { margin-top: 0; }
+
+/* Color themes for distribution cards */
+.dist-binomial .dist-card-header { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.dist-poisson .dist-card-header { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.dist-nbinom .dist-card-header { background: linear-gradient(135deg, #ec4899, #be185d); }
+.dist-exponential .dist-card-header { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.dist-gamma .dist-card-header { background: linear-gradient(135deg, #10b981, #059669); }
+.dist-invgauss .dist-card-header { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.dist-pareto .dist-card-header { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.dist-lognormal .dist-card-header { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.dist-weibull .dist-card-header { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+
+/* ===== Practice Problems ===== */
+.practice-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 24px 28px; margin: 20px 0; box-shadow: var(--shadow);
+  border-left: 5px solid var(--example-color);
+}
+.practice-card h4 { color: var(--example-color); }
+
+/* ===== References ===== */
+.references ol { margin: 8px 0 0 24px; }
+.references li { margin-bottom: 10px; }
+.references em { color: var(--text-muted); }
+</style>
+
+<link href="bookdown-lite.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header>
+  <button id="sidebar-toggle">&#9776;</button>
+  <img src="uibe.jpg" alt="UIBE" class="logo" onerror="this.style.display='none'">
+  <div>
+    <h1>非寿险精算学模型与应用</h1>
+    <div class="subtitle">第4章 费率厘定</div>
+  </div>
+  <a class="site-home-link" href="index.html">目录</a>
+  <button class="theme-toggle" onclick="toggleTheme()">&#127769; 深色模式</button>
+</header>
+
+<!-- ===== Sidebar ===== -->
+<aside id="sidebar">
+  <nav>
+        <div class="nav-section book-global-nav">
+      <div class="nav-section-title">全书</div>
+      <a href="index.html" class="nav-link">目录首页</a>
+      <a href="chap3.html" class="nav-link">上一章</a>
+      <a href="chap5.html" class="nav-link">下一章</a>
+    </div><div class="nav-section">
+      <div class="nav-section-title">导览</div>
+      <a href="#sec-intro" class="nav-link active">学习目标</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">4.1 流量三角形</div>
+      <a href="#sec-4-1" class="nav-link">4.1 流量三角形</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">4.2 链梯法</div>
+      <a href="#sec-4-2" class="nav-link">4.2 链梯法</a>
+      <a href="#sec-4-2-1" class="nav-link sub">4.2.1 计算过程</a>
+      <a href="#sec-4-2-2" class="nav-link sub">4.2.2 模型检验</a>
+      <a href="#sec-4-2-3" class="nav-link sub">4.2.3 通胀调整</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">4.3 案均赔款法</div>
+      <a href="#sec-4-3" class="nav-link">4.3 案均赔款法</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">4.4 B-F法</div>
+      <a href="#sec-4-4" class="nav-link">4.4 B-F法</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">4.5 随机准备金模型</div>
+      <a href="#sec-4-5" class="nav-link">4.5 随机准备金模型</a>
+      <a href="#sec-4-5-1" class="nav-link sub">4.5.1 Mack链梯法模型</a>
+      <a href="#sec-4-5-2" class="nav-link sub">4.5.2 广义线性模型方法</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">4.6 真题练习</div>
+            <a href="#sec-summary" class="nav-link">本章小结</a>
+<a href="#sec-4-6" class="nav-link">4.6 真题练习</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">附录</div>
+      <a href="#sec-references" class="nav-link">参考文献</a>
+    </div>
+  </nav>
+</aside>
+
+<!-- ===== Main Content ===== -->
+<div id="main">
+  <h1 class="chapter-title">第4章 费率厘定</h1>
+
+<div class="section-card" id="sec-intro">
+  <h2>本章学习目标</h2>
+  <div class="learning-objectives">
+    <ol>
+      <li>了解非寿险准备金的类型。</li>
+      <li>认识未决赔款准备金的流量三角形（run-off triangle），定义进展因子并预测流量三角形的发展。</li>
+      <li>掌握链梯法（chain-ladder method）的原理和应用，并在考虑通货膨胀情况下对链梯法进行调整。</li>
+      <li>描述未决赔款准备金评估的其他常用方法，包括案均赔款法和B-F法（Bornhuetter-Ferguson method）。</li>
+      <li>讨论前述方法的应用假设。</li>
+    </ol>
+  </div>
+</div>
+<div class="section-card" id="sec-4-1">
+  <h2>4.1 流量三角形</h2>
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline><source src="section4-movs/chap4_1.mp4" type="video/mp4">您的浏览器不支持 HTML5 视频播放。</video>
+    <figcaption>视频 4.1：准备金评估与流量三角形</figcaption>
+  </figure>
+  <p>非寿险准备金是经营非寿险业务的保险公司为履行保单赔付责任和其他相关义务所预留的资金储备，是经营过程中最重要的负债项目。准备金评估的准确性直接影响公司的偿付能力和财务稳定性。</p>
+<p>保险公司非寿险业务准备金包括未到期责任准备金和未决赔款准备金。其中，未到期责任准备金是指在准备金评估日为尚未终止的保险责任而提取的准备金，包括未赚保费准备金（即以未满期部分保费收入为基础所计提的准备金）及保费不足准备金（即在进行保费充足性测试时，若未来净现金流出大于未赚保费准备金，则取其差额作为未到期责任准备金的一部分）。由于未到期责任准备金主要依赖保费的时间分布，评估过程相对简单，故不是非寿险精算研究的主要问题。</p>
+<p>未决赔款准备金是指保险公司为保险事故已经发生但尚未最终结案的损失提取的准备金，包括已发生已报案未决赔款准备金、已发生未报案未决赔款（incurred but not reported，IBNR）准备金和理赔费用准备金三类。其中，已发生已报案未决赔款准备金是指为保险事故已经发生并已向保险公司提出索赔、但保险公司尚未结案的损失而提取的准备金，评估过程一般采用逐案估计法（对每个赔案的金额逐一进行估计）或案均赋值法（根据过去同类业务的平均赔款金额进行估计）；已发生未报案未决赔款准备金则主要面向以下四类赔案，包括：</p>
+<p>(1) 保险事故已经发生但尚未向保险公司提出索赔；</p>
+<p>(2) 已经提出索赔但保险公司尚未立案；</p>
+<p>(3) 保险公司已立案但对事故损失估计不足，预计最终赔付将超过原估损值的；</p>
+<p>(4) 保险事故已经赔付但有可能再次提出索赔。</p>
+<p>理赔费用准备金是指为尚未结案的损失可能发生的直接或间接费用而提取的准备金。</p>
+<p>未决赔款准备金的产生主要来自保险事故发生、报告和理赔完成之间的迟滞。在非寿险领域，由于案件调查、责任界定、估损争议、诉讼处理等流程的复杂性，导致赔付周期较长，延迟时间可能少则几天（如日常车险业务）、多则数年（如重大自然灾害或意外事故）。特别对于已经发生但尚未报案的事故，由于保险公司的信息不充分，IBNR准备金的评估存在较大的不确定性，需要依赖一定的假设和精算模型。因此，本章将重点介绍其评估方法。</p>
+<p>流量三角形（run-off triangles）是非寿险未决赔款准备金评估的常用工具，通过分析索赔数据的历史发展趋势，预测未来索赔和准备金需求。考虑如下一个例子，假设保险公司长期经营某个险种或业务，在每个准备金评估时点（如2024年末），将不同年度发生的事故在此后每一年的累积赔款进展情况绘制成表格，得到结果如下：</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">累积赔款的流量三角形</div><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="5"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td></tr><tr><td>2020</td><td>786</td><td>1410</td><td>2216</td><td>2440</td><td>2519</td></tr><tr><td>2021</td><td>904</td><td>1575</td><td>2515</td><td>2796</td></tr><tr><td>2022</td><td>995</td><td>1814</td><td>2880</td></tr><tr><td>2023</td><td>1220</td><td>2142</td></tr><tr><td>2024</td><td>1182</td></tr></tbody></table>
+<p>其中，流量三角形的每行对应事故年（accident year），即事故发生的年度；每列对应进展年（development year），对应从事故发生到索赔支付的时间。将事故年与进展年交叉，可以得到对该险种累积赔款变化趋势的描述。例如，对于发生在2020年度的事故，保险公司在当年（即进展年0）的赔款支出为786，第二年（即进展年1）的赔款支出为624、累积赔款达到1410……在前表~的最后一行（即2024年发生的事故），由于在准备金评估时点只能观察到当年的索赔情况，故只有进展年0的数据被报告；对于发生在2023年的事故，只有进展年0和进展年1的数据被报告，依此类推。</p>
+<p>在某些情况下，保险公司可能按季度或月度划分进展期，三角形中的数据可能从累积赔款变为增量赔款（即各事故年在对应进展期内新增的赔款），但基本原理是一致的。</p>
+<p>由于观察数据的限制，流量三角形通常只有上三角部分的赔款已知，而下三角部分未知。而未决赔款准备金评估的任务是，根据过往事故年的索赔进展经验，对流量三角形的下三角部分进行预测，确定该险种在未来各年需要支付的赔款金额、计提相应的准备金。例如，假设发生在2024年的事故具有与2020年的事故按照相似方式增长，则在第4个进展年年末，该事故年的累积赔款金额应为$1182 \times (2519/786) = 3788$。这并不一定是“最佳”的估计方法，但为精算师提供了未决赔款准备金评估的思路。</p>
+<p>继续进行分析，对于发生在2020年到2023年的事故，分别计算其累积赔款从前一个进展年到后一个进展年增加的比率（称为进展因子），结果如前表~所示。</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">累积赔款的增加比率</div><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="2"><strong>进展年0</strong></th><th colspan="2"><strong>进展年1</strong></th><th colspan="2"><strong>进展年2</strong></th><th colspan="2"><strong>进展年3</strong></th><th rowspan="2"><strong>进展年4</strong></th></tr></thead><tbody><tr><td>赔款</td><td>因子</td><td>赔款</td><td>因子</td><td>赔款</td><td>因子</td><td>赔款</td><td>因子</td><td>赔款</td></tr><tr><td>2020</td><td>786</td><td>1.794</td><td>1410</td><td>1.572</td><td>2216</td><td>1.101</td><td>2440</td><td>1.032</td><td>2519</td></tr><tr><td>2021</td><td>904</td><td>1.742</td><td>1575</td><td>1.597</td><td>2515</td><td>1.112</td><td>2796</td></tr><tr><td>2022</td><td>995</td><td>1.823</td><td>1814</td><td>1.588</td><td>2880</td></tr><tr><td>2023</td><td>1220</td><td>1.756</td><td>2142</td></tr><tr><td>2024</td><td>1182</td></tr></tbody></table>
+<p>观察上表发现，从2020年到2023年，每个事故年在进展年0到进展年1之间的累积赔款增加比率都不同，当向前预测2024年事故在第1个进展年的累积赔款时，需要确定合适的进展因子。例如，当采用比较保守的估计时，保险公司可以选取其中的最大值1.823；或者当索赔历史较为充足时，可以使用简单的算术平均值$(1.794 + 1.742 + 1.823 + 1.756)/4=1.779$作为进展因子。这种做法考虑了所有事故年在进展年0到1之间的索赔发展趋势，但缺点在于忽视了具有更多索赔的事故年的重要性。理论上讲，若某个事故年具有更多的索赔（事故），则在此基础上计算的比率就越可靠。因此，可以使用每个事故年的索赔金额作为权重，计算如下的加权平均值作为$0 \sim 1$年的进展因子：</p>
+<div class="math-display">$$\frac{1.794\times786 + 1.742\times904 + 1.823\times995 + 1.756\times1220}{786 + 904 + 995 + 1220} = 1.777$$</div>
+</div>
+
+<div class="section-card" id="sec-4-2">
+  <h2>4.2 链梯法</h2>
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline><source src="section4-movs/chap4_2.mp4" type="video/mp4">您的浏览器不支持 HTML5 视频播放。</video>
+    <figcaption>视频 4.2：链梯法原理、计算与检验</figcaption>
+  </figure>
+  
+
+  <h3 id="sec-4-2-1">4.2.1 计算过程</h3>
+  <p>观察前例的进展因子，易发现其分子部分可以写成：</p>
+<div class="math-display">$$\begin{gathered}\frac{1410}{786}  \times 786 + \frac{1575}{904} \times 904 + \frac{1814}{995} \times 995 + \frac{2142}{1220} \times 1220\end{gathered}$$</div>
+<p>因此，进展因子的计算可简化为进展年1与进展年0的累积赔款之比，即：</p>
+<div class="math-display">$$\frac{1410 + 1575 + 1814 + 2142}{786 + 904 + 995 + 1220} = 1.777$$</div>
+<p>这种将前后两个进展年的累积赔款相除，逐步计算事故赔款在两个进展年之间的进展因子的方法，称为链梯法（chain-ladder method），比喻沿着梯子逐步向上攀爬的过程。链梯法的计算过程非常简单，通过加总合适年度的数据，可以计算每个进展年的进展因子如下：</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">链梯法的进展因子</div><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="2"><strong>进展年0</strong></th><th colspan="2"><strong>进展年1</strong></th><th colspan="2"><strong>进展年2</strong></th><th colspan="2"><strong>进展年3</strong></th><th rowspan="2"><strong>进展年4</strong></th></tr></thead><tbody><tr><td>赔款</td><td>因子</td><td>赔款</td><td>因子</td><td>赔款</td><td>因子</td><td>赔款</td><td>因子</td><td>赔款</td></tr><tr><td>2020</td><td>786</td><td>1410</td><td>2216</td><td>2440</td><td>2519</td></tr><tr><td>2021</td><td>904</td><td>1575</td><td>2515</td><td>2796</td></tr><tr><td>2022</td><td>995</td><td>1814</td><td>2880</td></tr><tr><td>2023</td><td>1220</td><td>2142</td></tr><tr><td>2024</td><td>1182</td></tr><tr><td>$\frac{6941}{3905}$</td><td>$\frac{7611}{4799}$</td><td>$\frac{5236}{4731}$</td><td>$\frac{2519}{2440}$</td></tr><tr><td>1.777</td><td>1.586</td><td>1.107</td><td>1.032</td></tr></tbody></table>
+<p>由于每个进展年的进展因子都已算出，可以向前预测每个事故年的累积赔款。例如对于事故年2024，其在后续4个进展年的累积赔款预测值为：</p>
+<div class="math-display">$$\begin{aligned}&\text{进展年1：}1182 \times 1.777 = 2100 \\
+&\text{进展年2：}1182 \times 1.777 \times 1.586 = 3331 \\
+&\text{进展年3：}1182 \times 1.777 \times 1.586 \times 1.107 = 3688 \\
+&\text{进展年4：}1182 \times 1.777 \times 1.586 \times 1.107 \times 1.032 = 3806\end{aligned}$$</div>
+<p>注意，由于缺少观察数据，链梯法一般无法对流量三角形以外的进展年赔款进行预测。此时可假定所有保险事故的赔付责任均已在最后一个进展年结清，累积赔款在其后基本不会发生变动，作为最大进展年。</p>
+<p>根据前表~计算的进展因子，类似计算各事故年的累积赔款预测值，可得到流量三角形的下三角如前表。读者可自行对计算结果进行验证。</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">链梯法的累积赔款预测值</div><table><thead><tr><th>p{25pt}|c|c|c|c|}
+<p>{*}{<strong>事故年</strong>} & {c|}{<strong>进展年</strong>}</th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td></tr><tr><td>2020</td><td>786</td><td>1410</td><td>2216</td><td>2440</td><td>2519</td></tr><tr><td>2021</td><td>904</td><td>1575</td><td>2515</td><td>2796</td><td>(2885)</td></tr><tr><td>2022</td><td>995</td><td>1814</td><td>2880</td><td>(3188)</td><td>(3290)</td></tr><tr><td>2023</td><td>1220</td><td>2142</td><td>(3397)</td><td>(3761)</td><td>(3881)</td></tr><tr><td>2024</td><td>1182</td><td>(2100)</td><td>(3331)</td><td>(3688)</td><td>(3806)</td></tr></tbody></table></p>
+<p>在每个评估时点，保险公司对该业务的IBNR准备金应等于“各事故年在最大进展年的累积赔款预测值”减去“目前已付的最后一个累积赔款”的差额之和。例如，根据上表数据，保险公司在2024年末应计提的准备金为：</p>
+<div class="math-display">$$(2885 - 2796) + (3290 - 2880) + (3881 - 2142) + (3806 - 1182) = 4862$$</div>
+<p>注意此处没有考虑通胀和不同年份赔款折现的影响。</p>
+<div class="theorem-box exa"><span class="label">例 4.1</span><p>考虑保险公司的一款家财险产品，下表展示了2019年至2022年间发生的事故在每个进展年报告的索赔金额。使用链梯法估算这些事故导致的最终索赔额。</p>
+<p><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td></tr><tr><td>2019</td><td>17500</td><td>5000</td><td>2250</td><td>750</td></tr><tr><td>2020</td><td>21000</td><td>6200</td><td>2750</td></tr><tr><td>2021</td><td>18800</td><td>5500</td></tr><tr><td>2022</td><td>21300</td></tr></tbody></table></p><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>第一步，将各事故年的增量赔款逐年相加，转换为累积赔款的流量三角形进行分析，如下表：</p>
+<p><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td></tr><tr><td>2019</td><td>17500</td><td>22500</td><td>24750</td><td>25500</td></tr><tr><td>2020</td><td>21000</td><td>27200</td><td>29950</td></tr><tr><td>2021</td><td>18800</td><td>24300</td></tr><tr><td>2022</td><td>21300</td></tr></tbody></table></p>
+<p>第二步，计算进展因子。</p>
+<div class="math-display">$$\begin{aligned}& r_1 = \frac{22500 + 27200 + 24300}{17500 + 21000 + 18800} = 1.2914 \\
+& r_2 = \frac{24750 + 29950}{22500 + 27200} = 1.1006 \\
+& r_3 = \frac{25500}{24750} = 1.0303\end{aligned}$$</div>
+<p>第三步，补充流量三角形的下三角部分。</p>
+<p><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td></tr><tr><td>2019</td><td>17500</td><td>22500</td><td>24750</td><td>25500</td></tr><tr><td>2020</td><td>21000</td><td>27200</td><td>29950</td><td>(30858)</td></tr><tr><td>2021</td><td>18800</td><td>24300</td><td>(26745)</td><td>(27555)</td></tr><tr><td>2022</td><td>21300</td><td>(27508)</td><td>(30275)</td><td>(31193)</td></tr></tbody></table></p>
+<p>第四步，计算最终的索赔金额为：$25500+30858+27555+31193=115106$。</p></div></div>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true"># 4.5.1 B-F法示例1
+# 对应教材：section4.tex 4.4节，例4.3
+# -----------------------------------------------------------------
+# 累积赔款流量三角形
+triangle_bf1 &lt;- matrix(c(
+  2866, 3334, 3503, 3624, 3719, 3720,
+  3359, 3889, 4033, 4231, 4319,   NA,
+  3848, 4503, 4779, 4946,   NA,   NA,
+  4673, 5422, 5676,   NA,   NA,   NA,
+  5369, 6142,   NA,   NA,   NA,   NA,
+  5818,   NA,   NA,   NA,   NA,   NA
+), nrow = 6, byrow = TRUE)
+
+# 已赚保费
+premium &lt;- c(4486, 5024, 5680, 6590, 7482, 8502)
+# 预期赔付率
+loss_ratio &lt;- 0.83
+
+# 应用链梯法计算进展因子
+result_cl &lt;- chain_ladder(triangle_bf1)
+factors &lt;- result_cl$factors  # 1.158, 1.049, 1.039, 1.023, 1.000
+
+# 计算各事故年的累积进展因子f
+n &lt;- nrow(triangle_bf1)
+f &lt;- numeric(n)
+for (i in 1:n) {
+  # 从最后一个已知进展年到最大进展年的累积进展因子
+  last_dev &lt;- n - i + 1  # 最后一个已知进展年
+  if (last_dev &lt; n) {
+    f[i] &lt;- prod(factors[last_dev:(n-1)])
+  } else {
+    f[i] &lt;- 1
+  }
+}
+f
+
+# 最终赔款的初始估计 = 保费 * 赔付率
+ultimate_initial &lt;- premium * loss_ratio
+ultimate_initial
+
+# B-F法准备金 = 保费 * 赔付率 * (1 - 1/f)
+reserve_bf &lt;- ultimate_initial * (1 - 1/f)
+reserve_bf
+
+# 修正的最终赔款 = 已付赔款 + B-F法准备金
+paid_bf &lt;- diag(triangle_bf1[, n:1])
+ultimate_bf &lt;- paid_bf + reserve_bf
+ultimate_bf
+
+# 总准备金
+sum(reserve_bf)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">##############################################################################
+# 第4章 准备金评估
+# 对应教材：section4.tex
+# 内容：流量三角形、链梯法、案均赔款法、B-F法、通胀调整、
+#       随机准备金模型（Mack链梯法、广义线性模型方法）
+##############################################################################
+
+import numpy as np
+import pandas as pd
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+
+##############################################################################
+# 4.1 流量三角形与进展因子
+##############################################################################
+
+## 4.5.1 B-F法示例1
+# 累积赔款流量三角形
+triangle_bf1 = np.array([
+    [2866, 3334, 3503, 3624, 3719, 3720],
+    [3359, 3889, 4033, 4231, 4319, np.nan],
+    [3848, 4503, 4779, 4946, np.nan, np.nan],
+    [4673, 5422, 5676, np.nan, np.nan, np.nan],
+    [5369, 6142, np.nan, np.nan, np.nan, np.nan],
+    [5818, np.nan, np.nan, np.nan, np.nan, np.nan]
+], dtype=float)
+
+# 已赚保费
+premium = np.array([4486, 5024, 5680, 6590, 7482, 8502])
+# 预期赔付率
+loss_ratio = 0.83
+
+# 应用链梯法计算进展因子
+result_cl = chain_ladder(triangle_bf1)
+factors_bf = result_cl[&#x27;factors&#x27;]  # 1.158, 1.049, 1.039, 1.023, 1.000
+print(f&quot;\nB-F法进展因子: {factors_bf}&quot;)
+
+# 计算各事故年的累积进展因子f
+n_bf = triangle_bf1.shape[0]
+f = np.zeros(n_bf)
+for i in range(n_bf):
+    # 从最后一个已知进展年到最大进展年的累积进展因子
+    last_dev = n_bf - i  # 最后一个已知进展年（1-indexed）
+    if last_dev &lt; n_bf:
+        f[i] = np.prod(factors_bf[last_dev-1:n_bf-1])
+    else:
+        f[i] = 1.0
+print(f&quot;累积进展因子: {f}&quot;)
+
+# 最终赔款的初始估计 = 保费 * 赔付率
+ultimate_initial = premium * loss_ratio
+print(f&quot;最终赔款初始估计: {ultimate_initial}&quot;)
+
+# B-F法准备金 = 保费 * 赔付率 * (1 - 1/f)
+reserve_bf = ultimate_initial * (1 - 1/f)
+print(f&quot;B-F法各事故年准备金: {reserve_bf}&quot;)
+
+# 修正的最终赔款 = 已付赔款 + B-F法准备金
+paid_bf = np.array([triangle_bf1[i, n_bf-1-i] for i in range(n_bf)])
+ultimate_bf = paid_bf + reserve_bf
+print(f&quot;修正的最终赔款: {ultimate_bf}&quot;)
+
+# 总准备金
+print(f&quot;B-F法总准备金: {reserve_bf.sum():.0f}&quot;)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">/* 4.5.1 B-F法示例1 */
+proc iml;
+  /* 累积赔款流量三角形 */
+  C = {2866 3334 3503 3624 3719 3720,
+       3359 3889 4033 4231 4319 .,
+       3848 4503 4779 4946 . .,
+       4673 5422 5676 . . .,
+       5369 6142 . . . .,
+       5818 . . . . .};
+  /* 已赚保费 */
+  EP = {4486, 5024, 5680, 6590, 7482, 8502};
+  /* 预期赔付率 */
+  ELR = 0.83;
+
+  n = nrow(C);
+  /* 链梯进展因子 */
+  f = j(n-1, 1, 0);
+  do j = 1 to n-1;
+    s1 = 0; s2 = 0;
+    do i = 1 to n-j;
+      s1 = s1 + C[i, j+1];
+      s2 = s2 + C[i, j];
+    end;
+    f[j] = s1 / s2;
+  end;
+
+  /* 累积进展因子 */
+  F = j(n, 1, 1);
+  do i = 2 to n;
+    F[i] = F[i-1] * f[n-i+1];
+  end;
+
+  /* B-F法准备金 */
+  reserve = j(n, 1, 0);
+  do i = 2 to n;
+    ult_loss = EP[i] * ELR;
+    reserve[i] = ult_loss * (1 - 1/F[i]);
+  end;
+  total_reserve = sum(reserve);
+  print &quot;B-F法各事故年准备金&quot; reserve;
+  print &quot;总准备金 =&quot; total_reserve;
+quit;</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+<div class="theorem-box defn"><span class="label">定义 4.1（链梯法）</span>
+<p>链梯法的基本假设是每个事故年的赔款都具有相同发展趋势，故在计算进展因子时，可以使用其他事故年的数据作为参考。此外，链梯法还假设未来的通货膨胀率保持相对稳定，由于价格因素已经被包含在进展因子中，若通货膨胀率突然上升，未来的赔款金额将很可能高出预期。</p>
+<p>当进展因子的稳定性因索赔特性或外部环境而受到影响时，精算师还可以手动对进展因子进行调整。例如若保险公司引入自动化理赔系统，
+改善其理赔政策和流程，则事故处理与赔款支付的时间可能加快；当保险产品条款、核保策略等因素发生变化，或在某个年度遭遇了重大事故时，赔款的累积模式也会表现出一定差异。此时，无论是直接根据数据计算进展因子，还是基于专家知识手动设定进展因子，利用流量三角形估计最终赔款的步骤都是一致的。</p>
+<p>值得说明的是，链梯法的思想也可以扩展到更一般的统计模型。记$C_{ij}$表示第$i$个事故年在第$j$个进展年的增量赔款，则可以使用如下公式刻画其变化规律：</p>
+<div class="math-display">$$C_{ij} = s_i \cdot r_j \cdot x_{i+j} + e_{ij}$$</div>
+<p>其中，$s_i$表示随事故年$i$变化的参数，例如风险单位数等；$r_j$是对应的进展因子，表示进展年$j$支付赔款所占的比例，且$r_j$与事故年$i$无关；$x_{i+j}$是随日历年（会计年）变化的参数，如通胀率等；$e_{ij}$为随机误差项。通过将增量赔款视为随机变量，并使用广义线性模型等技术进行建模，可以进一步提高准备金评估的有效性。</p>
+
+  <h3 id="sec-4-2-2">4.2.2 模型检验</h3>
+  <p>本节将展示如何对链梯法的应用效果进行检验。在前述例子中，已知前四个事故年在进展年0的真实赔款如下：</p>
+<table><thead><tr><th>事故年</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th></tr></thead><tbody><tr><td>在进展年0的赔款</td><td>786</td><td>904</td><td>995</td><td>1220</td></tr></tbody></table>
+<p>且根据前表，计算的进展因子分别为1.777、1.586、1.107和1.032。因此可应用链梯法，从各事故年在进展年0的赔款出发，预测随后每个进展年的累积赔款并与前表~的真实值进行比较。前表~给出了对上三角部分累积赔款的预测结果。</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">链梯法对上三角部分的累积赔款预测值</div><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="5"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td></tr><tr><td>2020</td><td>786</td><td>1397</td><td>2215</td><td>2452</td><td>2531</td></tr><tr><td>2021</td><td>904</td><td>1606</td><td>2548</td><td>2820</td></tr><tr><td>2022</td><td>995</td><td>1768</td><td>2804</td></tr><tr><td>2023</td><td>1220</td><td>2168</td></tr></tbody></table>
+<p>前表~比较了前表~和前表~的结果，为了展示方便，表中的数据转换为增量赔款进行分析。从比较结果来看，链梯法对各事故年在不同进展年的预测偏差均较小，故认为该方法能够比较好地反映累积赔款的发展趋势。</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">链梯法的预测结果比较</div><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th rowspan="2"><strong>指标</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td></tr><tr><td rowspan="3">2020</td><td>真实</td><td>624</td><td>806</td><td>224</td><td>79</td></tr><tr><td>拟合</td><td>611</td><td>818</td><td>237</td><td>79</td></tr><tr><td>误差</td><td>-13</td><td>12</td><td>13</td><td>0</td></tr><tr><td rowspan="3">2021</td><td>真实</td><td>671</td><td>940</td><td>281</td></tr><tr><td>拟合</td><td>702</td><td>942</td><td>272</td></tr><tr><td>误差</td><td>31</td><td>2</td><td>-9</td></tr><tr><td rowspan="3">2022</td><td>真实</td><td>819</td><td>1066</td></tr><tr><td>拟合</td><td>773</td><td>1036</td></tr><tr><td>误差</td><td>-46</td><td>-30</td></tr><tr><td rowspan="3">2023</td><td>真实</td><td>922</td></tr><tr><td>拟合</td><td>948</td></tr><tr><td>误差</td><td>26</td></tr></tbody></table>
+<div class="theorem-box exa"><span class="label">例 4.2</span><p>使用前例~的数据，可类似绘制比较结果如下：</p>
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">&#9654;</span></button>
+    <div class="collapsible-content">
+<p><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th rowspan="2"><strong>指标</strong></th><th colspan="3"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td></tr><tr><td rowspan="3">2019</td><td>真实</td><td>5000</td><td>2250</td><td>750</td></tr><tr><td>拟合</td><td>5100</td><td>2274</td><td>754</td></tr><tr><td>误差</td><td>100</td><td>24</td><td>4</td></tr><tr><td rowspan="3">2020</td><td>真实</td><td>6200</td><td>2750</td></tr><tr><td>拟合</td><td>6119</td><td>2728</td></tr><tr><td>误差</td><td>-81</td><td>-22</td></tr><tr><td rowspan="3">2021</td><td>真实</td><td>5500</td></tr><tr><td>拟合</td><td>5478</td></tr><tr><td>误差</td><td>-22</td></tr></tbody></table></p>
+    </div>
+  </div>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true"># 4.5.3 B-F法示例2
+# 对应教材：section4.tex 4.4节，例4.4
+# -----------------------------------------------------------------
+triangle_bf2 &lt;- matrix(c(
+  473, 620, 690, 715,
+  512, 660, 750,  NA,
+  611, 700,  NA,  NA,
+  647,  NA,  NA,  NA
+), nrow = 4, byrow = TRUE)
+
+premium2 &lt;- c(860, 940, 980, 1020)
+loss_ratio2 &lt;- 0.85
+
+result_bf2 &lt;- BF_method(triangle_bf2, premium2, loss_ratio2)
+result_bf2$f  # 1.0362, 1.1657, 1.4462
+result_bf2$reserve  # 0, 27.91, 118.41, 267.50
+result_bf2$total_reserve  # 413.82
+
+##############################################################################
+# 4.6 随机准备金模型：Mack链梯法
+##############################################################################</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">##############################################################################
+# 第4章 准备金评估
+# 对应教材：section4.tex
+# 内容：流量三角形、链梯法、案均赔款法、B-F法、通胀调整、
+#       随机准备金模型（Mack链梯法、广义线性模型方法）
+##############################################################################
+
+import numpy as np
+import pandas as pd
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+
+##############################################################################
+# 4.1 流量三角形与进展因子
+##############################################################################
+
+## 4.5.3 B-F法示例2
+triangle_bf2 = np.array([
+    [473, 620, 690, 715],
+    [512, 660, 750, np.nan],
+    [611, 700, np.nan, np.nan],
+    [647, np.nan, np.nan, np.nan]
+], dtype=float)
+
+premium2 = np.array([860, 940, 980, 1020])
+loss_ratio2 = 0.85
+
+result_bf2 = BF_method(triangle_bf2, premium2, loss_ratio2)
+print(f&quot;\nB-F法示例2:&quot;)
+print(f&quot;  累积进展因子: {result_bf2[&#x27;f&#x27;]}&quot;)  # 1.0362, 1.1657, 1.4462
+print(f&quot;  各事故年准备金: {result_bf2[&#x27;reserve&#x27;]}&quot;)  # 0, 27.91, 118.41, 267.50
+print(f&quot;  总准备金: {result_bf2[&#x27;total_reserve&#x27;]:.2f}&quot;)  # 413.82
+
+
+##############################################################################
+# 4.6 随机准备金模型：Mack链梯法
+##############################################################################</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">/* 4.5.3 B-F法示例2 */
+proc iml;
+  C = {473 620 690 715,
+       512 660 750 .,
+       611 700 . .,
+       647 . . .};
+  EP = {860, 940, 980, 1020};
+  ELR = 0.85;
+
+  n = nrow(C);
+  /* 链梯进展因子 */
+  f = j(n-1, 1, 0);
+  do j = 1 to n-1;
+    s1 = 0; s2 = 0;
+    do i = 1 to n-j;
+      s1 = s1 + C[i, j+1];
+      s2 = s2 + C[i, j];
+    end;
+    f[j] = s1 / s2;
+  end;
+
+  /* 累积进展因子 */
+  F = j(n, 1, 1);
+  do i = 2 to n;
+    F[i] = F[i-1] * f[n-i+1];
+  end;
+
+  /* B-F法准备金 */
+  reserve = j(n, 1, 0);
+  do i = 2 to n;
+    ult_loss = EP[i] * ELR;
+    reserve[i] = ult_loss * (1 - 1/F[i]);
+  end;
+  total_reserve = sum(reserve);
+  print &quot;累积进展因子&quot; F;
+  print &quot;B-F法各事故年准备金&quot; reserve;
+  print &quot;总准备金 =&quot; total_reserve;
+quit;</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+
+  <h3 id="sec-4-2-3">4.2.3 通胀调整</h3>
+  <p><strong>1. 处理历史通胀率</strong></p>
+<p>通货膨胀将会影响按日历年支付的赔款金额，即流量三角形中的各条对角线。因此在进行通胀调整时，首先需要将累积赔款转化为增量赔款。</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">增量赔款的流量三角形</div><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="5"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td></tr><tr><td>2020</td><td>786</td><td>624</td><td>806</td><td>224</td><td>79</td></tr><tr><td>2021</td><td>904</td><td>671</td><td>940</td><td>281</td></tr><tr><td>2022</td><td>995</td><td>819</td><td>1066</td></tr><tr><td>2023</td><td>1220</td><td>922</td></tr><tr><td>2024</td><td>1182</td></tr></tbody></table>
+<p>假定赔款均在每个日历年的中期进行支付，即所有事故年在当年的赔款都会受到相同通胀率的影响。若已知各年度的通货膨胀率如下：</p>
+<table><thead><tr><th>日历年</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th></tr></thead><tbody><tr><td>通胀率</td><td>5.1%</td><td>6.4%</td><td>7.3%</td><td>5.4%</td></tr></tbody></table>
+<p>则可以算出以2024年中期价格计价的所有赔款的指数，应用通胀率对前表~的增量赔款进行调整，结果见前表。</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">增量赔款的流量三角形：以2024年中期价格计价</div><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="5"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td></tr><tr><td>2020</td><td>994</td><td>751</td><td>912</td><td>236</td><td>79</td></tr><tr><td>2021</td><td>1088</td><td>759</td><td>991</td><td>281</td></tr><tr><td>2022</td><td>1125</td><td>863</td><td>1066</td></tr><tr><td>2023</td><td>1286</td><td>922</td></tr><tr><td>2024</td><td>1182</td></tr></tbody></table>
+<p>其中，最右侧的对角线代表日历年2024年支付的赔款，故无需进行调整；右侧第二条对角线代表日历年2023年支付的赔款，需要乘以2024年的通胀率，如$224 \times (1+5.4%) = 236$；……；最左上角代表日历年2020年支付的赔款，故需乘以所有年度的通胀率，即$786 \times (1+5.1%) \times (1+6.4%) \times (1+7.3%) \times (1+5.4%) = 994$。</p>
+<p>根据前表，可以重新计算进行通胀调整后的累积赔款流量三角形，再应用链梯法计算进展因子和累积赔款预测值（以2024年中期价格计价），可得到结果如下：</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">链梯法的累积赔款预测值：以2024年中期价格计价</div><table><thead><tr><th>p{25pt}|c|c|c|c|}
+<p>{*}{<strong>事故年</strong>} & {c|}{<strong>进展年</strong>}</th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td></tr><tr><td>2020</td><td>994</td><td>1745</td><td>2657</td><td>2893</td><td>2972</td></tr><tr><td>2021</td><td>1088</td><td>1847</td><td>2838</td><td>3119</td><td>(3204)</td></tr><tr><td>2022</td><td>1125</td><td>1988</td><td>3054</td><td>(3341)</td><td>(3433)</td></tr><tr><td>2023</td><td>1286</td><td>2208</td><td>(3383)</td><td>(3701)</td><td>(3802)</td></tr><tr><td>2024</td><td>1182</td><td>(2049)</td><td>(3139)</td><td>(3434)</td><td>(3528)</td></tr></tbody></table></p>
+<p><strong>2. 处理未来通胀率</strong></p>
+<p>在前表~中，累积赔款的预测值并未考虑未来通胀率。为了预测实际赔款金额，还需要假定未来通胀率的大小。与处理历史通胀率的情形类似，在对未来通胀进行调整之前，需要将累积赔款转换为增量赔款。</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">链梯法的增量赔款预测值：以2024年中期价格计价</div><table><thead><tr><th>p{25pt}|c|c|c|c|}
+<p>{*}{<strong>事故年</strong>} & {c|}{<strong>进展年</strong>}</th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td></tr><tr><td>2021</td><td>$\cdot$</td><td>$\cdot$</td><td>$\cdot$</td><td>$\cdot$</td><td>(85)</td></tr><tr><td>2022</td><td>$\cdot$</td><td>$\cdot$</td><td>$\cdot$</td><td>(287)</td><td>(92)</td></tr><tr><td>2023</td><td>$\cdot$</td><td>$\cdot$</td><td>(1175)</td><td>(318)</td><td>(101)</td></tr><tr><td>2024</td><td>$\cdot$</td><td>(867)</td><td>(1090)</td><td>(295)</td><td>(94)</td></tr></tbody></table></p>
+<p>未来通胀率的调整只需考虑下三角。假设未来每年的通胀率均为10%，对前表~的增量赔款进行调整，可以得到以实际价格表示的增量赔款预测值如前表。将所有预测值加总，得到保险公司在2024年末需要持有的准备金为5137。</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">链梯法的增量赔款预测值：以实际价格计价</div><table><thead><tr><th>p{25pt}|c|c|c|c|}
+<p>{*}{<strong>事故年</strong>} & {c|}{<strong>进展年</strong>}</th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td></tr><tr><td>2021</td><td>$\cdot$</td><td>$\cdot$</td><td>$\cdot$</td><td>$\cdot$</td><td>(94)</td></tr><tr><td>2022</td><td>$\cdot$</td><td>$\cdot$</td><td>$\cdot$</td><td>(316)</td><td>(111)</td></tr><tr><td>2023</td><td>$\cdot$</td><td>$\cdot$</td><td>(1293)</td><td>(385)</td><td>(134)</td></tr><tr><td>2024</td><td>$\cdot$</td><td>(954)</td><td>(1319)</td><td>(393)</td><td>(138)</td></tr></tbody></table></p>
+</div>
+
+<div class="section-card" id="sec-4-3">
+  <h2>4.3 案均赔款法</h2>
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline><source src="section4-movs/chap4_3.mp4" type="video/mp4">您的浏览器不支持 HTML5 视频播放。</video>
+    <figcaption>视频 4.3：案均赔款法与调整因子</figcaption>
+  </figure>
+  <p>在前述章节中，链梯法的计算仅考虑了累积赔款的发展规律。然而，现实情况下每年的案件数和每个案件的赔款金额都可能发生变化，同时影响保险公司当年的赔付。考虑案件相关的信息并分别进行建模，或可得到更准确的准备金评估结果。</p>
+<p>定义案均赔款表示赔款与案件数之比。当同时具有累积赔款和案件总数的进展信息时，将两个表中的对应元素相除，即可得到案均赔款的进展表（流量三角形）。与链梯法类似，保险公司可分别计算案件总数和案均赔款的进展因子（或调整因子），对两项信息进行预测后再相乘，得到最终赔款和准备金的预测值。</p>
+<p>考虑如下一个例子。假设保险公司将某个险种的累积赔款和案件数按照事故年和进展年进行划分，结果分别如前表~和前表。</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">案均赔款法的流量三角形：累积赔款</div><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="6"><strong>进展年</strong></th><th rowspan="2"><strong>最终</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td><td><strong>5</strong></td></tr><tr><td>1</td><td>2777</td><td>3264</td><td>3452</td><td>3594</td><td>3719</td><td>3720</td><td>3720</td></tr><tr><td>2</td><td>3252</td><td>3804</td><td>3973</td><td>4231</td><td>4319</td></tr><tr><td>3</td><td>3725</td><td>4404</td><td>4779</td><td>4946</td></tr><tr><td>4</td><td>4521</td><td>5422</td><td>5676</td></tr><tr><td>5</td><td>5369</td><td>6142</td></tr><tr><td>6</td><td>5818</td></tr></tbody></table>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">案均赔款法的流量三角形：累积案件数</div><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="6"><strong>进展年</strong></th><th rowspan="2"><strong>最终</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td><td><strong>5</strong></td></tr><tr><td>1</td><td>414</td><td>460</td><td>482</td><td>488</td><td>492</td><td>494</td><td>494</td></tr><tr><td>2</td><td>453</td><td>506</td><td>526</td><td>536</td><td>539</td></tr><tr><td>3</td><td>494</td><td>548</td><td>572</td><td>582</td></tr><tr><td>4</td><td>530</td><td>588</td><td>615</td></tr><tr><td>5</td><td>545</td><td>605</td></tr><tr><td>6</td><td>557</td></tr></tbody></table>
+<p>将两个表格的对应元素相除，得到案均赔款的流量三角形如前表。</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">案均赔款法的流量三角形：案均赔款</div><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="6"><strong>进展年</strong></th><th rowspan="2"><strong>最终</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td><td><strong>5</strong></td></tr><tr><td>1</td><td>6.708</td><td>7.096</td><td>7.162</td><td>7.365</td><td>7.559</td><td>7.530</td><td>7.530</td></tr><tr><td>2</td><td>7.179</td><td>7.518</td><td>7.553</td><td>7.894</td><td>8.013</td></tr><tr><td>3</td><td>7.540</td><td>8.036</td><td>8.355</td><td>8.498</td></tr><tr><td>4</td><td>8.530</td><td>9.221</td><td>9.229</td></tr><tr><td>5</td><td>9.851</td><td>10.152</td></tr><tr><td>6</td><td>10.445</td></tr></tbody></table>
+<p>对于前表~和前表，可以分别计算进展因子，描述案件数量和案均赔款的发展趋势。此外，也可以计算每个进展年的值相对最终值的比例，使用调整因子进行预测。</p>
+<p>例如，对于事故年1，可计算进展年0到进展年4的累积案件数相对最终值的比例分别为83.8%、93.1%、97.6%、98.8%和99.6%；对于事故年2，使用事故年1在进展年4的比例99.6%，可计算得事故年2的最终案件数为$539 / 0.996 \approx 541$，以及进展年0到进展年3的累积案件数相对最终值的比例为83.7%、93.5%、97.2%和99.1%；对于事故年3，使用事故年1和事故年2在进展年3的比例的简单平均值，可计算得事故年3的最终案件数为$582 / 0.9895 \approx 588$，依次类推。</p>
+<p>利用调整因子计算的案件数和案均赔款预测值见前表~和前表。</p>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">案均赔款法的流量三角形：累积案件数预测值</div><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="6"><strong>进展年</strong></th><th rowspan="2"><strong>最终</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td><td><strong>5</strong></td></tr><tr><td>1</td><td>414<br>83.8%</td><td>460<br>93.1%</td><td>482<br>97.6%</td><td>488<br>98.8%</td><td>492<br>99.6%</td><td>494<br>100%</td><td>494</td></tr><tr><td>2</td><td>453<br>83.7%</td><td>506<br>93.5%</td><td>526<br>97.2%</td><td>536<br>99.1%</td><td>539<br> <u><strong>99.6%</strong></u></td><td>541</td></tr><tr><td>3</td><td>494<br>84.0%</td><td>548<br>93.2%</td><td>572<br>97.3%</td><td>582<br> <u><strong>99.0%</strong></u></td><td>588</td></tr><tr><td>4</td><td>530<br>84.0%</td><td>588<br>93.2%</td><td>615<br> <u><strong>97.4%</strong></u></td><td>631</td></tr><tr><td>5</td><td>545<br>84.1%</td><td>605<br> <u><strong>93.3%</strong></u></td><td>648</td></tr><tr><td>6</td><td>557<br> <u><strong>83.9%</strong></u></td><td>664</td></tr></tbody></table>
+<div class="table-caption" style="text-align:center;font-size:0.9rem;color:var(--text-muted);margin:8px 0;font-style:italic;">案均赔款法的流量三角形：案均赔款预测值</div><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="6"><strong>进展年</strong></th><th rowspan="2"><strong>最终</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td><td><strong>5</strong></td></tr><tr><td>1</td><td>6.708<br>89.1%</td><td>7.096<br>94.2%</td><td>7.162<br>95.1%</td><td>7.365<br>97.8%</td><td>7.559<br>100.4%</td><td>7.530<br>100%</td><td>7.530</td></tr><tr><td>2</td><td>7.179<br>90.0%</td><td>7.518<br>94.2%</td><td>7.553<br>94.6%</td><td>7.894<br>98.9%</td><td>8.013<br> <u><strong>100.4%</strong></u></td><td>7.981</td></tr><tr><td>3</td><td>7.540<br>87.3%</td><td>8.036<br>93.1%</td><td>8.355<br>96.7%</td><td>8.498<br> <u><strong>98.4%</strong></u></td><td>8.636</td></tr><tr><td>4</td><td>8.530<br>88.3%</td><td>9.221<br>95.4%</td><td>9.229<br> <u><strong>95.5%</strong></u></td><td>9.664</td></tr><tr><td>5</td><td>9.851<br>91.4%</td><td>10.152<br> <u><strong>94.2%</strong></u></td><td>10.777</td></tr><tr><td>6</td><td>10.445<br> <u><strong>89.2%</strong></u></td><td>11.710</td></tr></tbody></table>
+<p>根据上述结果，可计算每个事故年的累积赔款最终值等于其案件数与案均赔款的乘积，分别为3720、4318、5078、6098、6983和7775，总赔付金额为33972；若截至目前已支付的赔款金额为30621，可计算所需的IBNR准备金等于3351。注意，由于事故年1在进展年5的案均赔款低于进展年4的案均赔款，在对事故年2的案均赔款进行调整后，可能导致预测的累积赔款最终值比进展年4观察的累积赔款更低。</p>
+<p>案均赔款法可以使用已决赔款或已报案赔款的数据，在计算时只需确保赔款金额和案件次数的形式相对应（即已决赔款对应已完成的案件数，已报案赔款对应已报告案件数）。案均赔款法与链梯法的假设存在许多相似之处，如要求索赔数据的进展模式保持平稳（一般而言，已报案赔款的进展模式较已决赔款相比可能更加稳定）。值得说明的是，为了演示方便，本节在计算调整因子时只考虑了简单的算术平均值，但在实际应用中同样可以使用加权平均值，例如取案件数作为权重；上述例子也并未考虑通货膨胀的影响，对此可采用与链梯法相同的方式进行调整。</p>
+</div>
+
+<div class="section-card" id="sec-4-4">
+  <h2>4.4 B-F法</h2>
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline><source src="section4-movs/chap4_4.mp4" type="video/mp4">您的浏览器不支持 HTML5 视频播放。</video>
+    <figcaption>视频 4.4：B-F法及准备金计算</figcaption>
+  </figure>
+  <p>赔付率或损失率是非寿险精算学的一个重要概念，表示保险公司在特定期间的赔款支出与（已赚）保费收入之比。基于历史数据、保险人经验或市场趋势得到的赔付率可以作为估计最终损失和未决赔款的基础，但由于索赔数据故有的波动性，赔付率估计值本身也具有较大的不确定性。</p>
+<div class="theorem-box defn"><span class="label">定义 4.2（Bornhuetter-Ferguson法）</span>
+<p>B-F法（Bornhuetter-Ferguson法）的基本思想是将链梯法与赔付率法相结合：通过考虑索赔进展的模式，可以提高赔付率法的评估准确性；同时，赔付率法的结果也可以增加链梯法的稳定性，防止进展模式失真。</p>
+<p>该方法的具体计算步骤如下：</p>
+<p>(1) 应用链梯法，计算每个事故年已付赔款的累积进展因子$f$；</p>
+<p>(2) 基于保费收入和预期赔付率假设，计算每个事故年的最终赔款的初始估计；</p>
+<p>(3) 将最终赔款的估计值除以累积进展因子$f$，得到已付赔款的近似结果；</p>
+<p>(4) 从最终赔款中减去已付赔款，得到未付赔款（即准备金）的估计结果。</p>
+<p>其中，累积进展因子$f$的定义为：</p>
+<div class="math-display">$$\text{已付赔款} \times f = \text{最终赔款}$$</div>
+<p>即$1/f=\text{已付赔款}/\text{最终赔款}$，表示已支付赔款的比例；$1-1/f$表示未支付赔款的比例。对上述步骤进行归纳，可以得到B-F法的准备金估计结果为：</p>
+<div class="math-display">$$\text{准备金} = \text{保费} \times \text{预期损失率} \times (1 - 1/f)$$</div>
+</div>
+<p>由于最终的估计结果同时考虑了索赔数据的历史经验（链梯法的累积赔款流量三角形）以及赔付率的先验假设信息，该方法也体现了贝叶斯统计学的思想。</p>
+<div class="theorem-box exa"><span class="label">例 4.3</span><p>已知各事故年和进展年的累积赔款、各事故年的已赚保费收入和预期赔付率如下，应用B-F法计算准备金评估结果。</p>
+<p><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="6"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td><td><strong>5</strong></td></tr><tr><td>1</td><td>2866</td><td>3334</td><td>3503</td><td>3624</td><td>3719</td><td>3720</td></tr><tr><td>2</td><td>3359</td><td>3889</td><td>4033</td><td>4231</td><td>4319</td></tr><tr><td>3</td><td>3848</td><td>4503</td><td>4779</td><td>4946</td></tr><tr><td>4</td><td>4673</td><td>5422</td><td>5676</td></tr><tr><td>5</td><td>5369</td><td>6142</td></tr><tr><td>6</td><td>5818</td></tr></tbody></table></p>
+<p><table><thead><tr><th>事故年</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead><tbody><tr><td>已赚保费</td><td>4486</td><td>5024</td><td>5680</td><td>6590</td><td>7482</td><td>8502</td></tr><tr><td>赔付率</td><td>83%</td><td>83%</td><td>83%</td><td>83%</td><td>83%</td><td>83%</td></tr></tbody></table></p><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>首先，应用链梯法计算各年度的进展因子（加权平均值）如下：</p>
+<p><table><thead><tr><th>进展年</th><th>0$\sim$1</th><th>1$\sim$2</th><th>2$\sim$3</th><th>3$\sim$4</th><th>4$\sim$5</th></tr></thead><tbody><tr><td>进展因子</td><td>1.158</td><td>1.049</td><td>1.039</td><td>1.023</td><td>1.000</td></tr></tbody></table></p>
+<p>对于各事故年，从观察数据的最后一个进展年开始，将进展因子逐年相乘，可以得到累积进展因子$f$。例如对事故年6，有$f = 1.158 \times1.049 \times \cdots \times 1.000 = 1.291$。</p>
+<p>将基于保费和赔付率的赔款信息与基于链梯法的累积进展因子汇总，可得下表：</p>
+<p><table><thead><tr><th>事故年</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead><tbody><tr><td>已赚保费</td><td>4486</td><td>5024</td><td>5680</td><td>6590</td><td>7482</td><td>8502</td></tr><tr><td>赔付率</td><td>83%</td><td>83%</td><td>83%</td><td>83%</td><td>83%</td><td>83%</td></tr><tr><td>最终赔款的估计</td><td>3723</td><td>4170</td><td>4714</td><td>5470</td><td>6210</td><td>7057</td></tr><tr><td>$f$</td><td>1.000</td><td>1.000</td><td>1.023</td><td>1.063</td><td>1.115</td><td>1.291</td></tr><tr><td>$1-1/f$</td><td>0</td><td>0</td><td>0.022</td><td>0.059</td><td>0.103</td><td>0.225</td></tr><tr><td>未付赔款的估计</td><td>0</td><td>0</td><td>104</td><td>323</td><td>640</td><td>1588</td></tr><tr><td>已付赔款</td><td>3720</td><td>4319</td><td>4946</td><td>5676</td><td>6142</td><td>5818</td></tr><tr><td>修正的最终赔款</td><td>3720</td><td>4319</td><td>5050</td><td>5999</td><td>6782</td><td>7406</td></tr></tbody></table></p>
+<p>将所有事故年的未付赔款估计值加总，可得准备金为2655。从本例也可以看出，修正后的最终赔款总是介于链梯法和赔付率法的估计结果之间，该方法实际上可以视为两种方法的加权。</p></div></div>
+<div class="theorem-box exa"><span class="label">例 4.4</span><p>根据下表数据，用B-F法估计2024年末的准备金（假设预期赔付率为85%）。</p>
+<p><table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th rowspan="2"><strong>已赚保费</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td></tr><tr><td>2021</td><td>860</td><td>473</td><td>620</td><td>690</td><td>715</td></tr><tr><td>2022</td><td>940</td><td>512</td><td>660</td><td>750</td></tr><tr><td>2023</td><td>980</td><td>611</td><td>700</td></tr><tr><td>2024</td><td>1020</td><td>647</td></tr></tbody></table></p><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>首先，应用链梯法计算各年度的进展因子（加权平均值）如下：</p>
+<div class="math-display">$$\begin{aligned}r_3 &= \frac{715}{690} = 1.0362,&nbsp;&nbsp; f_3 = r_3 = 1.0362 \\
+r_2 &= \frac{690 + 750}{620 + 660} = 1.1250,&nbsp;&nbsp; f_2 = r_2r_3 = 1.1657 \\
+r_1 &= \frac{620 + 660 + 700}{473 + 512 + 611} = 1.2406, &nbsp;&nbsp; f_1 = r_1r_2r_3 = 1.4462\end{aligned}$$</div>
+<p>各事故年最终赔款的初始估计值为已赚保费的85%，分别为731、799、833和867。</p>
+<p>(1) 对于事故年2021，由于假设其进展完全，故没有未付赔款。</p>
+<p>(2) 对于事故年2022，未付赔款的估计值为$799 \times(1-1/1.0362)=27.91$，修正后的最终赔款估计值为$750+27.91=777.91$。</p>
+<p>(3) 对于事故年2023，未付赔款的估计值为$833 \times(1-1/1.1657)=118.41$，修正后的最终赔款估计值为$700+118.41=818.41$。</p>
+<p>(4) 对于事故年2024，未付赔款的估计值为$867 \times(1-1/1.4462)=267.50$，修正后的最终赔款估计值为$647+267.50=914.50$。</p>
+<p>将所有未付赔款的估计值加总，得到准备金为413.82。</p></div></div>
+<p>B-F法最早应用于已报案赔款进展的分析，然而，该方法也同样适用于已决赔款的进展。在原始计算过程中，累积进展因子$f$由链梯法计算得到，但应用其他方法计算的进展因子或调整因子，也可以得到准备金评估结果。此外，上述例子没有考虑对通货膨胀进行调整，但是可以采用链梯法中介绍的调整方法。</p>
+<p>需要说明的是，应用B-F法需要对赔付率给出恰当的估计，且一般而言，也需要假设赔款进展具有与链梯法类似的稳定趋势。然而，B-F法对赔款进展中的异常值相对不敏感。故在处理波动性较大的赔款数据时，该方法常被视为更可靠的选择。</p>
+<p>上述结果可通过对公前式变形来说明。由前例~和前例可知，B-F法对最终赔款的估计值也可以表示为：</p>
+<div class="math-display">$$\begin{aligned}
+\text{B-F法的最终赔款} &= \text{已付赔款} + \text{保费} \times \text{预期损失率} \times (1 - \frac{1}{f}) \\
+&= \text{链梯法的最终赔款} \times \frac{1}{f} + \text{赔付率法的最终赔款} \times (1 - \frac{1}{f})
+\end{aligned}$$</div>
+<p>即两种方法预测结果的加权。</p>
+<p>一般而言，链梯法的估计结果受到当前阶段已付赔款的强烈影响，特别对于靠近评估时点的事故年，由于其进展不完全、累积进展因子$f$较大，已付赔款的微小变动也可能导致最终赔款的估计结果发生显著差异。但在B-F法中，当$f$较大时，链梯法的权重下降而赔付率法的权重上升，此时的估计结果更多参考了先验知识的影响；对于靠前的事故年，由于其进展相对完全、累积进展因子$f$较小且接近于1，B-F法的结果基本等同于链梯法。</p>
+</div>
+
+<div class="section-card" id="sec-4-5">
+  <h2>4.5 随机准备金模型</h2>
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline><source src="section4-movs/chap4_5.mp4" type="video/mp4">您的浏览器不支持 HTML5 视频播放。</video>
+    <figcaption>视频 4.5：Mack随机准备金模型</figcaption>
+  </figure>
+  <p>前述链梯法、案均赔款法、B-F法等准备金评估模型均为确定性方法，仅能给出准备金的（期望）预测值，无法给出其分布特征。因此在近年来，非寿险准备金评估的随机性模型，如Mack模型、广义线性模型方法等，受到了越来越多的关注。</p>
+
+  <h3 id="sec-4-5-1">4.5.1 Mack链梯法模型</h3>
+  <p>Mack模型（Mack chain-ladder model）是对链梯法的一种随机性拓展，能够在链梯法假设的基础上，给出未来赔款进展的无偏估计并对其误差进行度量，在非寿险准备金评估中具有重要应用。</p>
+<p>设随机变量$C_{i,j}$表示第$i$个事故年在第$j$个进展年的累积赔款（已付赔款、已发生赔款或已报案赔款），其中事故年$i \in \{1,\cdots,I\}$，进展年$j \in \{1,\cdots,J\}$。不失一般性，可以假设$I=J$。进一步假定$C_{i,j}$对于满足$i+j \leq I + 1$的日历年是可观测的随机变量，而对于$i+j>I+1$的日历年需要预测，构成一个流量三角形。通过对$\hat{C}_{i,I}$进行预测，即可计算事故年$i$的未付赔款$\hat{R}_i = \hat{C}_{i,I} - C_{i,I-i+1}$，加总后得到准备金。</p>
+<p>定义个体进展因子$F_{i,j} = C_{i,j+1} / C_{i,j}$，其中$1 \leq i,j \leq I-1$。模型包含以下假设：</p>
+<p>(1) 存在常数$f_j>0$，使得对所有$1 \leq i \leq I$和$1 \leq j \leq I-1$，有：</p>
+<div class="math-display">$$\mathbb{E}(F_{i,j} \mid C_{i,1},\cdots,C_{i,j}) = f_j$$</div>
+<p>其中，参数$f_j$称为损失进展因子或链接比率（link ratios）。</p>
+<p>(2) 存在常数$\sigma_j^2 > 0$，使得对所有$1 \leq i \leq I$和$1 \leq j \leq I-1$，有：</p>
+<div class="math-display">$$\text{Var}(F_{i,j} \mid C_{i,1},\cdots,C_{i,j}) = \frac{\sigma_j^2}{w_{i,j} \cdot C_{i,j}^\alpha}$$</div>
+<p>其中，$w_{i,j} \in [0,1]$表示$C_{i,j}$的权重，参数$\sigma_j$称为方差参数。</p>
+<p>(3) 各事故年的索赔数据$(C_{i,1},\cdots,C_{i,I})_{1 \leq i \leq I}$之间相互独立。</p>
+<p>上式和上式也等价于：</p>
+<div class="math-display">$$\begin{gathered}\mathbb{E}(C_{i,j+1}|C_{i,j}) = f_j C_{i,j} \\
+\text{Var}(C_{i,j+1}|C_{i,j}) = \frac{\sigma_j^2}{w_{i,j}} C_{i,j}^{2-\alpha}\end{gathered}$$</div>
+<p>已知索赔信息$D_{\text{I}} = \{C_{ij}: i+j \leq I+1\}$，Mack模型给出了进展因子和方差参数的估计值，分别为：</p>
+<div class="math-display">$$\begin{gathered}\hat{f}_j = \frac{\sum\limits_{i=1}^{I-j} w_{i,j} C_{i,j}^\alpha F_{i,j}}{\sum\limits_{i=1}^{I-j} w_{i,j} C_{i,j}^\alpha},\ 1 \leq j \leq I-1,\ \alpha \in \{0,1,2\} \\
+\hat{\sigma_j^2} = \frac{1}{I_j - 1} \sum\limits_{i=1}^{I-j} w_{i,j} C_{i,j}^\alpha (F_{i,j}-\hat{f}_j)^2,\ 1 \leq j \leq I-2,\ \alpha \in \{0,1,2\}\end{gathered}$$</div>
+<p>其中，$I_j$代表权重$w_{i,j}$不为零的观测值（事故年）个数。对于第$I-1$个进展年，考虑到$f_{I-1}$仅能通过单个观测值$C_{1,I}/C_{1,I-1}$计算，无法直接估计$\hat{\sigma}_{I-1}^2$。此时，若$f_{I-1}=1$且假设赔款进展在第$I-1$年结束，则$\hat{\sigma}_{I-1}^2 = 0$；若赔款进展未结束，则可以使用外推公式$\hat{\sigma}_{I-3}/\hat{\sigma}_{I-2} = \hat{\sigma}_{I-2}/\hat{\sigma}_{I-1}$，求得估计值$\hat{\sigma}_{I-1}^2 = \min(\hat{\sigma}_{I-2}^4 / \hat{\sigma}_{I-3}^2, \min(\hat{\sigma}_{I-3}^2,\hat{\sigma}_{I-2}^2))$。</p>
+<p>可以证明$\hat{f}_j,\hat{\sigma}_j^2$是对应参数$f_j,\sigma_j^2$的无偏估计量，且$\hat{f}_j$在所有表示为已观察进展因子$F_{i,j}$的加权平均值的无偏估计量中，方差最低。</p>
+<p>在Mack模型中，参数$\alpha$决定了$f_j$的估计方法。不妨设权重$w_{i,j} \equiv 1$：</p>
+<p>(1) 若$\alpha = 1$，即为经典链梯法对$f_j$的估计结果：</p>
+<div class="math-display">$$\begin{gathered}\hat{f}_j = \frac{\sum\limits_{i=1}^{I-j} C_{i,j} F_{i,j}}{\sum\limits_{i=1}^{I-j} C_{i,j}} = \frac{\sum\limits_{i=1}^{I-j} C_{i,j+1}}{\sum\limits_{i=1}^{I-j} C_{i,j}}\end{gathered}$$</div>
+<p>此时有$\text{Var}(C_{i,j+1}|C_{i,j}) = \sigma_j^2 \cdot C_{i,j}$，即估计结果的不确定性会随索赔规模增加。</p>
+<p>(2) 当$\alpha = 0$时，估计结果等于个体进展因子$F_{i,j}$的算术平均值：</p>
+<div class="math-display">$$\begin{gathered}\hat{f}_j = \frac{1}{I-j} \sum_{i=1}^{I-j} F_{i,j}\end{gathered}$$</div>
+<p>(3) 当$\alpha = 2$时，估计结果是以$C_{i,j+1}$为因变量、以$C_{i,j}$为自变量的最小二乘回归系数（假设截距项等于0）：</p>
+<div class="math-display">$$\begin{gathered}\hat{f}_j = \frac{\sum\limits_{i=1}^{I-j} C_{i,j}^2 F_{i,j}}{\sum\limits_{i=1}^{I-j} C_{i,j}^2} = \frac{\sum\limits_{i=1}^{I-j} C_{i,j} C_{i,j+1}}{\sum\limits_{i=1}^{I-j} C_{i,j}^2}\end{gathered}$$</div>
+<p>当$i+j > I+1$时，Mack模型对累积赔款的预测值等于：</p>
+<div class="math-display">$$\begin{gathered}\mathbb{E}(C_{i,j}|D_I) = C_{i,I+1-i} \cdot f_{i,I+1-i} \cdots f_{i,j-1}\end{gathered}$$</div>
+
+  <h3 id="sec-4-5-2">4.5.2 广义线性模型方法</h3>
+  <p>广义线性模型方法通常使用增量赔款的流量三角形数据进行建模。记$Z_{ij}$表示保险公司的某项业务在第$i(1\leq i\leq I)$个年度发生的事故在第$j(1\leq j\leq J)$个进展年的增量赔款，是一个随机变量。不失一般性，可以假定$I=J$，即事故年和进展年的期限相等。流量三角形的上三角部分$Z_{o}=\{Z_{ij}:i+j\leq I+1\}$表示增量赔款的观测值，下三角部分$Z_{p}=\{Z_{ij}:i+j>I+1\}$表示待预测的增量赔款，将下三角部分的增量赔款预测值相加，即可得到准备金评估结果。</p>
+<p>在对增量赔款数据进行建模前，通常需要将赔款转化为单位增量赔款，以剔除各个事故年的业务规模所造成的影响。记$Y_{ij}=Z_{ij}/\omega _{i}$表示标准化的增量赔款，其中$\omega_{i}$为事故年$i$的风险单位数，通常可以使用当年的已赚保费代替。</p>
+<p>与链梯法等确定性模型相比，广义线性模型方法将各年度的标准化增量赔款视作随机变量，且假定其服从指数族中的某一分布，如伽马分布或逆高斯分布等（详见本书第7章）。记$F(\cdot)$表示标准化增量赔款的分布，则相应的准备金评估模型定义为：</p>
+<div class="math-display">$$Y_{ij} \sim F(y_{ij};~ \eta_{ij}, \boldsymbol{\gamma})$$</div>
+<p>其中，$\eta_{ij}$和$\boldsymbol{\gamma}$为对应分布的参数。$\eta_{ij}$代表可以由增量赔款的事故年和进展年效应解释的参数，通常为分布的位置参数或形状参数；$\boldsymbol{\gamma}$为除$\eta_{ij}$外，分布的其他所有参数。</p>
+<p>将赔款发生的事故年和进展年作为自变量引入模型，参照链梯法的思想，可以得到广义线性模型的结构如下：</p>
+<div class="math-display">$$g(\eta_{ij}) = \eta + \alpha _{i} + \beta _{j},\ 1 \leq i,j \leq I$$</div>
+<p>其中，$\alpha_{i}$和$\beta_{j}$分别表示不同事故年和不同进展年的效应（$\alpha _{1} = \beta _{1} = 0$）；$g(\cdot)$为广义线性模型的连接函数。</p>
+<p>在非寿险准备金评估中，通常使用的分布假设包括伽马分布和对数正态分布，能够较好刻画增量赔款数据的非负性和右偏特征。但当赔款数据的尾部较厚时，这些分布可能低估尾部风险，导致准备金评估不足。此时需要基于厚尾分布（如帕累托分布等）建立准备金评估模型，以更准确地衡量高额赔款的潜在影响，提高准备金的充足性。本书第11章将给出一个更复杂的案例。</p>
+</div>
+
+<div class="section-card" id="sec-4-6">
+  
+
+<!-- ===== 本章汇总 ===== -->
+<div class="section-card" id="sec-summary">
+  <h2>本章小结</h2>
+  <h3>准备金评估方法比较</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>方法</th>
+        <th>核心假设</th>
+        <th>所需数据</th>
+        <th>优点</th>
+        <th>局限</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>链梯法</td>
+        <td>进展因子稳定</td>
+        <td>累积赔款流量三角形</td>
+        <td>简单直观</td>
+        <td>忽略外部信息</td>
+      </tr>
+      <tr>
+        <td>案均赔款法</td>
+        <td>案均赔款稳定</td>
+        <td>赔款+案件数</td>
+        <td>考虑案件数影响</td>
+        <td>数据要求多</td>
+      </tr>
+      <tr>
+        <td>B-F法</td>
+        <td>预期赔付率</td>
+        <td>赔款+已赚保费</td>
+        <td>结合先验信息</td>
+        <td>依赖赔付率假设</td>
+      </tr>
+      <tr>
+        <td>随机模型</td>
+        <td>概率分布假设</td>
+        <td>同确定性方法</td>
+        <td>量化不确定性</td>
+        <td>模型假设较强</td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+
+<h2>4.6 真题练习</h2>
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline><source src="section4-movs/chap4_6.mp4" type="video/mp4">您的浏览器不支持 HTML5 视频播放。</video>
+    <figcaption>视频 4.6：本章真题讲解</figcaption>
+  </figure>
+  <p>1. 下表给出了一个保单组合在4个事故年中的累积索赔额（通胀调整前）。假设赔款在会计年中期支付，相关期间的年通胀率假设为5{%}，请用通胀调整后的链梯法估计事故年2018年的总未决赔款（以2018年中期价格计价）。</p>
+<table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td></tr><tr><td>2015</td><td>2047</td><td>3141</td><td>3209</td><td>3310</td></tr><tr><td>2016</td><td>2471</td><td>3712</td><td>3810</td></tr><tr><td>2017</td><td>2388</td><td>3750</td></tr><tr><td>2018</td><td>2580</td></tr></tbody></table>
+<p>【解答】首先将累积赔款转换为增量赔款，得到下表：</p>
+<table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td></tr><tr><td>2015</td><td>2047</td><td>1094</td><td>68</td><td>101</td></tr><tr><td>2016</td><td>2471</td><td>1241</td><td>98</td></tr><tr><td>2017</td><td>2388</td><td>1362</td></tr><tr><td>2018</td><td>2580</td></tr></tbody></table>
+<p>使用5{%}的历史通胀率，将各事故年的增量赔款折算成2018年价格，得到通胀调整后各会计年（日历年）的增量赔款为：</p>
+<table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td colspan="1"><strong>0</strong></td><td colspan="1"><strong>1</strong></td><td colspan="1"><strong>2</strong></td><td colspan="1"><strong>3</strong></td></tr><tr><td>2015</td><td>2369.6584</td><td>1206.135</td><td>71.4</td><td>101</td></tr><tr><td>2016</td><td>2724.2775</td><td>1303.05</td><td>98</td></tr><tr><td>2017</td><td>2507.40</td><td>1362</td></tr><tr><td>2018</td><td>2580</td></tr></tbody></table>
+<p>根据通胀调整后的增量赔款，计算通胀调整后的累积赔款：</p>
+<table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td colspan="1"><strong>0</strong></td><td colspan="1"><strong>1</strong></td><td colspan="1"><strong>2</strong></td><td colspan="1"><strong>3</strong></td></tr><tr><td>2015</td><td>2369.6584</td><td>3575.7934</td><td>3647.1934</td><td>3748.1934</td></tr><tr><td>2016</td><td>2724.2775</td><td>4027.3275</td><td>4125.3275</td></tr><tr><td>2017</td><td>2507.40</td><td>3869.40</td></tr><tr><td>2018</td><td>2580</td></tr></tbody></table>
+<p>应用链梯法计算进展因子，结果为：</p>
+<div class="math-display">$$\begin{aligned}\lambda_1 &= \frac{3575.7934 + 4027.3275 + 3869.4}{2369.6584 + 2724.2775 + 2507.4} = 1.509277 \\
+\lambda_2 &= \frac{3647.1934 + 4125.3275}{3575.7934 + 4027.3275} = 1.022280 \\
+\lambda_3 &= \frac{3748.1934}{3647.1934} = 1.027693\end{aligned}$$</div>
+<p>对累积赔款流量三角形（以2018年价格计价）的下三角进行填补，得到通胀调整后的累积赔款预测值：</p>
+<table><thead><tr><th rowspan="2"><strong>事故年</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td colspan="1"><strong>0</strong></td><td colspan="1"><strong>1</strong></td><td colspan="1"><strong>2</strong></td><td colspan="1"><strong>3</strong></td></tr><tr><td>2015</td><td>2369.6584</td><td>3575.7934</td><td>3647.1934</td><td>3748.1934</td></tr><tr><td>2016</td><td>2724.2775</td><td>4027.3275</td><td>4125.3275</td><td>(4239.57)</td></tr><tr><td>2017</td><td>2507.40</td><td>3869.40</td><td>(3955.61)</td><td>(4065.15)</td></tr><tr><td>2018</td><td>2580</td><td>(3893.93)</td><td>(3980.70)</td><td>(4090.93)</td></tr></tbody></table>
+<p>假定事故年2018的赔款在第3个进展年已全部结清，因此，以2018年中期价格计价的事故年2018年的总未决赔款为：</p>
+<div class="math-display">$$4090.93-2580=1510.93$$</div>
+<p>2. 下面的流量三角形展示了某个车险业务的增量赔款。</p>
+<table><thead><tr><th rowspan="2"><strong>保单年</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td></tr><tr><td>2018</td><td>362</td><td>272</td><td>506</td><td>350</td></tr><tr><td>2019</td><td>444</td><td>116</td><td>165</td></tr><tr><td>2020</td><td>487</td><td>195</td></tr><tr><td>2021</td><td>518</td></tr></tbody></table>
+<p>(1) 使用基本链梯法计算未决赔款准备金。</p>
+<p>(2) 讨论链梯法是否适用于这种索赔模式。</p>
+<p>(3) 思考是否有其他方法比基本链梯法更好。</p>
+<p>【解答】(1) 根据已知的增量赔款流量三角形，写出各事故年对应的累积赔款：</p>
+<table><thead><tr><th rowspan="2"><strong>保单年</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td></tr><tr><td>2018</td><td>362</td><td>634</td><td>1140</td><td>1490</td></tr><tr><td>2019</td><td>444</td><td>560</td><td>725</td></tr><tr><td>2020</td><td>487</td><td>682</td></tr><tr><td>2021</td><td>518</td></tr></tbody></table>
+<p>使用链梯法计算进展因子：</p>
+<div class="math-display">$$\begin{aligned}\text{DF}(0,1) &= \frac{ 634 + 560 + 682 }{ 362 + 444 + 487 }= 1.4509\\
+\text{DF}(1,2) &= \frac{ 1140 + 725 }{ 634 + 560 } = 1.5620\\
+\text{DF}(2,3) &= { 1490 } / { 1140 } = 1.3070\end{aligned}$$</div>
+<p>根据进展因子填充累积赔款流量三角形的下三角，得到下表：</p>
+<table><thead><tr><th rowspan="2"><strong>保单年</strong></th><th colspan="4"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td></tr><tr><td>2018</td><td>362</td><td>634</td><td>1140</td><td>1490</td></tr><tr><td>2019</td><td>444</td><td>560</td><td>725</td><td>(947.6)</td></tr><tr><td>2020</td><td>487</td><td>682</td><td>(1065.3)</td><td>(1392.3)</td></tr><tr><td>2021</td><td>518</td><td>(751.6)</td><td>(1173.9)</td><td>(1534.3)</td></tr></tbody></table>
+<p>未决赔款准备金等于$ (1534.3 - 518) + (1392.3 - 682) + (947.6 - 725) = 1949.2$。</p>
+<p>(2) 对增量赔款的数据模式进行分析，认为基本链梯法可能不太适合该例。</p>
+<p>首先，各事故年的增量赔款表现出比较快的增长，这表明保险公司的业务规模快速扩大，或是出现了比较严重的通胀，可能导致链梯法的基本假设（即索赔进展的稳定性）被破坏。</p>
+<p>其次，2018年签发保单的赔款进展模式似乎与其他年度完全不同：该年度的增量赔款在第2个进展年有明显增加（较上一年提高了一倍），且在第3个进展年仍然有较多增量赔款。除非有证据表明该模式在未来仍然会持续，否则计算出的进展因子可能并不恰当。此外，即使2018年的赔款模式是正常的，则后续进展年度可能还会出现较多索赔，未决赔款可能无法在3年内进展结束。</p>
+<p>(3) 可以考虑使用其他评估方法，以修正基本链梯法的不足。例如，保险公司可以使用通胀调整后的链梯法，对过去几年可能出现的高通胀进行修正；保险公司也可以考虑使用B-F法，将保费和赔款金额之间的假设纳入评估；保险公司还可以考虑使用案均赔款法，因为该方法分别考虑了索赔次数和案均赔款的信息。如果确认2018年的经验异常，保险公司可以将该年度的数据从计算中剔除，或者通过人工调整纠正错误。</p>
+<p>3. 下表给出了每1000美元汽车保单组合在每个日历年支付的已结案索赔金额：</p>
+<table><thead><tr><th rowspan="2"><strong>保单年</strong></th><th colspan="3"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td></tr><tr><td>2020</td><td>1729</td><td>199</td><td>57</td></tr><tr><td>2021</td><td>2274</td><td>318</td></tr><tr><td>2022</td><td>2511</td></tr></tbody></table>
+<p>下表为对应的已结案索赔次数：</p>
+<table><thead><tr><th rowspan="2"><strong>保单年</strong></th><th colspan="3"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td></tr><tr><td>2020</td><td>247</td><td>43</td><td>19</td></tr><tr><td>2021</td><td>291</td><td>50</td></tr><tr><td>2022</td><td>317</td></tr></tbody></table>
+<p>请使用案均赔款法计算该组保单的未决赔款准备金。</p>
+<p>【解答】首先，根据题目计算索赔金额与索赔次数的累积值，分别如下：</p>
+<table><thead><tr><th rowspan="2"><strong>保单年</strong></th><th colspan="3"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td></tr><tr><td>2020</td><td>1729</td><td>1928</td><td>1985</td></tr><tr><td>2021</td><td>2274</td><td>2592</td></tr><tr><td>2022</td><td>2511</td></tr></tbody></table>
+<table><thead><tr><th rowspan="2"><strong>保单年</strong></th><th colspan="3"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td></tr><tr><td>2020</td><td>247</td><td>290</td><td>309</td></tr><tr><td>2021</td><td>291</td><td>341</td></tr><tr><td>2022</td><td>317</td></tr></tbody></table>
+<p>将累积赔款与索赔次数的对应各项相除，可以得到案均赔款的累积值：</p>
+<table><thead><tr><th rowspan="2"><strong>保单年</strong></th><th colspan="3"><strong>进展年</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td></tr><tr><td>2020</td><td>7.0000</td><td>6.6483</td><td>6.4239</td></tr><tr><td>2021</td><td>7.8144</td><td>7.6012</td></tr><tr><td>2022</td><td>7.9211</td></tr></tbody></table>
+<p>应用调整因子，计算索赔次数和案均赔款的最终预测值，分别如下：</p>
+<table><thead><tr><th rowspan="2"><strong>保单年</strong></th><th colspan="3"><strong>进展年</strong></th><th rowspan="2"><strong>最终</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td></tr><tr><td>2020</td><td>247<br> 0.7994</td><td>290<br> 0.9385</td><td>309<br> <u><strong>1</strong></u></td><td>309.0</td></tr><tr><td>2021</td><td>291<br> 0.8010</td><td>341<br> <u><strong>0.9385</strong></u></td><td>363.3</td></tr><tr><td>2022</td><td>317<br> <u><strong>0.8002</strong></u></td><td>396.2</td></tr></tbody></table>
+<table><thead><tr><th rowspan="2"><strong>保单年</strong></th><th colspan="3"><strong>进展年</strong></th><th rowspan="2"><strong>最终</strong></th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td></tr><tr><td>2020</td><td>7.0000<br> 1.0897</td><td>6.6483<br> 1.0349</td><td>6.4239<br> <u><strong>1</strong></u></td><td>6.4239</td></tr><tr><td>2021</td><td>7.8144<br> 1.0639</td><td>7.6012<br> <u><strong>1.0349</strong></u></td><td>7.3449</td></tr><tr><td>2022</td><td>7.9211<br> <u><strong>1.0768</strong></u></td><td>7.3561</td></tr></tbody></table>
+<p>最后，计算预测的总索赔为：$1985 + 363.3 \times 7.3447 + 396.2 \times 7.3561 = 7568$。减去已支付的索赔，得到未决赔款准备金为：$7568.0 - (1985 + 2592 + 2511) = 480 $。</p>
+</div>
+
+<div class="section-card" id="sec-references">
+  <h2>参考文献</h2>
+  <ol class="references">
+    <li>Klugman, S. A., Panjer, H. H., & Willmot, G. E. (2019). <em>Loss Models: From Data to Decisions</em> (5th ed.). Wiley.</li>
+    <li>Boland, P. J. (2007). <em>Statistical and Probabilistic Methods in Actuarial Science</em>. Chapman & Hall/CRC.</li>
+    <li>孟生旺, 袁卫. (2020). 《非寿险精算学》. 中国人民大学出版社.</li>
+    <li>Frees, E. W. (2009). <em>Regression Modeling with Actuarial and Financial Applications</em>. Cambridge University Press.</li>
+    <li>R Core Team. (2024). <em>R: A Language and Environment for Statistical Computing</em>. R Foundation for Statistical Computing.</li>
+  </ol>
+</div>
+
+<!-- ===== Footer ===== -->
+<div class="footer">
+  <p>非寿险精算学模型与应用 · 第四章 费率厘定</p>
+  <p>© 2024 保险学院 · 统计与精算学系</p>
+  <nav class="book-pager" aria-label="章节导航">
+    <a class="book-prev" href="chap3.html">上一章：第3章 贝叶斯与信度</a>
+    <a class="book-home" href="index.html">目录</a>
+    <a class="book-next" href="chap5.html">下一章：第5章 损失调整与再保险</a>
+  </nav>
+</div>
+
+<!-- ===== Lightbox ===== -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close">&times;</span>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- ===== Scripts ===== -->
+<script>
+
+  // 折叠面板
+  function toggleCollapsible(btn) {
+    const content = btn.nextElementSibling;
+    const arrow = btn.querySelector('.arrow');
+    const label = btn.querySelector('span:first-child');
+    const isOpen = content.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+    arrow.textContent = isOpen ? '▼' : '▶';
+    if (label) {
+      if (isOpen && label.textContent.includes('查看')) {
+        label.textContent = label.textContent.replace('点击查看', '点击收起');
+      } else if (!isOpen && label.textContent.includes('收起')) {
+        label.textContent = label.textContent.replace('点击收起', '点击查看');
+      }
+    }
+  }
+
+  // 代码标签页切换
+  function switchTab(btn) {
+    const tabs = btn.parentElement;
+    const container = tabs.parentElement;
+    const targetLang = btn.dataset.lang;
+    tabs.querySelectorAll('.code-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    container.querySelectorAll('.code-tab-content').forEach(c => {
+      if (c.dataset.lang === targetLang) {
+        c.classList.add('active');
+      } else {
+        c.classList.remove('active');
+      }
+    });
+  }
+
+  // R代码中文字符串翻译（webR缺少中文字体时的兜底方案）
+  const _R_CN_EN_MAP = [
+    ['概率质量函数', 'PMF'], ['累积分布函数', 'CDF'], ['概率密度函数', 'PDF'],
+    ['生存函数', 'Survival'], ['危险率函数', 'Hazard'],
+    ['二项分布', 'Binomial'], ['泊松分布', 'Poisson'], ['负二项分布', 'Neg.Binom'],
+    ['几何分布', 'Geometric'], ['指数分布', 'Exponential'], ['伽马分布', 'Gamma'],
+    ['对数正态分布', 'Lognormal'], ['帕累托分布', 'Pareto'], ['威布尔分布', 'Weibull'],
+    ['正态分布', 'Normal'], ['卡方分布', 'Chi-sq'], ['t分布', 't-dist'],
+    ['零截断负二项', 'ZTNB'], ['零调整负二项', 'ZMNB'],
+    ['零截断', 'ZT'], ['零调整', 'ZM'], ['零膨胀', 'ZI'],
+    ['索赔次数', 'Claim Count'], ['索赔金额', 'Claim Amt'], ['索赔强度', 'Severity'],
+    ['累积索赔', 'Cum.Claim'], ['总索赔', 'Total Claim'],
+    ['事故年', 'Acc.Year'], ['进展年', 'Dev.Year'], ['准备金', 'Reserve'],
+    ['费率', 'Rate'], ['保费', 'Premium'], ['赔款', 'Loss'], ['纯保费', 'Pure Prem'],
+    ['均值', 'Mean'], ['方差', 'Var'], ['标准差', 'Std'], ['中位数', 'Median'],
+    ['偏度', 'Skew'], ['峰度', 'Kurt'], ['分位数', 'Quantile'],
+    ['参数', 'Param'], ['估计', 'Est'], ['拟合', 'Fit'], ['预测', 'Pred'],
+    ['观测值', 'Obs'], ['期望值', 'Exp'], ['残差', 'Resid'],
+    ['风险', 'Risk'], ['损失', 'Loss'], ['概率', 'Prob'], ['频率', 'Freq'],
+    ['信度', 'Cred'], ['先验', 'Prior'], ['后验', 'Posterior'],
+    ['回归', 'Reg'], ['分类', 'Class'], ['聚类', 'Clust'],
+    ['准确率', 'Acc'], ['误差', 'Error'], ['平方误差', 'MSE'],
+    ['时间', 'Time'], ['年份', 'Year'], ['月份', 'Month'], ['季度', 'Qtr'],
+    ['金额', 'Amt'], ['数量', 'Count'], ['比率', 'Ratio'], ['因子', 'Factor'],
+    ['分布', 'Dist'], ['函数', 'Func'], ['模型', 'Model'], ['数据', 'Data'],
+    ['图', 'Fig'], ['表', 'Tab'], ['例', 'Ex'], ['注', 'Note'],
+    ['尺度', 'Scale'], ['形状', 'Shape'], ['位置', 'Loc'],
+    ['直方图', 'Histogram'], ['密度曲线', 'Density'], ['散点图', 'Scatter'],
+    ['拟合优度', 'Goodness of Fit'], ['QQ图', 'QQ Plot'], ['PP图', 'PP Plot'],
+    ['经验分布', 'Empirical'], ['理论分布', 'Theoretical'],
+    ['对数似然', 'Log-Likelihood'], ['AIC', 'AIC'], ['BIC', 'BIC'],
+    ['置信区间', 'CI'], ['标准误', 'SE'], ['p值', 'p-value'],
+    ['极大似然估计', 'MLE'], ['矩估计', 'MoM'],
+    ['火灾损失', 'Fire Loss'], ['丹麦', 'Danish'],
+    ['实际', 'Actual'], ['理论', 'Theor'], ['样本', 'Sample'],
+    ['检验', 'Test'], ['统计量', 'Stat'], ['自由度', 'df'],
+    ['对比', ' vs '], ['频数', 'Freq'], ['累积', 'Cum'],
+    ['的', ' '], ['和', ' & '], ['与', ' & '], ['在', ' at '],
+    ['为', ' = '], ['中', ' in '], ['上', ' up '], ['下', ' down '],
+    ['x轴', 'x'], ['y轴', 'y'], ['x 轴', 'x'], ['y 轴', 'y'],
+  ];
+
+  function _translateRCode(code) {
+    if (!code) return code;
+    let translated = code;
+    for (const [cn, en] of _R_CN_EN_MAP) {
+      translated = translated.split(cn).join(en);
+    }
+    translated = translated.replace(/[\u4e00-\u9fff]+/g, '?');
+    return translated;
+  }
+
+  // 复制代码
+  function copyCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const text = codeBlock.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = btn.textContent;
+      btn.textContent = '✓ 已复制';
+      setTimeout(() => { btn.textContent = originalText; }, 2000);
+    }).catch(() => {
+      // fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      btn.textContent = '✓ 已复制';
+      setTimeout(() => { btn.textContent = '复制'; }, 2000);
+    });
+  }
+
+  // 存储所有代码块的原始代码（用于重置功能）
+  const _originalCode = new Map();
+
+  // 初始化：保存所有代码块的原始代码
+  function initCodeReset() {
+    document.querySelectorAll('.code-tab-content pre code').forEach(codeBlock => {
+      _originalCode.set(codeBlock, codeBlock.textContent);
+    });
+  }
+
+  // 重置代码块为原始代码
+  function resetCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const original = _originalCode.get(codeBlock);
+    if (original !== undefined) {
+      codeBlock.textContent = original;
+      // 显示短暂提示
+      const originalText = btn.textContent;
+      btn.textContent = '✓ 已重置';
+      btn.style.background = 'rgba(34,197,94,0.3)';
+      btn.style.color = '#4ade80';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 1500);
+    }
+  }
+
+  // 图片灯箱
+  function openLightbox(src) {
+    const lb = document.getElementById('lightbox');
+    document.getElementById('lightbox-img').src = src;
+    lb.classList.add('active');
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('active');
+  }
+
+  // WebR 代码运行
+  let webRReady = false;
+  let webRLoading = false;
+  let webRInstance = null;
+
+  async function initWebR() {
+    if (webRReady) return webRInstance;
+    if (webRLoading) {
+      while (webRLoading) { await new Promise(r => setTimeout(r, 100)); }
+      return webRInstance;
+    }
+    webRLoading = true;
+    if (typeof WebR === 'undefined') {
+      webRLoading = false;
+      throw new Error('WebR 未加载，请检查网络连接');
+    }
+    try {
+      webRInstance = new WebR.WebR();
+      await webRInstance.init();
+
+      // 1) canvas 设备：单步容错，失败不阻塞后续流程
+      try {
+        await webRInstance.evalRVoid('webr::canvas_install()');
+      } catch (e) {
+        console.warn('canvas_install 跳过（可能为 I/O read 错误，图形输出将不可用）:', e && e.message);
+      }
+
+      // 2) 预安装 R 包。WebR CRAN 镜像 (repo.r-wasm.org) 不一定能访问，
+      //    因此每个包单独 try/catch，全部失败也不会让初始化彻底失败。
+      //    <span class="hl">注意：</span>lightgbm/rgl/CASdatasets/DPpackage 等不在镜像中，预期会失败。
+      const requiredPackages = [
+        "fitdistrplus", "statmod", "MASS", "Metrics", "ModelMetrics",
+        "caret", "data.table", "ggplot2", "glmnet", "gridExtra",
+        "pdp", "psych", "randomForest", "reshape2", "rpart", "rpart.plot",
+        "copula", "gsl", "evd", "evir", "tseries", "actuar",
+        "goftest", "mgcv", "gamlss", "gamlss.dist", "urca",
+        "forecast", "vars", "fGarch", "ChainLadder", "survival",
+        "mixtools", "kernelshap", "DALEX"
+      ];
+      const installErrors = [];
+      for (const pkg of requiredPackages) {
+        try {
+          await webRInstance.evalRVoid(
+            `tryCatch({if (!require("${pkg}", quietly = TRUE)) webr::install("${pkg}")}, ` +
+            `error = function(e) message("install ${pkg} skipped: ", conditionMessage(e)))`
+          );
+        } catch (e) {
+          // 捕获 JS 层 I/O 错误（如 repo.r-wasm.org 不可达），跳过此包
+          installErrors.push(pkg);
+          console.warn(`R包 ${pkg} 预安装跳过:`, e && e.message);
+        }
+      }
+      if (installErrors.length) {
+        console.info('下列 R 包在 WebR 中未能预安装（可能不在 WebR CRAN 镜像内，' +
+                     '运行相应代码时会报错）：', installErrors.join(', '));
+      }
+
+      webRReady = true;
+    } finally {
+      webRLoading = false;
+    }
+    return webRInstance;
+  }
+
+  function _decodeHtmlEntities(text) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+  }
+
+  async function runRCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const outputDiv = btn.closest('.code-tab-content').querySelector('.code-output');
+    const code = _decodeHtmlEntities(codeBlock.textContent);
+
+    outputDiv.innerHTML = '<div class="output-running">⏳ 正在加载 R 环境（首次运行需较长时间，请耐心等待）...</div>';
+    outputDiv.classList.add('show');
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ 运行中';
+    btn.disabled = true;
+
+    try {
+      const webr = await initWebR();
+
+      // WebR的canvas设备不支持showtext等字体包，统一使用翻译兜底
+      const hasChinese = /[\u4e00-\u9fff]/.test(code);
+      const codeToRun = _translateRCode(code);
+
+      outputDiv.innerHTML = '<div class="output-running">▶ 执行代码...</div>';
+
+      const shelter = await new webr.Shelter();
+      let outputHTML = '';
+      const plotCanvases = [];
+
+      try {
+        const result = await shelter.captureR(codeToRun, {
+          withAutoprint: true,
+          captureStreams: true,
+          captureConditions: false,
+          captureGraphics: true
+        });
+
+        for (const item of result.output) {
+          if (item.type === 'stdout' || item.type === 'stderr') {
+            const cls = item.type === 'stderr' ? 'error' : '';
+            outputHTML += `<pre class="output-text ${cls}">${escapeHTML(item.data)}</pre>`;
+          }
+        }
+
+        if (result.images && result.images.length > 0) {
+          for (const imgBitmap of result.images) {
+            const canvas = document.createElement('canvas');
+            canvas.width = imgBitmap.width;
+            canvas.height = imgBitmap.height;
+            canvas.className = 'output-plot';
+            canvas.style.maxWidth = '100%';
+            canvas.style.height = 'auto';
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imgBitmap, 0, 0);
+            plotCanvases.push(canvas);
+          }
+        }
+      } finally {
+        shelter.purge();
+      }
+
+      if (!outputHTML && plotCanvases.length === 0) {
+        outputHTML = '<pre class="output-text">(代码执行完毕，无文本输出)</pre>';
+      }
+
+      const translateNotice = hasChinese
+        ? '<div class="output-notice" style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">[提示] WebR环境缺少中文字体，图表中的中文标签已自动翻译为英文</div>'
+        : '';
+
+      outputDiv.innerHTML = `<div class="output-header">R 输出：</div>${translateNotice}${outputHTML}`;
+      for (const c of plotCanvases) {
+        outputDiv.appendChild(c);
+      }
+    } catch (err) {
+      outputDiv.innerHTML = `<div class="output-error">❌ 错误: ${escapeHTML(err.message || String(err))}</div>`;
+      console.error('WebR 运行错误:', err);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // ===== Python (Pyodide) 运行支持 =====
+  let pyodideReady = false;
+  let pyodideLoading = false;
+  let pyodideInstance = null;
+
+  async function initPyodide() {
+    if (pyodideReady) return pyodideInstance;
+    if (pyodideLoading) {
+      while (pyodideLoading) { await new Promise(r => setTimeout(r, 100)); }
+      return pyodideInstance;
+    }
+    pyodideLoading = true;
+    if (typeof loadPyodide === 'undefined') {
+      pyodideLoading = false;
+      throw new Error('Pyodide 未加载，请检查网络连接');
+    }
+    try {
+      pyodideInstance = await loadPyodide();
+      pyodideReady = true;
+    } finally {
+      pyodideLoading = false;
+    }
+    return pyodideInstance;
+  }
+
+  // 确保代码块有输出区域
+  function ensureOutputDiv(btn) {
+    const content = btn.closest('.code-tab-content');
+    let outputDiv = content.querySelector('.code-output');
+    if (!outputDiv) {
+      outputDiv = document.createElement('div');
+      outputDiv.className = 'code-output';
+      content.appendChild(outputDiv);
+    }
+    return outputDiv;
+  }
+
+  async function runPythonCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const outputDiv = ensureOutputDiv(btn);
+    const code = _decodeHtmlEntities(codeBlock.textContent);
+
+    outputDiv.innerHTML = '<div class="output-running">⏳ 正在加载 Python 环境（首次运行需较长时间，请耐心等待）...</div>';
+    outputDiv.classList.add('show');
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ 运行中';
+    btn.disabled = true;
+
+    try {
+      const pyodide = await initPyodide();
+      outputDiv.innerHTML = '<div class="output-running">⏳ 加载依赖库（numpy, scipy, matplotlib）...</div>';
+
+      // 加载常用库
+      await pyodide.loadPackage(['numpy', 'scipy', 'matplotlib']);
+
+      // 重定向 stdout/stderr
+      let outputText = '';
+      pyodide.setStdout({ batched: (s) => { outputText += s + '\n'; } });
+      pyodide.setStderr({ batched: (s) => { outputText += s + '\n'; } });
+
+      // 配置 matplotlib 使用 Agg 后端，图形保存为 base64
+      // 策略：优先加载本地中文字体，失败则翻译中文为英文
+      const setupCode = `
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import io, base64
+import warnings
+import re
+
+# 抑制中文字体缺失的警告
+warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
+warnings.filterwarnings('ignore', message='.*missing from current font.*')
+
+# 中文术语英文翻译映射（按长度降序，避免短词误匹配）
+_CN_EN_MAP = [
+    ('概率质量函数', 'PMF'), ('累积分布函数', 'CDF'), ('概率密度函数', 'PDF'),
+    ('生存函数', 'Survival'), ('危险率函数', 'Hazard'),
+    ('二项分布', 'Binomial'), ('泊松分布', 'Poisson'), ('负二项分布', 'Neg.Binom'),
+    ('几何分布', 'Geometric'), ('指数分布', 'Exponential'), ('伽马分布', 'Gamma'),
+    ('对数正态分布', 'Lognormal'), ('帕累托分布', 'Pareto'), ('威布尔分布', 'Weibull'),
+    ('正态分布', 'Normal'), ('卡方分布', 'Chi-sq'), ('t分布', 't-dist'),
+    ('零截断负二项', 'ZTNB'), ('零调整负二项', 'ZMNB'),
+    ('零截断', 'ZT'), ('零调整', 'ZM'), ('零膨胀', 'ZI'),
+    ('索赔次数', 'Claim Count'), ('索赔金额', 'Claim Amt'), ('索赔强度', 'Severity'),
+    ('累积索赔', 'Cum.Claim'), ('总索赔', 'Total Claim'),
+    ('事故年', 'Acc.Year'), ('进展年', 'Dev.Year'), ('准备金', 'Reserve'),
+    ('费率', 'Rate'), ('保费', 'Premium'), ('赔款', 'Loss'), ('纯保费', 'Pure Prem'),
+    ('均值', 'Mean'), ('方差', 'Var'), ('标准差', 'Std'), ('中位数', 'Median'),
+    ('偏度', 'Skew'), ('峰度', 'Kurt'), ('分位数', 'Quantile'),
+    ('参数', 'Param'), ('估计', 'Est'), ('拟合', 'Fit'), ('预测', 'Pred'),
+    ('观测值', 'Obs'), ('期望值', 'Exp'), ('残差', 'Resid'),
+    ('风险', 'Risk'), ('损失', 'Loss'), ('概率', 'Prob'), ('频率', 'Freq'),
+    ('信度', 'Cred'), ('先验', 'Prior'), ('后验', 'Posterior'),
+    ('回归', 'Reg'), ('分类', 'Class'), ('聚类', 'Clust'),
+    ('训练', 'Train'), ('测试', 'Test'), ('验证', 'Valid'),
+    ('准确率', 'Acc'), ('误差', 'Error'), ('平方误差', 'MSE'),
+    ('时间', 'Time'), ('年份', 'Year'), ('月份', 'Month'), ('季度', 'Qtr'),
+    ('金额', 'Amt'), ('数量', 'Count'), ('比率', 'Ratio'), ('因子', 'Factor'),
+    ('分布', 'Dist'), ('函数', 'Func'), ('模型', 'Model'), ('数据', 'Data'),
+    ('图', 'Fig'), ('表', 'Tab'), ('例', 'Ex'), ('注', 'Note'),
+    ('的', ' '), ('和', ' & '), ('与', ' & '), ('在', ' at '), ('为', ' = '),
+    ('中', ' in '), ('上', ' up '), ('下', ' down '), ('前', ' fwd '), ('后', ' back '),
+    ('尺度', 'Scale'), ('形状', 'Shape'), ('位置', 'Loc'),
+    ('直方图', 'Histogram'), ('密度曲线', 'Density'), ('散点图', 'Scatter'),
+    ('拟合优度', 'Goodness of Fit'), ('QQ图', 'QQ Plot'), ('PP图', 'PP Plot'),
+    ('经验分布', 'Empirical'), ('理论分布', 'Theoretical'),
+    ('对数似然', 'Log-Likelihood'), ('AIC', 'AIC'), ('BIC', 'BIC'),
+    ('置信区间', 'CI'), ('标准误', 'SE'), ('p值', 'p-value'),
+    ('极大似然估计', 'MLE'), ('矩估计', 'MoM'),
+    ('火灾损失', 'Fire Loss'), ('丹麦', 'Danish'),
+    ('实际', 'Actual'), ('理论', 'Theor'), ('样本', 'Sample'),
+    ('检验', 'Test'), ('统计量', 'Stat'), ('自由度', 'df'),
+    ('对比', ' vs '), ('频数', 'Freq'), ('累积', 'Cum'),
+]
+
+def _translate_cn(text):
+    """将中文文本翻译为英文"""
+    if not isinstance(text, str):
+        return text
+    result = text
+    for cn, en in _CN_EN_MAP:
+        result = result.replace(cn, en)
+    result = re.sub(r'[\\u4e00-\\u9fff]', '?', result)
+    result = re.sub(r' +', ' ', result).strip()
+    return result
+
+_plots = []
+_font_loaded = False
+_font_prop = None
+
+def _apply_font_to_fig(fig, font_prop):
+    """将字体属性直接应用到figure中所有文本元素（绕过rcParams）"""
+    for ax in fig.get_axes():
+        if ax.title:
+            ax.title.set_fontproperties(font_prop)
+        if ax.xaxis.label:
+            ax.xaxis.label.set_fontproperties(font_prop)
+        if ax.yaxis.label:
+            ax.yaxis.label.set_fontproperties(font_prop)
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontproperties(font_prop)
+        for text in ax.texts:
+            text.set_fontproperties(font_prop)
+        legend = ax.get_legend()
+        if legend:
+            for text in legend.get_texts():
+                text.set_fontproperties(font_prop)
+    if fig._suptitle:
+        fig._suptitle.set_fontproperties(font_prop)
+
+def _translate_fig_text(fig):
+    """翻译figure中所有中文文本为英文"""
+    for ax in fig.get_axes():
+        if ax.get_title():
+            ax.set_title(_translate_cn(ax.get_title()))
+        if ax.get_xlabel():
+            ax.set_xlabel(_translate_cn(ax.get_xlabel()))
+        if ax.get_ylabel():
+            ax.set_ylabel(_translate_cn(ax.get_ylabel()))
+        legend = ax.get_legend()
+        if legend:
+            for text in legend.get_texts():
+                t = text.get_text()
+                if t:
+                    text.set_text(_translate_cn(t))
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            if label.get_text():
+                label.set_text(_translate_cn(label.get_text()))
+        for text in ax.texts:
+            t = text.get_text()
+            if t:
+                text.set_text(_translate_cn(t))
+    if fig._suptitle and fig._suptitle.get_text():
+        fig._suptitle.set_text(_translate_cn(fig._suptitle.get_text()))
+
+def _capture_show(*args, **kwargs):
+    for num in plt.get_fignums():
+        fig = plt.figure(num)
+        if _font_loaded and _font_prop:
+            _apply_font_to_fig(fig, _font_prop)
+        else:
+            _translate_fig_text(fig)
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+        buf.seek(0)
+        _plots.append(base64.b64encode(buf.read()).decode('utf-8'))
+        buf.close()
+    plt.close('all')
+
+plt.show = _capture_show
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+`;
+      await pyodide.runPythonAsync(setupCode);
+
+      // 加载本地中文字体（同源fetch，无CORS问题）
+      // 必须在setupCode之后执行，确保_font_loaded控制翻译逻辑
+      try {
+        const fontUrl = new URL('../../assets/fonts/NotoSansSC-Regular.otf', window.location.href).href;
+        const fontResp = await fetch(fontUrl);
+        if (fontResp.ok) {
+          const fontBuffer = await fontResp.arrayBuffer();
+          const fontBytes = new Uint8Array(fontBuffer);
+          pyodide.FS.writeFile('/tmp/cjk_font.otf', fontBytes);
+          await pyodide.runPythonAsync(`
+import os
+font_path = '/tmp/cjk_font.otf'
+if os.path.getsize(font_path) > 100000:
+    import matplotlib.font_manager as fm
+    fm.fontManager.addfont(font_path)
+    _font_prop = fm.FontProperties(fname=font_path)
+    _font_name = _font_prop.get_name()
+    _font_loaded = True
+    print(f'[提示] 中文字体加载成功: {_font_name}')
+else:
+    print('[提示] 字体文件异常，使用英文翻译模式')
+`);
+        } else {
+          console.log('本地字体获取失败，使用英文翻译模式');
+        }
+      } catch (fontErr) {
+        console.log('字体加载异常:', fontErr, '，使用英文翻译模式');
+      }
+
+      outputDiv.innerHTML = '<div class="output-running">▶ 执行代码...</div>';
+
+      // 运行用户代码
+      await pyodide.runPythonAsync(code);
+
+      // 获取图形
+      const plots = pyodide.globals.get('_plots').toJs();
+
+      let outputHTML = '';
+      if (outputText.trim()) {
+        outputHTML += `<pre class="output-text">${escapeHTML(outputText)}</pre>`;
+      }
+
+      if (plots && plots.length > 0) {
+        for (const imgBase64 of plots) {
+          outputHTML += `<img class="output-plot" src="data:image/png;base64,${imgBase64}" style="max-width:100%;height:auto;" />`;
+        }
+      }
+
+      if (!outputHTML) {
+        outputHTML = '<pre class="output-text">(代码执行完毕，无文本输出)</pre>';
+      }
+
+      outputDiv.innerHTML = `<div class="output-header">Python 输出：</div>${outputHTML}`;
+    } catch (err) {
+      outputDiv.innerHTML = `<div class="output-error">❌ 错误: ${escapeHTML(err.message || String(err))}</div>`;
+      console.error('Pyodide 运行错误:', err);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // ===== SAS 运行提示 =====
+  async function runSasCode(btn) {
+    const outputDiv = ensureOutputDiv(btn);
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const code = _decodeHtmlEntities(codeBlock.textContent);
+
+    outputDiv.innerHTML = `
+      <div class="output-header">SAS 运行提示：</div>
+      <div class="output-info">
+        <p><strong>&#9888; SAS 为商业软件，无法在浏览器中直接运行。</strong></p>
+        <p>请将代码复制到本地 SAS 环境中执行（如 SAS Studio、SAS EG 或 SAS Base）。</p>
+        <p style="margin-top:10px;color:var(--text-secondary);font-size:0.85rem;">&#128161; 提示：您可以切换到 R 或 Python 标签页，在浏览器中直接运行等效代码查看结果。</p>
+      </div>
+    `;
+    outputDiv.classList.add('show');
+  }
+
+  function escapeHTML(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // 滚动监听 - 高亮当前章节
+  document.addEventListener('DOMContentLoaded', function() {
+    // 初始化代码块重置功能
+    initCodeReset();
+
+    const navLinks = document.querySelectorAll('#sidebar a.nav-link');
+    // 收集所有带id的章节元素（section-card、h3、h4）
+    const headings = document.querySelectorAll('.section-card, .section-card h3[id], .section-card h4[id]');
+
+    function updateActiveNav() {
+      let current = '';
+      headings.forEach(h => {
+        const top = h.getBoundingClientRect().top;
+        if (top < 200) current = h.id;
+      });
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) {
+          link.classList.add('active');
+        }
+      });
+    }
+    window.addEventListener('scroll', updateActiveNav);
+
+    // 侧边栏切换（移动端）
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+      });
+      navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (window.innerWidth <= 768) sidebar.classList.remove('open');
+        });
+      });
+    }
+
+    // 主题初始化
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      const btn = document.querySelector('.theme-toggle');
+      if (btn) btn.innerHTML = '&#9728; 浅色模式';
+    }
+  });
+
+  // 主题切换
+  function toggleTheme() {
+    const html = document.documentElement;
+    const btn = document.querySelector('.theme-toggle');
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+      if (btn) btn.innerHTML = '&#127769; 深色模式';
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+      if (btn) btn.innerHTML = '&#9728; 浅色模式';
+    }
+  }
+
+</script>
+
+</body>
+</html>

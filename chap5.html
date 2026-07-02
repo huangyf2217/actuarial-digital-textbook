@@ -1,0 +1,3920 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第5章 损失调整与再保险 | 非寿险精算学模型与应用</title>
+
+<!-- MathJax -->
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$'],['\\(','\\)']],
+    displayMath: [['$$','$$'],['\\[','\\]']],
+    processEscapes: true,
+    tags: 'none'
+  },
+  svg: { fontCache: 'global' },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+
+<!-- Prism.js for code syntax highlighting -->
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-r.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sas.min.js"></script>
+
+<!-- WebR for running R code in browser (ES Module, loaded dynamically) -->
+<script type="module">
+  import('https://webr.r-wasm.org/v0.5.4/webr.mjs').then(({ WebR }) => {
+    window.WebR = { WebR };
+    console.log('WebR 模块已加载');
+  }).catch(err => {
+    console.warn('WebR 模块加载失败:', err);
+  });
+</script>
+
+<!-- Pyodide for running Python code in browser -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+
+<style>
+:root {
+  --bg: #f0f4f8;
+  --card-bg: #ffffff;
+  --text: #1a202c;
+  --text-muted: #64748b;
+  --primary: #2563eb;
+  --primary-light: #dbeafe;
+  --primary-dark: #1e40af;
+  --accent: #dc2626;
+  --border: #e2e8f0;
+  --code-bg: #1e1e1e;
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #cbd5e1;
+  --sidebar-active: #3b82f6;
+  --theorem-color: #7c3aed;
+  --theorem-bg: #f5f3ff;
+  --defn-color: #059669;
+  --defn-bg: #ecfdf5;
+  --example-color: #d97706;
+  --example-bg: #fffbeb;
+  --proof-color: #db2777;
+  --proof-bg: #fdf2f8;
+  --prop-color: #2563eb;
+  --prop-bg: #eff6ff;
+  --lemma-color: #9333ea;
+  --lemma-bg: #faf5ff;
+
+  --answer-color: #0891b2;
+  --answer-bg: #ecfeff;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --radius: 12px;
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --primary: #60a5fa;
+  --primary-light: #1e3a5f;
+  --primary-dark: #93c5fd;
+  --border: #334155;
+  --sidebar-bg: #020617;
+  --theorem-bg: #2e1065;
+  --defn-bg: #064e3b;
+  --example-bg: #451a03;
+  --proof-bg: #500724;
+  --answer-bg: #083344;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Segoe UI','PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.85;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ===== Header ===== */
+header {
+  position: fixed; top:0; left:0; right:0; height:64px; z-index:100;
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; padding: 0 24px;
+  gap: 16px;
+}
+header img.logo { height: 40px; border-radius: 6px; }
+header h1 { font-size: 1.15rem; font-weight: 700; flex: 1; color: var(--text); }
+header .subtitle { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+
+.theme-toggle {
+  background: none; border: 1px solid var(--border); border-radius: 20px;
+  padding: 8px 18px; cursor: pointer; font-size: 0.85rem; color: var(--text);
+  transition: all 0.3s; white-space: nowrap;
+}
+.theme-toggle:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+/* ===== Sidebar ===== */
+#sidebar {
+  position: fixed; top:64px; left:0; bottom:0; width:280px; z-index:90;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  overflow-y: auto;
+  padding: 16px 0;
+  transition: transform 0.3s;
+}
+#sidebar::-webkit-scrollbar { width: 6px; }
+#sidebar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+#sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+#sidebar nav { padding: 0 12px; }
+#sidebar .nav-section { margin-bottom: 8px; }
+#sidebar .nav-section-title {
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 12px 12px 6px; color: var(--sidebar-text); opacity: 0.5;
+  font-weight: 600;
+}
+#sidebar a {
+  display: block; padding: 7px 12px 7px 20px;
+  color: var(--sidebar-text); text-decoration: none;
+  font-size: 0.88rem; border-radius: 6px; margin: 2px 0;
+  transition: all 0.2s; border-left: 3px solid transparent;
+}
+#sidebar a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+#sidebar a.active {
+  background: rgba(59,130,246,0.15); color: #93c5fd;
+  border-left-color: var(--sidebar-active); font-weight: 500;
+}
+#sidebar a.sub { padding-left: 32px; font-size: 0.82rem; }
+#sidebar a.sub2 { padding-left: 48px; font-size: 0.78rem; opacity: 0.85; }
+
+/* ===== Main ===== */
+#main {
+  margin-left: 280px; margin-top: 64px; padding: 32px 40px 80px;
+  max-width: 920px; overflow-x: hidden;
+}
+
+/* ===== Section Cards ===== */
+.section-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 32px 36px; margin-bottom: 28px; box-shadow: var(--shadow-lg);
+  scroll-margin-top: 80px; overflow-x: auto;
+}
+.section-card h2 {
+  font-size: 1.6rem; margin-bottom: 20px; padding-bottom: 14px;
+  border-bottom: 3px solid var(--primary); color: var(--primary);
+  font-weight: 700;
+}
+.section-card h3 {
+  font-size: 1.3rem; margin: 28px 0 14px; color: var(--text);
+  font-weight: 600; padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+.section-card h4 {
+  font-size: 1.1rem; margin: 20px 0 10px; color: var(--primary-dark);
+  font-weight: 600;
+}
+.section-card h5 {
+  font-size: 1rem; margin: 16px 0 8px; font-weight: 600;
+  color: var(--text);
+}
+
+/* ===== Content Elements ===== */
+.section-card p { margin-bottom: 14px; text-align: justify; }
+.section-card ul, .section-card ol { margin: 10px 0 14px 28px; }
+.section-card li { margin-bottom: 6px; }
+.section-card strong { color: var(--primary-dark); font-weight: 600; }
+
+.hl { color: var(--accent); font-weight: 500; }
+.key { color: var(--primary); font-weight: 600; }
+
+.highlight-box {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-left: 4px solid #f59e0b;
+  padding: 14px 18px; margin: 14px 0; border-radius: 6px;
+}
+
+[data-theme="dark"] .theorem-box.prop { background: rgba(37,99,235,0.1); }
+[data-theme="dark"] .theorem-box.lemma { background: rgba(147,51,234,0.1); }
+
+[data-theme="dark"] .highlight-box {
+  background: linear-gradient(135deg, #422006 0%, #451a03 100%);
+}
+
+/* ===== Theorem / Definition / Example Boxes ===== */
+.theorem-box {
+  border: 1px solid var(--border); border-left: 4px solid var(--theorem-color);
+  padding: 16px 20px; margin: 16px 0; border-radius: 8px;
+  background: var(--theorem-bg);
+}
+.theorem-box .label {
+  font-weight: 700; color: var(--theorem-color); margin-bottom: 8px;
+  display: block; font-size: 0.9rem;
+}
+.theorem-box.defn {
+  border-left-color: var(--defn-color);
+  background: var(--defn-bg);
+}
+.theorem-box.defn .label { color: var(--defn-color); }
+.theorem-box.exa {
+  border-left-color: var(--example-color);
+  background: var(--example-bg);
+}
+.theorem-box.exa .label { color: var(--example-color); }
+
+.theorem-box.prop {
+  border-left-color: #2563eb;
+  background: #eff6ff;
+}
+.theorem-box.prop .label { color: #2563eb; }
+.theorem-box.lemma {
+  border-left-color: #9333ea;
+  background: #faf5ff;
+}
+.theorem-box.lemma .label { color: #9333ea; }
+
+
+/* ===== Collapsible Sections ===== */
+.collapsible-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 10px 16px; border-radius: 8px;
+  cursor: pointer; font-size: 0.9rem; font-weight: 600;
+  transition: all 0.2s; border: 1px dashed; margin: 10px 0;
+}
+.collapsible-toggle .arrow { transition: transform 0.3s; font-size: 0.8rem; }
+.collapsible-toggle.open .arrow { transform: rotate(90deg); }
+
+.proof-toggle {
+  background: var(--proof-bg); border-color: var(--proof-color);
+  color: var(--proof-color);
+}
+.proof-toggle:hover { background: var(--proof-color); color: #fff; }
+
+.answer-toggle {
+  background: var(--answer-bg); border-color: var(--answer-color);
+  color: var(--answer-color);
+}
+.answer-toggle:hover { background: var(--answer-color); color: #fff; }
+
+.collapsible-content {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+  padding: 0 16px;
+}
+.collapsible-content.open {
+  max-height: 8000px; padding: 12px 16px;
+}
+
+/* ===== Code Blocks ===== */
+.code-tabs {
+  margin: 16px 0; border-radius: 10px; overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.code-tab-header {
+  display: flex; background: #2d2d2d;
+}
+.code-tab-btn {
+  padding: 10px 20px; background: transparent; border: none;
+  color: #999; cursor: pointer; font-size: 0.85rem; font-weight: 500;
+  transition: all 0.2s; border-bottom: 3px solid transparent;
+  display: flex; align-items: center; gap: 6px;
+}
+.code-tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.code-tab-btn.active { color: #fff; border-bottom-color: var(--primary); background: rgba(255,255,255,0.05); }
+.code-tab-btn .lang-dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+}
+.code-tab-btn[data-lang="r"] .lang-dot { background: #2563eb; }
+.code-tab-btn[data-lang="python"] .lang-dot { background: #eab308; }
+.code-tab-btn[data-lang="sas"] .lang-dot { background: #dc2626; }
+
+.code-tab-content { display: none; position: relative; overflow-x: auto; }
+.code-tab-content.active { display: block; }
+
+.code-actions {
+  position: absolute; top: 8px; right: 8px; z-index: 10;
+  display: flex; gap: 6px;
+}
+.code-btn {
+  background: rgba(255,255,255,0.1); border: none; color: #ccc;
+  padding: 5px 12px; border-radius: 5px; cursor: pointer;
+  font-size: 0.75rem; transition: all 0.2s;
+  display: flex; align-items: center; gap: 4px;
+}
+.code-btn:hover { background: rgba(255,255,255,0.25); color: #fff; }
+.code-btn.run-btn { background: rgba(34,197,94,0.2); color: #4ade80; }
+.code-btn.run-btn:hover { background: rgba(34,197,94,0.4); }
+.code-btn.copied { background: #10b981; color: #fff; }
+.code-btn.reset-btn { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.code-btn.reset-btn:hover { background: rgba(251,191,36,0.35); }
+
+pre[class*="language-"] {
+  margin: 0 !important; border-radius: 0 !important;
+  font-size: 0.85rem !important; padding: 16px !important;
+  max-height: 450px; overflow-y: auto;
+}
+
+/* 可编辑代码块样式 */
+pre[class*="language-"] code[contenteditable="true"] {
+  display: block; outline: none; white-space: pre;
+  border-left: 2px solid transparent; transition: border-color 0.2s;
+}
+pre[class*="language-"] code[contenteditable="true"]:focus {
+  border-left-color: #fbbf24; background: #1e1e1e;
+}
+pre[class*="language-"] code[contenteditable="true"]:hover {
+  border-left-color: rgba(251,191,36,0.3);
+}
+
+/* Code output area */
+.code-output {
+  background: #1a1a1a; color: #e0e0e0; padding: 12px 16px;
+  font-family: 'Consolas','Monaco','Courier New',monospace;
+  font-size: 0.82rem; line-height: 1.6; max-height: 300px;
+  overflow-y: auto; display: none; border-top: 1px solid #444;
+}
+.code-output.show { display: block; }
+.code-output .output-line { margin: 2px 0; white-space: pre-wrap; word-break: break-word; }
+.code-output .error { color: #f87171; }
+.code-output .info { color: #60a5fa; }
+.code-output .success { color: #4ade80; }
+.code-output .output-header {
+  color: #60a5fa; font-weight: 600; margin-bottom: 8px;
+  border-bottom: 1px solid #444; padding-bottom: 4px;
+}
+.code-output .output-running { color: #fbbf24; padding: 4px 0; }
+.code-output .output-error {
+  color: #f87171; background: rgba(248,113,113,0.1);
+  padding: 8px 12px; border-radius: 4px; margin: 4px 0;
+}
+.code-output .output-text {
+  background: transparent; color: #e0e0e0; padding: 2px 0;
+  margin: 0; white-space: pre-wrap; word-break: break-word;
+  font-family: 'Consolas','Monaco','Courier New',monospace;
+}
+.code-output .output-plot {
+  max-width: 100%; margin: 8px 0; border-radius: 4px;
+  background: #fff; padding: 4px;
+}
+.code-output .output-info {
+  background: rgba(96,165,250,0.08); padding: 12px 16px;
+  border-radius: 6px; border-left: 3px solid #60a5fa; margin: 8px 0;
+}
+.code-output .output-info p { margin: 4px 0; line-height: 1.7; }
+
+/* ===== Images ===== */
+.figure-wrapper {
+  text-align: center; margin: 24px 0; cursor: zoom-in;
+}
+.figure-wrapper img {
+  max-width: 100%; border-radius: 10px; box-shadow: var(--shadow-lg);
+  transition: transform 0.3s;
+}
+.figure-wrapper:hover img { transform: scale(1.02); }
+.figure-wrapper img.broken {
+  padding: 40px; background: var(--card-bg); opacity: 0.5;
+  border: 2px dashed var(--border);
+}
+.figure-wrapper .caption {
+  font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;
+  font-style: italic;
+}
+.figure-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0;
+}
+.figure-grid .figure-wrapper { margin: 0; }
+
+.lesson-video { text-align: center; margin: 24px 0; }
+.lesson-video video {
+  display: block; width: 100%; max-width: 960px; height: auto; margin: 0 auto;
+  border-radius: 10px; box-shadow: var(--shadow-lg); background: #000;
+}
+.lesson-video figcaption { font-size: 0.85rem; color: var(--text-muted); margin-top: 10px; }
+
+/* Lightbox */
+#lightbox {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.92); z-index: 9999;
+  display: none; justify-content: center; align-items: center;
+  cursor: zoom-out;
+}
+#lightbox img { max-width: 92%; max-height: 92%; border-radius: 8px; }
+#lightbox.active { display: flex; }
+.lightbox-close {
+  position: absolute; top: 20px; right: 30px; color: #fff;
+  font-size: 40px; font-weight: bold; cursor: pointer; line-height: 1;
+}
+
+/* ===== Tables ===== */
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: center; }
+th { background: var(--primary-light); font-weight: 600; color: var(--primary-dark); }
+tr:nth-child(even) { background: rgba(0,0,0,0.02); }
+[data-theme="dark"] tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+
+/* ===== Math Display ===== */
+.math-display {
+  overflow-x: auto; padding: 8px 0; margin: 12px 0;
+}
+mjx-container { font-size: 1.05em !important; }
+
+/* ===== Back to Top ===== */
+#back-top {
+  position: fixed; bottom: 30px; right: 30px; width: 48px; height: 48px;
+  border-radius: 50%; background: var(--primary); color: #fff;
+  border: none; cursor: pointer; font-size: 1.3rem; z-index: 80;
+  display: none; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: transform 0.2s;
+}
+#back-top:hover { transform: translateY(-3px); }
+
+/* ===== WebR Status ===== */
+#webr-status {
+  position: fixed; bottom: 30px; left: 310px; z-index: 80;
+  background: var(--card-bg); padding: 8px 16px; border-radius: 20px;
+  box-shadow: var(--shadow); font-size: 0.8rem; color: var(--text-muted);
+  display: flex; align-items: center; gap: 8px;
+}
+#webr-status .dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;
+}
+#webr-status.ready .dot { background: #10b981; }
+#webr-status.loading .dot { background: #f59e0b; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ===== Mobile ===== */
+#sidebar-toggle {
+  display: none; background: none; border: none; font-size: 1.5rem;
+  color: var(--text); cursor: pointer;
+}
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-280px); }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left: 0; padding: 20px 16px 60px; }
+  #sidebar-toggle { display: block; }
+  .section-card { padding: 20px 16px; }
+  .figure-grid { grid-template-columns: 1fr; }
+  #webr-status { display: none; }
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.section-card { animation: fadeIn 0.4s ease; }
+
+/* ===== Learning Objectives ===== */
+.learning-objectives {
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(219,234,254,0.5) 100%);
+  border-radius: var(--radius); padding: 24px 28px; margin-bottom: 24px;
+  border-left: 5px solid var(--primary);
+}
+.learning-objectives h3 {
+  color: var(--primary-dark); margin-top: 0; border: none; padding: 0;
+}
+.learning-objectives ol { margin: 8px 0 0 24px; }
+.learning-objectives li { margin-bottom: 8px; }
+
+/* ===== Distribution Card ===== */
+.dist-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 0; margin: 24px 0; overflow: hidden;
+  box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+}
+.dist-card-header {
+  padding: 16px 24px; color: #fff; font-size: 1.2rem; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.dist-card-header .icon { font-size: 1.4rem; }
+.dist-card-body { padding: 24px 28px; }
+.dist-card-body h4 { margin-top: 0; }
+
+/* Color themes for distribution cards */
+.dist-binomial .dist-card-header { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.dist-poisson .dist-card-header { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.dist-nbinom .dist-card-header { background: linear-gradient(135deg, #ec4899, #be185d); }
+.dist-exponential .dist-card-header { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.dist-gamma .dist-card-header { background: linear-gradient(135deg, #10b981, #059669); }
+.dist-invgauss .dist-card-header { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.dist-pareto .dist-card-header { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.dist-lognormal .dist-card-header { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.dist-weibull .dist-card-header { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+
+/* ===== Practice Problems ===== */
+.practice-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 24px 28px; margin: 20px 0; box-shadow: var(--shadow);
+  border-left: 5px solid var(--example-color);
+}
+.practice-card h4 { color: var(--example-color); }
+
+/* ===== References ===== */
+.references ol { margin: 8px 0 0 24px; }
+.references li { margin-bottom: 10px; }
+.references em { color: var(--text-muted); }
+</style>
+
+<link href="bookdown-lite.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header>
+  <button id="sidebar-toggle">&#9776;</button>
+  <img src="uibe.jpg" alt="UIBE" class="logo" onerror="this.style.display='none'">
+  <div>
+    <h1>非寿险精算学模型与应用</h1>
+    <div class="subtitle">第5章 损失调整与再保险</div>
+  </div>
+  <a class="site-home-link" href="index.html">目录</a>
+  <button class="theme-toggle" onclick="toggleTheme()">&#127769; 深色模式</button>
+</header>
+
+<!-- ===== Sidebar ===== -->
+<aside id="sidebar">
+  <nav>
+        <div class="nav-section book-global-nav">
+      <div class="nav-section-title">全书</div>
+      <a href="index.html" class="nav-link">目录首页</a>
+      <a href="chap4.html" class="nav-link">上一章</a>
+      <a href="chap6.html" class="nav-link">下一章</a>
+    </div><div class="nav-section">
+      <div class="nav-section-title">导览</div>
+      <a href="#sec-intro" class="nav-link active">学习目标</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">5.1 再保险简介</div>
+      <a href="#sec-5-1" class="nav-link">5.1 再保险简介</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">5.2 再保险下的赔付金额</div>
+      <a href="#sec-5-2" class="nav-link">5.2 再保险下的赔付金额</a>
+      <a href="#sec-5-2-1" class="nav-link sub">5.2.1 比例再保险</a>
+      <a href="#sec-5-2-2" class="nav-link sub">5.2.2 超额赔款再保险</a>
+      <a href="#sec-5-2-3" class="nav-link sub">5.2.3 特定分布下的再保险定价</a>
+      <a href="#sec-5-2-4" class="nav-link sub">5.2.4 通货膨胀的影响</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">5.3 再保险下的累积赔付金额</div>
+      <a href="#sec-5-3" class="nav-link">5.3 再保险下的累积赔付金额</a>
+      <a href="#sec-5-3-1" class="nav-link sub">5.3.1 比例再保险</a>
+      <a href="#sec-5-3-2" class="nav-link sub">5.3.2 超额赔款再保险</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">5.4 不完整数据的估计</div>
+      <a href="#sec-5-4" class="nav-link">5.4 不完整数据的估计</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">5.5 真题练习</div>
+            <a href="#sec-summary" class="nav-link">本章小结</a>
+<a href="#sec-5-5" class="nav-link">5.5 真题练习</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">附录</div>
+      <a href="#sec-references" class="nav-link">参考文献</a>
+    </div>
+  </nav>
+</aside>
+
+<!-- ===== Main Content ===== -->
+<div id="main">
+  <h1 class="chapter-title">第5章 损失调整与再保险</h1>
+
+<div class="section-card" id="sec-intro">
+  <h2>本章学习目标</h2>
+  <div class="learning-objectives">
+    <ol>
+      <li>了解再保险的功能和类型。</li>
+      <li>描述简单形式的比例再保险和超额赔款再保险。</li>
+      <li>计算保险人和再保险人在比例再保险和超额赔款再保险情况下，单个索赔和累积索赔金额的分布。</li>
+      <li>理解在数据不完整情况下，估计原始索赔金额分布参数的方法。</li>
+    </ol>
+  </div>
+</div>
+<div class="section-card" id="sec-5-1">
+  <h2>5.1 再保险简介</h2>
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline><source src="section5-movs/chap5_1.mp4" type="video/mp4">您的浏览器不支持 HTML5 视频播放。</video>
+    <figcaption>视频 5.1：再保险形式与比例再保险</figcaption>
+  </figure>
+  <p>在本节开始前，不妨设想这样一个场景：假如你是一家保险公司的精算师，公司承保了一艘船只从中国出海前往欧洲的航程。根据风险评估结果，你发现航程中的某一段航线可能面临较高的自然灾害风险。在这种情况下，你是否也会希望有另一份保险，能够为公司分散风险和提供保障？当保险人将原始保单中的部分保险责任转让给其他保险人时，便形成了最初的再保险。随着历史的发展，再保险的内涵与形式不断丰富完善，国际再保险市场日益成熟，已成为全球风险管理体系中的重要环节。我国自加入世界贸易组织以来，大量国际再保险公司陆续进入中国市场，它们带来了先进的风险管理理念和再保险技术。这不仅推动了我国再保险业务规模的快速扩张，也使中国从一个新兴市场逐步成长为国际再保险领域的重要参与者。</p>
+<p>根据《再保险业务管理规定》的定义，再保险是指保险人将其承担的保险业务，部分转移给其他保险人的经营行为。为便于区分，将直接与投保人订立保险合同的保险人称为直接保险公司（简称直保公司）或原保险公司。直保公司为了维持经营的稳定性，同时保护自身不受大额索赔的影响，可以投保再保险；相应的保单称为再保险保单或再保险合同。因此，直保公司是风险的分出者，再保险公司是风险的接受者（分入者）。同直接保险类似，直保公司相当于购买了再保险公司提供的保险，故应向再保险公司支付再保险费；为了弥补直保公司的保单取得成本及再保险业务管理费用，再保险公司也会向直保公司返还再保险费的一部分，作为再保险佣金或再保险手续费。再保险仍然具有分散风险和补偿损失的基本特征，且在经营过程中也需满足最大诚信、可保利益等原则，感兴趣的读者可自行了解。</p>
+<div class="figure-wrapper" onclick="openLightbox('section5-figs/reinsurance.jpg')"><img src="section5-figs/reinsurance.jpg" alt="再保险涉及的主体与关系" onerror='this.classList.add("broken");this.alt="图片加载失败: reinsurance.jpg";'><div class="caption">再保险涉及的主体与关系</div></div>
+<p>根据赔付基础的不同，再保险可以分为比例再保险和非比例再保险。其中，比例再保险也称保额再保险，是指以保险金额为基础，确定再保险分出人自留额和再保险接受人分保额的再保险方式；非比例再保险是指以赔款金额为基础，确定再保险分出人自负责任和再保险接受人分保责任的再保险方式。比例再保险的主要特征是再保分出人与接受人按照比例分配保险金额（保险责任）和保费，并按照同一比例分担赔款。此类再保险还可进一步细分为成数再保险、溢额再保险以及成数溢额混合再保险三种形式。</p>
+<p>(1) 成数再保险（quota share reinsurance）</p>
+<div class="theorem-box defn"><span class="label">定义 5.3（成数再保险）</span>
+<p>成数再保险也称比例分担再保险，是指原保险人将每一风险单位的保险金额，按照事先约定的固定比例分给再保险人的方式。在成数再保险中，不论每张保单的保险金额大小，只要在合同规定的限额内，都需要按比例进行分摊。</p>
+</div>
+<p>例如，某风险单位的保险金额为100万元，费率为0.1%，原保险人自留40%，分出60%；保险期间内风险单位的实际损失为5万元。根据约定的分保比例，可以对保费和赔款进行分配。计算可知原保险人对该风险单位收取的总保费为1000元，保费自留40%、即400元，分出保费（即再保费）为600元；赔款金额按照相同比例分担，故原保险人承担赔款2万元，再保险人承担3万元。</p>
+<p>成数再保险的操作简单，在再保险实务和会计处理上较为方便。同时，由于按照固定比例分摊风险和保费，再保险双方的利益较为一致，盈利与亏损共同承担，在一定程度上有助于提高保险业务的质量。然而成数再保险也存在一些不足：一方面，固定比例缺乏灵活性；另一方面，成数再保险分出的保费相对较多，可能影响原保险人的收益。</p>
+<p>(2) 溢额再保险（surplus reinsurance）</p>
+<div class="theorem-box defn"><span class="label">定义 5.4（溢额再保险）</span>
+<p>溢额再保险是指原保险人将风险保额超过自留额的部分进行分保。通过溢额再保险安排，保险人将实际承担的风险控制在不超过自留额的水平，防止保险事故的不确定性对公司财务状况带来冲击。</p>
+</div>
+<p>在溢额再保险安排下，保险人确定一个最大的保险金额作为自留额（通常称为“一线”），分出额一般为自留额的整数倍（称为“几线”），保险人和再保险人按照自留额与分出额占总保额的百分比来分配保费、分摊赔款。例如保险公司确定某风险单位的自留额为50万元，溢额分保的限额为5根线、即250万元。若风险单位A的保险金额为40万元，原保险人自留全部责任；若风险单位B的保险金额为100万元，自留与分出责任的比例为1:1，保费和赔付责任平均分摊；若风险单位C的保额为350万元，则自留50万元、溢额分保250万元，剩余50万元保额列入其他合同。</p>
+<p>由本例可以看出，在溢额再保险中，原保险人确定的是自留额，而非自留比例。这一特点使得分出公司能够根据业务质量灵活调整各个风险单位的自留水平，从而实现经济的再保险安排。此外，溢额再保险在处理大额保险业务时具有更大的弹性，能够更有效地分散风险。但在提升灵活性的同时，溢额再保险也存在一定的局限性。例如，由于需要对不同风险单位分别计算和管理分保事宜，其操作相对繁琐；此外，由于合同双方的利益不完全一致，分出公司可能存在逆选择，即选择将高风险业务更多地分给再保险公司，影响整体风险管理的均衡性。</p>
+<div class="theorem-box defn"><span class="label">定义 5.5（成数和溢额混合再保险）</span>
+<p>成数和溢额混合再保险（combined QS/surplus treaty）是指在一个再保险合同中既有成数再保险，又有溢额再保险，并根据需要将二者有机组合在一起的再保险方式。成数和溢额混合再保险包括先溢额后成数再保险，或先成数后溢额再保险，例如以成数再保险的限额作为溢额再保险的自留额，再以自留额的一定线数作为溢额再保险的限额。</p>
+</div>
+<p>非比例再保险的特点是当原保险人的实际赔款超过约定标准时，由再保险人对超出部分进行补偿，故又被称为第二危险再保险。非比例再保险的形式主要包括超额赔款再保险（excess of loss reinsurance，简称XOL）和赔付率超赔再保险：前者以保险公司的赔付金额作为标准，再保险公司负责超过标准部分的一定金额；后者以保险公司的赔付率作为标准，当业务的实际赔付率超出约定比率时，超出部分由再保险公司负责，直至某一约定赔付率的再保险方式，故又称为停止损失再保险（stop-loss reinsurance）。两种非比例再保险的标准不同，但原理和计算方法非常相似。本章将主要讨论比例再保险和超额赔款再保险。</p>
+<div class="figure-wrapper" onclick="openLightbox('section5-figs/classification.jpg')"><img src="section5-figs/classification.jpg" alt="再保险的类型：成数再保险和超额赔款再保险" onerror='this.classList.add("broken");this.alt="图片加载失败: classification.jpg";'><div class="caption">再保险的类型：成数再保险和超额赔款再保险</div></div>
+</div>
+
+<div class="section-card" id="sec-5-2">
+  <h2>5.2 再保险下的赔付金额</h2>
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline><source src="section5-movs/chap5_2.mp4" type="video/mp4">您的浏览器不支持 HTML5 视频播放。</video>
+    <figcaption>视频 5.2：再保险赔付金额与不完全矩</figcaption>
+  </figure>
+  
+
+  <h3 id="sec-5-2-1">5.2.1 比例再保险</h3>
+  <div class="theorem-box defn"><span class="label">定义 5.1（比例再保险）</span>
+<p>在比例再保险中，原保险人仅支付索赔金额的一定比例。记原始索赔金额为$X$，原保险人承担的部分为$Y$，则：</p>
+<div class="math-display">$$Y = \alpha X,\ 0 < \alpha < 1$$</div>
+<p>其中，参数$\alpha$为自留比例。</p>
+</div>
+<p>已知原保险人对索赔$X$实际支付的金额为$Y = \alpha X$，其余全部分出，则再保险人赔付的金额为$Z = (1-\alpha) X$。通过随机变量的简单变化，容易找到两个金额的分布。</p>
+
+  <h3 id="sec-5-2-2">5.2.2 超额赔款再保险</h3>
+  <div class="theorem-box defn"><span class="label">定义 5.2（超额赔款再保险）</span>
+<p>假定在超额赔款再保险中，原保险人全额支付最高不超过自留额$M$的索赔，超过$M$的部分由再保险人承担。则给定原始索赔$X$，原保险人的赔付金额$Y$满足如下关系：</p>
+<div class="math-display">$$Y = X \wedge M = \left\{
+\begin{aligned}
+X,&&nbsp;&nbsp; \text{if}~~ X \leq M, \\
+M,&&nbsp;&nbsp; \text{if}~~ X > M.
+\end{aligned}
+\right.$$</div>
+</div>
+<p>由此可得再保险人的赔付金额为 $ Z = X − Y = \max(X − M, 0) $。不难看出，原保险人支付金额的期望和方差均会降低，这是由于超额赔款再保险对索赔设定了上限。</p>
+<p>首先计算原保险人和再保险人在超额赔款再保险下的期望赔付金额。假设$X$为连续型随机变量，具有概率密度函数$f(x)$。对于每次索赔，当自留额为$M$时，原保险人的赔付金额$Y$具有如下的期望和矩母函数：</p>
+<div class="math-display">$$\begin{gathered}\mathbb{E}(Y) = \int_0^M x f(x) \mathrm{d}x + M \cdot \text{P}(X > M) = \mathbb{E}(X \wedge M) \\
+M_Y(t)=\mathbb{E}(e^{tY})=\int_0^M {e^{tx} f(x) \mathrm{d}x + e^{tM} \cdot P(X > M)}\end{gathered}$$</div>
+<p>对于每次索赔，再保险人赔付金额的期望等于：</p>
+<div class="math-display">$$\mathbb{E}(Z) = \int_M^\infty {(x - M)} f (x) \mathrm{d}x = \mathbb{E}(X) - \mathbb{E}(X \wedge M)$$</div>
+<p>现在从再保险人角度进行考虑。对于超额赔款再保险，当原始索赔$X \leq M$时，赔款全部由原保险人支付，此时再保险人可能甚至不知道索赔已经发生。因此，再保险人仅能应用索赔超过$M$的数据拟合损失分布，构成截断数据的统计推断问题。</p>
+<p>截断数据（truncated data）是指研究者仅能观察到某个区间范围内的数据，超出该范围的数据被丢弃、无法被观测。例如，原始索赔$X$的理论取值范围为$(0,+\infty)$，但由于能力限制，再保险公司仅能了解区间$(M,+\infty)$内的观测值，区间$(0,M]$部分的数据对再保险公司完全不可见，是一个典型的左截断数据。</p>
+<p>下面从数学上进行说明。根据定义，截断随机变量的分布可以表示为原始随机变量的条件分布。记$W$为已知再保险触发条件下、再保险人负责赔付的金额，则其可写为：</p>
+<div class="math-display">$$W = (X-M) \mid (X > M)$$</div>
+<p>此时研究的问题是：假设原始索赔金额有概率密度函数$f(x)$和累积分布函数$F(x)$，若再保险人仅能获知索赔金额超过自留额$M$的记录（截断并平移），如何推导再保险人赔付金额$W$的分布？</p>
+<p>对此，再保险人可以应用条件概率公式，首先推导$W$的分布函数：</p>
+<div class="math-display">$$\begin{aligned}
+\text{P}(W \leq w) &= \text{P}(X \leq w+M \mid X > M) \\
+&= \frac{\text{P}(M < X \leq w + M)}{\text{P}(X > M)} \\
+&= \frac{F(w+M) - F(M)}{1-F(M)},\ w>0
+\end{aligned}$$</div>
+<p>将分布函数关于$w$求导，即可得到再保险人赔付金额$W$的概率密度函数为：</p>
+<div class="math-display">$$g(w) = \frac{f(w + M)}{1 - F(M)},\ w > 0$$</div>
+<p>值得说明的是，超额赔款再保险的赔付机制与汽车保险和其他财产责任保险中的免赔额非常相似，两者都以损失金额是否超过特定限额为条件进行赔付。当存在免赔额为$L$时，被保险人需自行承担不超过$L$的损失，保险人仅赔付超过$L$的部分；而在超额赔款再保险中，原保险人承担自留限额以内的损失，再保险人仅对超出部分进行赔付。此类保单也称为超额保单，被保险人和保险人在超额保单中的损失情况与超额赔款再保险中的原保险人和再保险人完全相同。</p>
+
+  <h3 id="sec-5-2-3">5.2.3 特定分布下的再保险定价</h3>
+  <p><strong>1. 正态分布</strong></p>
+<p>假设原始索赔金额服从正态分布，即$X \sim \text{N}(\mu, \sigma^2)$。记$\Phi(x)$和$\phi(x)$分别表示标准正态分布的分布函数和概率密度函数，则可以推导正态随机变量的不完全1阶矩和不完全2阶矩分别为：</p>
+<div class="math-display">$$\begin{gathered}\int_{L}^{U} x f_X(x) \mathrm{d}x = \mu[\Phi(U') - \Phi(L')] - \sigma[\phi(U') - \phi(L')] \\
+\int_{L}^{U} x^2 f_X(x) \mathrm{d}x = (\mu^2 + \sigma^2)[\Phi(U') - \Phi(L')] - \sigma[(2\mu+\sigma U')\phi(U') - (2\mu+\sigma L')\phi(L')]\end{gathered}$$</div>
+<p>其中，$L' = (L-\mu)/\sigma$，$U' = (U-\mu)/\sigma$。</p>
+<p>应用上述结果，可以进一步讨论再保险公司实际赔付金额$W$的期望和方差。根据上式，可以推导$W$的1阶矩（期望）为：</p>
+<div class="math-display">$$\begin{aligned}
+\mathbb{E}(W) &= \int_{0}^{\infty} w \cdot g_W(w) \mathrm{d}w \\
+&= \int_{0}^{\infty} w \cdot \frac{f_X(w + M)}{1 - F_X(M)} \mathrm{d}w \\
+&\xlongequal{x=w+M} \frac{1}{1-F_X(M)} \int_{M}^{\infty} (x-M)f_X(x)\mathrm{d}x \\
+&= \frac{1}{1-F_X(M)} \left[\int_{M}^{\infty} xf_X(x)\mathrm{d}x - M\int_{M}^{\infty} f_X(x)\mathrm{d}x \right]
+\end{aligned}$$</div>
+<p>括号中的第一项为$X$在区间$(M,+\infty)$上的不完全1阶矩，第二项为生存函数。</p>
+<p>类似地，$W$的2阶矩可表示为：</p>
+<div class="math-display">$$\begin{aligned}
+\mathbb{E}(W^2) &= \int_{0}^{\infty} w^2 \cdot g_W(w) \mathrm{d}w \\
+&= \int_{0}^{\infty} w^2 \cdot \frac{f_X(w + M)}{1 - F_X(M)} \mathrm{d}w \\
+&\xlongequal{x=w+M} \frac{1}{1-F_X(M)} \int_{M}^{\infty} (x-M)^2 f_X(x)\mathrm{d}x \\
+&= \frac{1}{1-F_X(M)} \left[\int_{M}^{\infty} x^2f_X(x)\mathrm{d}x -2M \int_{M}^{\infty} xf_X(x)\mathrm{d}x + M^2\int_{M}^{\infty} f_X(x)\mathrm{d}x \right]
+\end{aligned}$$</div>
+<p>括号中的第一项为$X$在区间$(M,+\infty)$上的不完全2阶矩。将正态分布的不完全1阶矩和不完全2阶矩公式代入，即可得到具体结果。</p>
+<p>注意，此处讨论的是再保险人无限制接受超额赔款的情况。若再保险人对超额赔款设定了限额（即再保险人承担的责任上限），例如当再保险人最多同意承担$M$以上、限额为$L$的损失时，将不完全矩的积分上限$+\infty$对应替换为$M+L$即可。</p>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">## 正态分布的不完全1阶矩和不完全2阶矩
+norm1 &lt;- function(mu,sigma,L,U){
+  L1 &lt;- (L-mu)/sigma
+  U1 &lt;- (U-mu)/sigma
+  mu*(pnorm(U1)-pnorm(L1)) - sigma*(dnorm(U1)-dnorm(L1))
+}
+norm2 &lt;- function(mu,sigma,L,U){
+  L1 &lt;- (L-mu)/sigma
+  U1 &lt;- (U-mu)/sigma
+  (mu^2+sigma^2)*(pnorm(U1)-pnorm(L1)) - sigma*((2*mu+sigma*U1)*dnorm(U1)-(2*mu+sigma*L1)*dnorm(L1))
+}
+
+## W的期望和方差
+EW1 &lt;- function(mu,sigma,M){
+  (norm1(mu,sigma,L=M,U=Inf) - M*(1-pnorm(M,mu,sigma))) / (1-pnorm(M,mu,sigma))
+}
+EW2 &lt;- function(mu,sigma,M){
+  (norm2(mu,sigma,L=M,U=Inf) - 2*M*norm1(mu,sigma,L=M,U=Inf) + (M^2)*(1-pnorm(M,mu,sigma))) / (1-pnorm(M,mu,sigma))
+}
+DW &lt;- function(mu,sigma,M){
+  EW2(mu,sigma,M) - EW1(mu,sigma,M)^2
+}</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">##############################################################################
+# 第5章 损失调整与再保险
+# 对应教材：section5.tex
+# 内容：通货膨胀影响、再保险类型、免赔额与限额、
+#       不完整数据估计、再保险定价
+##############################################################################
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.optimize import minimize
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+plt.rcParams[&#x27;font.sans-serif&#x27;] = [&#x27;SimHei&#x27;, &#x27;DejaVu Sans&#x27;]
+plt.rcParams[&#x27;axes.unicode_minus&#x27;] = False
+
+
+##############################################################################
+# 5.1 通货膨胀对损失分布的影响
+##############################################################################
+mu, sigma = 5, 1
+r = 0.1  # 通胀率
+mu_new = mu + np.log(1 + r)
+
+E_X = np.exp(mu + sigma**2/2)
+E_Y = np.exp(mu_new + sigma**2/2)
+print(f&quot;通胀前后: E(X)={E_X:.2f}, E(Y)={E_Y:.2f}, 比值={E_Y/E_X:.4f}&quot;)
+
+# 绘图
+x = np.linspace(0.1, 500, 500)
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu)), &#x27;b-&#x27;, label=&#x27;原分布&#x27;)
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu_new)), &#x27;r--&#x27;, label=&#x27;通胀后&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;通胀对损失分布的影响&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 5.2 比例再保险
+##############################################################################
+np.random.seed(123)
+n_sim = 10000
+X = np.random.lognormal(mu, sigma, n_sim)
+alpha = 0.7  # 自留比例
+
+X_primary = alpha * X
+X_reins = (1 - alpha) * X
+
+print(f&quot;\n比例再保险（自留比例0.7）:&quot;)
+print(f&quot;  原损失均值: {X.mean():.2f}&quot;)
+print(f&quot;  原保险人赔付均值: {X_primary.mean():.2f}&quot;)
+print(f&quot;  再保险人赔付均值: {X_reins.mean():.2f}&quot;)
+
+
+##############################################################################
+# 5.3 超额赔款再保险
+##############################################################################
+
+## 5.3.1 单个损失的再保险赔付
+M, L = 1000, 5000
+Y_reins = np.minimum(np.maximum(X - M, 0), L)
+Y_primary = X - Y_reins
+
+print(f&quot;\n超额赔款再保险（M=1000, L=5000）:&quot;)
+print(f&quot;  原保险人赔付均值: {Y_primary.mean():.2f}&quot;)
+print(f&quot;  再保险人赔付均值: {Y_reins.mean():.2f}&quot;)
+
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.hist(Y_reins[Y_reins &gt; 0], bins=50, density=True, alpha=0.5, color=&#x27;grey&#x27;)
+ax.set_xlabel(&#x27;再保险赔付&#x27;); ax.set_ylabel(&#x27;密度&#x27;)
+ax.set_title(&#x27;超额赔款再保险赔付分布&#x27;)
+plt.tight_layout(); plt.show()
+
+
+## 5.3.2 累积赔付的再保险
+M_agg, L_agg = 5000, 20000
+S_agg = np.zeros(n_sim)
+for i in range(n_sim):
+    N = np.random.poisson(5)
+    S_agg[i] = np.random.lognormal(mu, sigma, N).sum()
+
+Y_reins_agg = np.minimum(np.maximum(S_agg - M_agg, 0), L_agg)
+Y_primary_agg = S_agg - Y_reins_agg
+
+print(f&quot;\n累积超额赔款再保险:&quot;)
+print(f&quot;  累积损失均值: {S_agg.mean():.2f}&quot;)
+print(f&quot;  再保险人赔付均值: {Y_reins_agg.mean():.2f}&quot;)
+print(f&quot;  P95: {np.percentile(S_agg, 95):.2f}&quot;)
+
+
+##############################################################################
+# 5.4 免赔额与限额的影响
+##############################################################################
+print(f&quot;\n免赔额对期望赔付的影响:&quot;)
+for d in [0, 50, 100, 200, 500, 1000]:
+    E_X_above_d = np.exp(mu + sigma**2/2) * \
+                  stats.norm.cdf((mu + sigma**2 - np.log(d))/sigma) if d &gt; 0 else E_X
+    P_above_d = 1 - stats.lognorm.cdf(d, s=sigma, scale=np.exp(mu)) if d &gt; 0 else 1
+    E_X_given_d = E_X_above_d / P_above_d if d &gt; 0 else E_X
+    print(f&quot;  d={d}: E[X|X&gt;d]={E_X_given_d:.2f}, P(X&gt;d)={P_above_d:.4f}&quot;)
+
+print(f&quot;\n限额对期望赔付的影响:&quot;)
+for u in [100, 500, 1000, 5000, 10000]:
+    E_X_below_u = np.exp(mu + sigma**2/2) * \
+                  stats.norm.cdf((mu + sigma**2 - np.log(u))/sigma)
+    P_above_u = 1 - stats.lognorm.cdf(u, s=sigma, scale=np.exp(mu))
+    E_min_Xu = E_X_below_u + u * P_above_u
+    print(f&quot;  u={u}: E[min(X,u)]={E_min_Xu:.2f}&quot;)
+
+
+##############################################################################
+# 5.5 不完整数据估计：截断数据
+##############################################################################
+np.random.seed(123)
+d = 100
+X_trunc = []
+while len(X_trunc) &lt; 1000:
+    x = np.random.lognormal(mu, sigma)
+    if x &gt; d:
+        X_trunc.append(x)
+X_trunc = np.array(X_trunc)
+
+# 截断数据MLE
+log_x = np.log(X_trunc)
+mu_hat = log_x.mean()
+sigma_hat = log_x.std(ddof=1)
+print(f&quot;\n截断数据MLE: μ_hat={mu_hat:.4f}, σ_hat={sigma_hat:.4f}&quot;)
+
+
+##############################################################################
+# 5.6 不完整数据估计：删失数据
+##############################################################################
+np.random.seed(123)
+u = 5000
+X_full = np.random.lognormal(mu, sigma, 1000)
+X_cens = np.minimum(X_full, u)
+censored = (X_full &gt; u).astype(int)
+
+# 使用未删失部分估计
+uncens = X_cens[censored == 0]
+log_uncens = np.log(uncens)
+mu_hat_c = log_uncens.mean()
+sigma_hat_c = log_uncens.std(ddof=1)
+print(f&quot;\n删失数据MLE（仅未删失）: μ_hat={mu_hat_c:.4f}, σ_hat={sigma_hat_c:.4f}&quot;)
+print(f&quot;  删失比例: {censored.mean():.4f}&quot;)
+
+
+##############################################################################
+# 5.7 再保险定价
+##############################################################################
+
+## 5.7.1 溢额再保险定价
+np.random.seed(123)
+lam, alpha_g, beta_g = 100, 2, 0.01
+M, L = 1000, 5000
+S_reins = np.zeros(n_sim)
+for i in range(n_sim):
+    N = np.random.poisson(lam)
+    X = np.random.gamma(alpha_g, 1/beta_g, N)
+    S_reins[i] = np.minimum(np.maximum(X - M, 0), L).sum()
+
+loading = 0.2
+premium = S_reins.mean() * (1 + loading)
+print(f&quot;\n溢额再保险定价:&quot;)
+print(f&quot;  E[S_reins]={S_reins.mean():.2f}, Var={S_reins.var():.1f}&quot;)
+print(f&quot;  再保险保费(20%附加)={premium:.2f}&quot;)
+
+
+## 5.7.2 比例再保险定价
+alpha_quota = 0.3
+S_reins_q = np.zeros(n_sim)
+for i in range(n_sim):
+    N = np.random.poisson(lam)
+    X = np.random.gamma(alpha_g, 1/beta_g, N)
+    S_reins_q[i] = (alpha_quota * X).sum()
+
+premium_q = S_reins_q.mean() * 1.15
+print(f&quot;\n比例再保险定价:&quot;)
+print(f&quot;  E[S_reins]={S_reins_q.mean():.2f}&quot;)
+print(f&quot;  再保险保费(15%附加)={premium_q:.2f}&quot;)
+
+
+##############################################################################
+# 5.8 通货膨胀对再保险的影响
+##############################################################################
+print(f&quot;\n通胀对超额赔款再保险的影响:&quot;)
+for r in [0, 0.05, 0.10, 0.15, 0.20]:
+    mu_new = mu + np.log(1 + r)
+    np.random.seed(123)
+    S_r = np.zeros(n_sim)
+    for i in range(n_sim):
+        N = np.random.poisson(100)
+        X = np.random.lognormal(mu_new, sigma, N)
+        S_r[i] = np.minimum(np.maximum(X - M, 0), L).sum()
+    print(f&quot;  r={r:.2f}: E[S_reins]={S_r.mean():.2f}&quot;)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">/****************************************************************************/
+/* 第5章 损失调整与再保险                                                   */
+/* 对应教材：section5.tex                                                   */
+/* 内容：通货膨胀影响、再保险类型、免赔额与限额、                           */
+/*       不完整数据估计、再保险定价                                         */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 5.1 通货膨胀对损失分布的影响                                             */
+/****************************************************************************/
+proc iml;
+  /* 原始损失分布：对数正态LN(μ=5, σ=1) */
+  mu = 5; sigma = 1;
+  /* 通胀率r=10% */
+  r = 0.1;
+  /* 通胀后分布：LN(μ+ln(1+r), σ) */
+  mu_new = mu + log(1 + r);
+  print &quot;通胀前后参数:&quot;;
+  print &quot;原 μ=&quot; mu &quot;σ=&quot; sigma;
+  print &quot;通胀后 μ=&quot; mu_new &quot;σ=&quot; sigma;
+
+  /* 均值和方差变化 */
+  E_X = exp(mu + sigma**2/2);
+  E_Y = exp(mu_new + sigma**2/2);
+  print &quot;E(X)=&quot; E_X &quot;E(Y)=&quot; E_Y &quot;比值=&quot; E_Y/E_X;
+quit;
+
+
+/****************************************************************************/
+/* 5.2 比例再保险                                                           */
+/****************************************************************************/
+proc iml;
+  /* 原保险人自留比例α */
+  alpha = 0.7;
+  /* 原损失X */
+  call streaminit(123);
+  X = j(10000, 1, 0);
+  do i = 1 to 10000;
+    X[i] = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+  end;
+
+  /* 原保险人赔付 */
+  X_primary = alpha * X;
+  /* 再保险人赔付 */
+  X_reins = (1 - alpha) * X;
+
+  print &quot;比例再保险（自留比例0.7）&quot;;
+  print &quot;原损失均值:&quot; mean(X);
+  print &quot;原保险人赔付均值:&quot; mean(X_primary);
+  print &quot;再保险人赔付均值:&quot; mean(X_reins);
+quit;
+
+
+/****************************************************************************/
+/* 5.3 超额赔款再保险                                                       */
+/****************************************************************************/
+
+/* 5.3.1 单个损失的再保险赔付 */
+proc iml;
+  call streaminit(123);
+  M = 1000;  /* 免赔额 */
+  L = 5000;  /* 限额 */
+
+  X = j(10000, 1, 0);
+  Y_reins = j(10000, 1, 0);
+  Y_primary = j(10000, 1, 0);
+  do i = 1 to 10000;
+    X[i] = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+    /* 再保险人赔付：min(max(X-M, 0), L) */
+    Y_reins[i] = min(max(X[i] - M, 0), L);
+    /* 原保险人赔付：X - Y_reins */
+    Y_primary[i] = X[i] - Y_reins[i];
+  end;
+
+  print &quot;超额赔款再保险（M=1000, L=5000）&quot;;
+  print &quot;原损失均值:&quot; mean(X);
+  print &quot;原保险人赔付均值:&quot; mean(Y_primary);
+  print &quot;再保险人赔付均值:&quot; mean(Y_reins);
+quit;
+
+
+/* 5.3.2 累积赔付的再保险 */
+data aggregate_reins;
+  call streaminit(123);
+  M_agg = 5000;   /* 累积免赔额 */
+  L_agg = 20000;  /* 累积限额 */
+  do sim = 1 to 10000;
+    N = rand(&#x27;POISSON&#x27;, 5);
+    S = 0;
+    do j = 1 to N;
+      S = S + exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+    end;
+    /* 再保险人赔付 */
+    Y_reins = min(max(S - M_agg, 0), L_agg);
+    Y_primary = S - Y_reins;
+    output;
+  end;
+run;
+
+title &quot;累积超额赔款再保险&quot;;
+proc means data=aggregate_reins mean std p95;
+  var S Y_reins Y_primary;
+run;
+title;
+
+
+/****************************************************************************/
+/* 5.4 免赔额与限额的影响                                                   */
+/****************************************************************************/
+proc iml;
+  /* 对数正态分布LN(μ=5, σ=1) */
+  mu = 5; sigma = 1;
+
+  /* 不同免赔额下的期望赔付 */
+  d_values = {0, 50, 100, 200, 500, 1000};
+  print &quot;免赔额对期望赔付的影响&quot;;
+  do i = 1 to nrow(d_values);
+    d = d_values[i];
+    /* E[X | X&gt;d] = E[X; X&gt;d] / P(X&gt;d) */
+    /* 对于对数正态：E[X; X&gt;d] = exp(μ+σ²/2) * Φ((μ+σ²-ln d)/σ) */
+    E_X_above_d = exp(mu + sigma**2/2) *
+                  cdf(&#x27;NORMAL&#x27;, (mu + sigma**2 - log(d))/sigma);
+    P_above_d = 1 - cdf(&#x27;LOGNORMAL&#x27;, d, mu, sigma);
+    E_X_given_d = E_X_above_d / P_above_d;
+    print &quot;d=&quot; d &quot;E[X|X&gt;d]=&quot; E_X_given_d &quot;P(X&gt;d)=&quot; P_above_d;
+  end;
+
+  /* 不同限额下的期望赔付 */
+  u_values = {100, 500, 1000, 5000, 10000};
+  print &quot;限额对期望赔付的影响&quot;;
+  do i = 1 to nrow(u_values);
+    u = u_values[i];
+    /* E[min(X,u)] = E[X; X≤u] + u*P(X&gt;u) */
+    E_X_below_u = exp(mu + sigma**2/2) *
+                  cdf(&#x27;NORMAL&#x27;, (mu + sigma**2 - log(u))/sigma);
+    P_above_u = 1 - cdf(&#x27;LOGNORMAL&#x27;, u, mu, sigma);
+    E_min_Xu = E_X_below_u + u * P_above_u;
+    print &quot;u=&quot; u &quot;E[min(X,u)]=&quot; E_min_Xu;
+  end;
+quit;
+
+
+/****************************************************************************/
+/* 5.5 不完整数据估计：截断数据                                             */
+/****************************************************************************/
+proc iml;
+  /* 生成截断数据：只观测大于d的损失 */
+  call streaminit(123);
+  d = 100;
+  n = 1000;
+  X_trunc = j(n, 1, 0);
+  count = 0;
+  do until(count &gt;= n);
+    x = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+    if x &gt; d then do;
+      count = count + 1;
+      X_trunc[count] = x;
+    end;
+  end;
+
+  /* 截断数据的MLE估计 */
+  /* 对于对数正态，截断后似然函数：
+     L = ∏ f(x_i) / (1 - F(d)) */
+  log_x = log(X_trunc);
+  mu_hat = mean(log_x);
+  sigma_hat = std(log_x);
+  print &quot;截断数据MLE（对数正态）&quot;;
+  print &quot;μ_hat =&quot; mu_hat &quot;σ_hat =&quot; sigma_hat;
+quit;
+
+
+/****************************************************************************/
+/* 5.6 不完整数据估计：删失数据                                             */
+/****************************************************************************/
+proc iml;
+  /* 生成删失数据：超过u的损失只记录u */
+  call streaminit(123);
+  u = 5000;
+  n = 1000;
+  X_cens = j(n, 1, 0);
+  censored = j(n, 1, 0);
+  do i = 1 to n;
+    x = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+    if x &gt; u then do;
+      X_cens[i] = u;
+      censored[i] = 1;
+    end;
+    else X_cens[i] = x;
+  end;
+
+  /* 删失数据的MLE：使用生存分析 */
+  /* 简化：仅展示未删失部分的估计 */
+  uncens_idx = loc(censored = 0);
+  X_uncens = X_cens[uncens_idx];
+  log_x = log(X_uncens);
+  mu_hat = mean(log_x);
+  sigma_hat = std(log_x);
+  print &quot;删失数据MLE（对数正态，仅未删失部分）&quot;;
+  print &quot;μ_hat =&quot; mu_hat &quot;σ_hat =&quot; sigma_hat;
+  print &quot;删失比例:&quot; n - nrow(uncens_idx);
+quit;
+
+
+/****************************************************************************/
+/* 5.7 再保险定价                                                           */
+/****************************************************************************/
+
+/* 5.7.1 溢额再保险定价 */
+proc iml;
+  /* 假设索赔次数N~Poisson(λ=100) */
+  /* 单个索赔金额X~Gamma(α=2, β=0.01) */
+  lambda = 100;
+  alpha = 2; beta = 0.01;
+
+  /* 再保险人每次赔付：min(max(X-M, 0), L) */
+  M = 1000; L = 5000;
+
+  /* 模拟 */
+  call streaminit(123);
+  n_sim = 10000;
+  S_reins = j(n_sim, 1, 0);
+  do i = 1 to n_sim;
+    N = rand(&#x27;POISSON&#x27;, lambda);
+    S = 0;
+    do j = 1 to N;
+      X = rand(&#x27;GAMMA&#x27;, alpha, 1/beta);
+      S = S + min(max(X - M, 0), L);
+    end;
+    S_reins[i] = S;
+  end;
+
+  E_S_reins = mean(S_reins);
+  Var_S_reins = var(S_reins);
+  /* 再保险保费 = E[S] + 风险附加 */
+  loading = 0.2;
+  premium = E_S_reins * (1 + loading);
+  print &quot;溢额再保险定价&quot;;
+  print &quot;E[S_reins] =&quot; E_S_reins;
+  print &quot;Var[S_reins] =&quot; Var_S_reins;
+  print &quot;再保险保费(20%附加) =&quot; premium;
+quit;
+
+
+/* 5.7.2 比例再保险定价 */
+proc iml;
+  lambda = 100;
+  alpha = 2; beta = 0.01;
+  alpha_quota = 0.3;  /* 再保险人承担30% */
+
+  call streaminit(123);
+  n_sim = 10000;
+  S_reins = j(n_sim, 1, 0);
+  do i = 1 to n_sim;
+    N = rand(&#x27;POISSON&#x27;, lambda);
+    S = 0;
+    do j = 1 to N;
+      X = rand(&#x27;GAMMA&#x27;, alpha, 1/beta);
+      S = S + alpha_quota * X;
+    end;
+    S_reins[i] = S;
+  end;
+
+  E_S_reins = mean(S_reins);
+  loading = 0.15;
+  premium = E_S_reins * (1 + loading);
+  print &quot;比例再保险定价&quot;;
+  print &quot;E[S_reins] =&quot; E_S_reins;
+  print &quot;再保险保费(15%附加) =&quot; premium;
+quit;
+
+
+/****************************************************************************/
+/* 5.8 通货膨胀对再保险的影响                                               */
+/****************************************************************************/
+proc iml;
+  /* 原损失X~LN(5,1)，通胀率r */
+  r_values = {0, 0.05, 0.10, 0.15, 0.20};
+  M = 1000; L = 5000;
+
+  print &quot;通胀对超额赔款再保险的影响&quot;;
+  do i = 1 to nrow(r_values);
+    r = r_values[i];
+    mu_new = 5 + log(1 + r);
+
+    call streaminit(123);
+    n_sim = 10000;
+    S_reins = j(n_sim, 1, 0);
+    do k = 1 to n_sim;
+      N = rand(&#x27;POISSON&#x27;, 100);
+      S = 0;
+      do j = 1 to N;
+        X = exp(rand(&#x27;NORMAL&#x27;, mu_new, 1));
+        S = S + min(max(X - M, 0), L);
+      end;
+      S_reins[k] = S;
+    end;
+
+    E_S = mean(S_reins);
+    print &quot;r=&quot; r &quot;E[S_reins]=&quot; E_S;
+  end;
+quit;</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+<p><strong>2. 对数正态分布</strong></p>
+<p>由于正态分布是一种对称、取值非负的分布，与保险损失的特征存在差异，因此一般可使用对数正态分布。假设$X \sim \text{LN}(\mu,\sigma^2)$，对数正态分布的一般性质已在第一章给出，可进一步推导其不完全$k$阶矩为：</p>
+<div class="math-display">$$\int_L^U x^k f_X(x) \mathrm{d}x = e^{k \mu+k^2 \sigma^2 / 2}\left[\Phi\left(U_k\right)-\Phi\left(L_k\right)\right]$$</div>
+<p>其中，$L_k = (\ln L-\mu)/\sigma - k\sigma$，$U_k = (\ln U-\mu)/\sigma - k\sigma$。容易计算$W$的期望和方差。</p>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true">## 对数正态分布的不完全k阶矩
+lnorm.k &lt;- function(mu,sigma,L,U,k){
+  Lk &lt;- (log(L)-mu)/sigma - k*sigma
+  Uk &lt;- (log(U)-mu)/sigma - k*sigma
+  exp(k*mu+0.5*(k^2)*(sigma^2)) * (pnorm(Uk)-pnorm(Lk))
+}
+
+## W的期望和方差
+EW1 &lt;- function(mu,sigma,M){
+  (lnorm.k(mu,sigma,L=M,U=Inf,k=1) - M*(1-plnorm(M,mu,sigma))) / (1-plnorm(M,mu,sigma))
+}
+EW2 &lt;- function(mu,sigma,M){
+  (lnorm.k(mu,sigma,L=M,U=Inf,k=2) - 2*M*lnorm.k(mu,sigma,L=M,U=Inf,k=1) + (M^2)*(1-plnorm(M,mu,sigma))) / (1-plnorm(M,mu,sigma))
+}
+DW &lt;- function(mu,sigma,M){
+  EW2(mu,sigma,M) - EW1(mu,sigma,M)^2
+}</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true">##############################################################################
+# 第5章 损失调整与再保险
+# 对应教材：section5.tex
+# 内容：通货膨胀影响、再保险类型、免赔额与限额、
+#       不完整数据估计、再保险定价
+##############################################################################
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.optimize import minimize
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+plt.rcParams[&#x27;font.sans-serif&#x27;] = [&#x27;SimHei&#x27;, &#x27;DejaVu Sans&#x27;]
+plt.rcParams[&#x27;axes.unicode_minus&#x27;] = False
+
+
+##############################################################################
+# 5.1 通货膨胀对损失分布的影响
+##############################################################################
+mu, sigma = 5, 1
+r = 0.1  # 通胀率
+mu_new = mu + np.log(1 + r)
+
+E_X = np.exp(mu + sigma**2/2)
+E_Y = np.exp(mu_new + sigma**2/2)
+print(f&quot;通胀前后: E(X)={E_X:.2f}, E(Y)={E_Y:.2f}, 比值={E_Y/E_X:.4f}&quot;)
+
+# 绘图
+x = np.linspace(0.1, 500, 500)
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu)), &#x27;b-&#x27;, label=&#x27;原分布&#x27;)
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu_new)), &#x27;r--&#x27;, label=&#x27;通胀后&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;通胀对损失分布的影响&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 5.2 比例再保险
+##############################################################################
+np.random.seed(123)
+n_sim = 10000
+X = np.random.lognormal(mu, sigma, n_sim)
+alpha = 0.7  # 自留比例
+
+X_primary = alpha * X
+X_reins = (1 - alpha) * X
+
+print(f&quot;\n比例再保险（自留比例0.7）:&quot;)
+print(f&quot;  原损失均值: {X.mean():.2f}&quot;)
+print(f&quot;  原保险人赔付均值: {X_primary.mean():.2f}&quot;)
+print(f&quot;  再保险人赔付均值: {X_reins.mean():.2f}&quot;)
+
+
+##############################################################################
+# 5.3 超额赔款再保险
+##############################################################################
+
+## 5.3.1 单个损失的再保险赔付
+M, L = 1000, 5000
+Y_reins = np.minimum(np.maximum(X - M, 0), L)
+Y_primary = X - Y_reins
+
+print(f&quot;\n超额赔款再保险（M=1000, L=5000）:&quot;)
+print(f&quot;  原保险人赔付均值: {Y_primary.mean():.2f}&quot;)
+print(f&quot;  再保险人赔付均值: {Y_reins.mean():.2f}&quot;)
+
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.hist(Y_reins[Y_reins &gt; 0], bins=50, density=True, alpha=0.5, color=&#x27;grey&#x27;)
+ax.set_xlabel(&#x27;再保险赔付&#x27;); ax.set_ylabel(&#x27;密度&#x27;)
+ax.set_title(&#x27;超额赔款再保险赔付分布&#x27;)
+plt.tight_layout(); plt.show()
+
+
+## 5.3.2 累积赔付的再保险
+M_agg, L_agg = 5000, 20000
+S_agg = np.zeros(n_sim)
+for i in range(n_sim):
+    N = np.random.poisson(5)
+    S_agg[i] = np.random.lognormal(mu, sigma, N).sum()
+
+Y_reins_agg = np.minimum(np.maximum(S_agg - M_agg, 0), L_agg)
+Y_primary_agg = S_agg - Y_reins_agg
+
+print(f&quot;\n累积超额赔款再保险:&quot;)
+print(f&quot;  累积损失均值: {S_agg.mean():.2f}&quot;)
+print(f&quot;  再保险人赔付均值: {Y_reins_agg.mean():.2f}&quot;)
+print(f&quot;  P95: {np.percentile(S_agg, 95):.2f}&quot;)
+
+
+##############################################################################
+# 5.4 免赔额与限额的影响
+##############################################################################
+print(f&quot;\n免赔额对期望赔付的影响:&quot;)
+for d in [0, 50, 100, 200, 500, 1000]:
+    E_X_above_d = np.exp(mu + sigma**2/2) * \
+                  stats.norm.cdf((mu + sigma**2 - np.log(d))/sigma) if d &gt; 0 else E_X
+    P_above_d = 1 - stats.lognorm.cdf(d, s=sigma, scale=np.exp(mu)) if d &gt; 0 else 1
+    E_X_given_d = E_X_above_d / P_above_d if d &gt; 0 else E_X
+    print(f&quot;  d={d}: E[X|X&gt;d]={E_X_given_d:.2f}, P(X&gt;d)={P_above_d:.4f}&quot;)
+
+print(f&quot;\n限额对期望赔付的影响:&quot;)
+for u in [100, 500, 1000, 5000, 10000]:
+    E_X_below_u = np.exp(mu + sigma**2/2) * \
+                  stats.norm.cdf((mu + sigma**2 - np.log(u))/sigma)
+    P_above_u = 1 - stats.lognorm.cdf(u, s=sigma, scale=np.exp(mu))
+    E_min_Xu = E_X_below_u + u * P_above_u
+    print(f&quot;  u={u}: E[min(X,u)]={E_min_Xu:.2f}&quot;)
+
+
+##############################################################################
+# 5.5 不完整数据估计：截断数据
+##############################################################################
+np.random.seed(123)
+d = 100
+X_trunc = []
+while len(X_trunc) &lt; 1000:
+    x = np.random.lognormal(mu, sigma)
+    if x &gt; d:
+        X_trunc.append(x)
+X_trunc = np.array(X_trunc)
+
+# 截断数据MLE
+log_x = np.log(X_trunc)
+mu_hat = log_x.mean()
+sigma_hat = log_x.std(ddof=1)
+print(f&quot;\n截断数据MLE: μ_hat={mu_hat:.4f}, σ_hat={sigma_hat:.4f}&quot;)
+
+
+##############################################################################
+# 5.6 不完整数据估计：删失数据
+##############################################################################
+np.random.seed(123)
+u = 5000
+X_full = np.random.lognormal(mu, sigma, 1000)
+X_cens = np.minimum(X_full, u)
+censored = (X_full &gt; u).astype(int)
+
+# 使用未删失部分估计
+uncens = X_cens[censored == 0]
+log_uncens = np.log(uncens)
+mu_hat_c = log_uncens.mean()
+sigma_hat_c = log_uncens.std(ddof=1)
+print(f&quot;\n删失数据MLE（仅未删失）: μ_hat={mu_hat_c:.4f}, σ_hat={sigma_hat_c:.4f}&quot;)
+print(f&quot;  删失比例: {censored.mean():.4f}&quot;)
+
+
+##############################################################################
+# 5.7 再保险定价
+##############################################################################
+
+## 5.7.1 溢额再保险定价
+np.random.seed(123)
+lam, alpha_g, beta_g = 100, 2, 0.01
+M, L = 1000, 5000
+S_reins = np.zeros(n_sim)
+for i in range(n_sim):
+    N = np.random.poisson(lam)
+    X = np.random.gamma(alpha_g, 1/beta_g, N)
+    S_reins[i] = np.minimum(np.maximum(X - M, 0), L).sum()
+
+loading = 0.2
+premium = S_reins.mean() * (1 + loading)
+print(f&quot;\n溢额再保险定价:&quot;)
+print(f&quot;  E[S_reins]={S_reins.mean():.2f}, Var={S_reins.var():.1f}&quot;)
+print(f&quot;  再保险保费(20%附加)={premium:.2f}&quot;)
+
+
+## 5.7.2 比例再保险定价
+alpha_quota = 0.3
+S_reins_q = np.zeros(n_sim)
+for i in range(n_sim):
+    N = np.random.poisson(lam)
+    X = np.random.gamma(alpha_g, 1/beta_g, N)
+    S_reins_q[i] = (alpha_quota * X).sum()
+
+premium_q = S_reins_q.mean() * 1.15
+print(f&quot;\n比例再保险定价:&quot;)
+print(f&quot;  E[S_reins]={S_reins_q.mean():.2f}&quot;)
+print(f&quot;  再保险保费(15%附加)={premium_q:.2f}&quot;)
+
+
+##############################################################################
+# 5.8 通货膨胀对再保险的影响
+##############################################################################
+print(f&quot;\n通胀对超额赔款再保险的影响:&quot;)
+for r in [0, 0.05, 0.10, 0.15, 0.20]:
+    mu_new = mu + np.log(1 + r)
+    np.random.seed(123)
+    S_r = np.zeros(n_sim)
+    for i in range(n_sim):
+        N = np.random.poisson(100)
+        X = np.random.lognormal(mu_new, sigma, N)
+        S_r[i] = np.minimum(np.maximum(X - M, 0), L).sum()
+    print(f&quot;  r={r:.2f}: E[S_reins]={S_r.mean():.2f}&quot;)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">/****************************************************************************/
+/* 第5章 损失调整与再保险                                                   */
+/* 对应教材：section5.tex                                                   */
+/* 内容：通货膨胀影响、再保险类型、免赔额与限额、                           */
+/*       不完整数据估计、再保险定价                                         */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 5.1 通货膨胀对损失分布的影响                                             */
+/****************************************************************************/
+proc iml;
+  /* 原始损失分布：对数正态LN(μ=5, σ=1) */
+  mu = 5; sigma = 1;
+  /* 通胀率r=10% */
+  r = 0.1;
+  /* 通胀后分布：LN(μ+ln(1+r), σ) */
+  mu_new = mu + log(1 + r);
+  print &quot;通胀前后参数:&quot;;
+  print &quot;原 μ=&quot; mu &quot;σ=&quot; sigma;
+  print &quot;通胀后 μ=&quot; mu_new &quot;σ=&quot; sigma;
+
+  /* 均值和方差变化 */
+  E_X = exp(mu + sigma**2/2);
+  E_Y = exp(mu_new + sigma**2/2);
+  print &quot;E(X)=&quot; E_X &quot;E(Y)=&quot; E_Y &quot;比值=&quot; E_Y/E_X;
+quit;
+
+
+/****************************************************************************/
+/* 5.2 比例再保险                                                           */
+/****************************************************************************/
+proc iml;
+  /* 原保险人自留比例α */
+  alpha = 0.7;
+  /* 原损失X */
+  call streaminit(123);
+  X = j(10000, 1, 0);
+  do i = 1 to 10000;
+    X[i] = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+  end;
+
+  /* 原保险人赔付 */
+  X_primary = alpha * X;
+  /* 再保险人赔付 */
+  X_reins = (1 - alpha) * X;
+
+  print &quot;比例再保险（自留比例0.7）&quot;;
+  print &quot;原损失均值:&quot; mean(X);
+  print &quot;原保险人赔付均值:&quot; mean(X_primary);
+  print &quot;再保险人赔付均值:&quot; mean(X_reins);
+quit;
+
+
+/****************************************************************************/
+/* 5.3 超额赔款再保险                                                       */
+/****************************************************************************/
+
+/* 5.3.1 单个损失的再保险赔付 */
+proc iml;
+  call streaminit(123);
+  M = 1000;  /* 免赔额 */
+  L = 5000;  /* 限额 */
+
+  X = j(10000, 1, 0);
+  Y_reins = j(10000, 1, 0);
+  Y_primary = j(10000, 1, 0);
+  do i = 1 to 10000;
+    X[i] = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+    /* 再保险人赔付：min(max(X-M, 0), L) */
+    Y_reins[i] = min(max(X[i] - M, 0), L);
+    /* 原保险人赔付：X - Y_reins */
+    Y_primary[i] = X[i] - Y_reins[i];
+  end;
+
+  print &quot;超额赔款再保险（M=1000, L=5000）&quot;;
+  print &quot;原损失均值:&quot; mean(X);
+  print &quot;原保险人赔付均值:&quot; mean(Y_primary);
+  print &quot;再保险人赔付均值:&quot; mean(Y_reins);
+quit;
+
+
+/* 5.3.2 累积赔付的再保险 */
+data aggregate_reins;
+  call streaminit(123);
+  M_agg = 5000;   /* 累积免赔额 */
+  L_agg = 20000;  /* 累积限额 */
+  do sim = 1 to 10000;
+    N = rand(&#x27;POISSON&#x27;, 5);
+    S = 0;
+    do j = 1 to N;
+      S = S + exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+    end;
+    /* 再保险人赔付 */
+    Y_reins = min(max(S - M_agg, 0), L_agg);
+    Y_primary = S - Y_reins;
+    output;
+  end;
+run;
+
+title &quot;累积超额赔款再保险&quot;;
+proc means data=aggregate_reins mean std p95;
+  var S Y_reins Y_primary;
+run;
+title;
+
+
+/****************************************************************************/
+/* 5.4 免赔额与限额的影响                                                   */
+/****************************************************************************/
+proc iml;
+  /* 对数正态分布LN(μ=5, σ=1) */
+  mu = 5; sigma = 1;
+
+  /* 不同免赔额下的期望赔付 */
+  d_values = {0, 50, 100, 200, 500, 1000};
+  print &quot;免赔额对期望赔付的影响&quot;;
+  do i = 1 to nrow(d_values);
+    d = d_values[i];
+    /* E[X | X&gt;d] = E[X; X&gt;d] / P(X&gt;d) */
+    /* 对于对数正态：E[X; X&gt;d] = exp(μ+σ²/2) * Φ((μ+σ²-ln d)/σ) */
+    E_X_above_d = exp(mu + sigma**2/2) *
+                  cdf(&#x27;NORMAL&#x27;, (mu + sigma**2 - log(d))/sigma);
+    P_above_d = 1 - cdf(&#x27;LOGNORMAL&#x27;, d, mu, sigma);
+    E_X_given_d = E_X_above_d / P_above_d;
+    print &quot;d=&quot; d &quot;E[X|X&gt;d]=&quot; E_X_given_d &quot;P(X&gt;d)=&quot; P_above_d;
+  end;
+
+  /* 不同限额下的期望赔付 */
+  u_values = {100, 500, 1000, 5000, 10000};
+  print &quot;限额对期望赔付的影响&quot;;
+  do i = 1 to nrow(u_values);
+    u = u_values[i];
+    /* E[min(X,u)] = E[X; X≤u] + u*P(X&gt;u) */
+    E_X_below_u = exp(mu + sigma**2/2) *
+                  cdf(&#x27;NORMAL&#x27;, (mu + sigma**2 - log(u))/sigma);
+    P_above_u = 1 - cdf(&#x27;LOGNORMAL&#x27;, u, mu, sigma);
+    E_min_Xu = E_X_below_u + u * P_above_u;
+    print &quot;u=&quot; u &quot;E[min(X,u)]=&quot; E_min_Xu;
+  end;
+quit;
+
+
+/****************************************************************************/
+/* 5.5 不完整数据估计：截断数据                                             */
+/****************************************************************************/
+proc iml;
+  /* 生成截断数据：只观测大于d的损失 */
+  call streaminit(123);
+  d = 100;
+  n = 1000;
+  X_trunc = j(n, 1, 0);
+  count = 0;
+  do until(count &gt;= n);
+    x = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+    if x &gt; d then do;
+      count = count + 1;
+      X_trunc[count] = x;
+    end;
+  end;
+
+  /* 截断数据的MLE估计 */
+  /* 对于对数正态，截断后似然函数：
+     L = ∏ f(x_i) / (1 - F(d)) */
+  log_x = log(X_trunc);
+  mu_hat = mean(log_x);
+  sigma_hat = std(log_x);
+  print &quot;截断数据MLE（对数正态）&quot;;
+  print &quot;μ_hat =&quot; mu_hat &quot;σ_hat =&quot; sigma_hat;
+quit;
+
+
+/****************************************************************************/
+/* 5.6 不完整数据估计：删失数据                                             */
+/****************************************************************************/
+proc iml;
+  /* 生成删失数据：超过u的损失只记录u */
+  call streaminit(123);
+  u = 5000;
+  n = 1000;
+  X_cens = j(n, 1, 0);
+  censored = j(n, 1, 0);
+  do i = 1 to n;
+    x = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+    if x &gt; u then do;
+      X_cens[i] = u;
+      censored[i] = 1;
+    end;
+    else X_cens[i] = x;
+  end;
+
+  /* 删失数据的MLE：使用生存分析 */
+  /* 简化：仅展示未删失部分的估计 */
+  uncens_idx = loc(censored = 0);
+  X_uncens = X_cens[uncens_idx];
+  log_x = log(X_uncens);
+  mu_hat = mean(log_x);
+  sigma_hat = std(log_x);
+  print &quot;删失数据MLE（对数正态，仅未删失部分）&quot;;
+  print &quot;μ_hat =&quot; mu_hat &quot;σ_hat =&quot; sigma_hat;
+  print &quot;删失比例:&quot; n - nrow(uncens_idx);
+quit;
+
+
+/****************************************************************************/
+/* 5.7 再保险定价                                                           */
+/****************************************************************************/
+
+/* 5.7.1 溢额再保险定价 */
+proc iml;
+  /* 假设索赔次数N~Poisson(λ=100) */
+  /* 单个索赔金额X~Gamma(α=2, β=0.01) */
+  lambda = 100;
+  alpha = 2; beta = 0.01;
+
+  /* 再保险人每次赔付：min(max(X-M, 0), L) */
+  M = 1000; L = 5000;
+
+  /* 模拟 */
+  call streaminit(123);
+  n_sim = 10000;
+  S_reins = j(n_sim, 1, 0);
+  do i = 1 to n_sim;
+    N = rand(&#x27;POISSON&#x27;, lambda);
+    S = 0;
+    do j = 1 to N;
+      X = rand(&#x27;GAMMA&#x27;, alpha, 1/beta);
+      S = S + min(max(X - M, 0), L);
+    end;
+    S_reins[i] = S;
+  end;
+
+  E_S_reins = mean(S_reins);
+  Var_S_reins = var(S_reins);
+  /* 再保险保费 = E[S] + 风险附加 */
+  loading = 0.2;
+  premium = E_S_reins * (1 + loading);
+  print &quot;溢额再保险定价&quot;;
+  print &quot;E[S_reins] =&quot; E_S_reins;
+  print &quot;Var[S_reins] =&quot; Var_S_reins;
+  print &quot;再保险保费(20%附加) =&quot; premium;
+quit;
+
+
+/* 5.7.2 比例再保险定价 */
+proc iml;
+  lambda = 100;
+  alpha = 2; beta = 0.01;
+  alpha_quota = 0.3;  /* 再保险人承担30% */
+
+  call streaminit(123);
+  n_sim = 10000;
+  S_reins = j(n_sim, 1, 0);
+  do i = 1 to n_sim;
+    N = rand(&#x27;POISSON&#x27;, lambda);
+    S = 0;
+    do j = 1 to N;
+      X = rand(&#x27;GAMMA&#x27;, alpha, 1/beta);
+      S = S + alpha_quota * X;
+    end;
+    S_reins[i] = S;
+  end;
+
+  E_S_reins = mean(S_reins);
+  loading = 0.15;
+  premium = E_S_reins * (1 + loading);
+  print &quot;比例再保险定价&quot;;
+  print &quot;E[S_reins] =&quot; E_S_reins;
+  print &quot;再保险保费(15%附加) =&quot; premium;
+quit;
+
+
+/****************************************************************************/
+/* 5.8 通货膨胀对再保险的影响                                               */
+/****************************************************************************/
+proc iml;
+  /* 原损失X~LN(5,1)，通胀率r */
+  r_values = {0, 0.05, 0.10, 0.15, 0.20};
+  M = 1000; L = 5000;
+
+  print &quot;通胀对超额赔款再保险的影响&quot;;
+  do i = 1 to nrow(r_values);
+    r = r_values[i];
+    mu_new = 5 + log(1 + r);
+
+    call streaminit(123);
+    n_sim = 10000;
+    S_reins = j(n_sim, 1, 0);
+    do k = 1 to n_sim;
+      N = rand(&#x27;POISSON&#x27;, 100);
+      S = 0;
+      do j = 1 to N;
+        X = exp(rand(&#x27;NORMAL&#x27;, mu_new, 1));
+        S = S + min(max(X - M, 0), L);
+      end;
+      S_reins[k] = S;
+    end;
+
+    E_S = mean(S_reins);
+    print &quot;r=&quot; r &quot;E[S_reins]=&quot; E_S;
+  end;
+quit;</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+<div class="theorem-box exa"><span class="label">例 5.1</span><p>保险人正在考虑以下两个再保险协议：</p>
+<p><ul><li>协议1：25{%}成数再保险；</li><li>协议2：无限额超额赔款保险，超额点为25000元。</li></ul></p>
+<p>假设原始索赔的分布是参数为$\mu=8.5$和$\sigma^2=0.64$的对数正态分布，请分别计算下面三种再保险方案下，保险人支付的净赔付金额的期望：(1) 不使用任何协议；(2) 仅使用协议1；(3) 仅使用协议2。</p><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>(1) 如果没有再保险协议，保险人将全额赔偿每项索赔，期望等于：</p>
+<div class="math-display">$$\mathbb{E}(X) = e^{\mu + \frac{1}{2}\sigma ^2} = e^{8.5 +\frac{1}{2}(0.64)} = 6768$$</div>
+<p>(2) 协议1：保险人支付每项索赔的75{%}，即净赔付金额$Y_1=0.75X$，期望等于：</p>
+<div class="math-display">$$\mathbb{E}(Y_1) = 0.75E(X) = 0.75 \times 6768 = 5076$$</div>
+<p>(3) 协议2：保险人为每项索赔最多支付25000元，即净赔付金额$Y_2 = X \wedge M$。根据对数正态分布的有限期望公式，可计算得：</p>
+<div class="math-display">$$\begin{aligned}
+\mathbb{E}({X \wedge M }) &= \exp ( {\mu  + \frac{1}{2}\sigma ^2 } ) \Phi\left({\frac{{\ln M - \mu - \sigma ^2}}{\sigma}} \right) + M [ {1 - F( M )} ] \\
+&= e^{8.5+\frac{1}{2}(0.64)} \cdot \Phi\left( \frac{\ln 25000 -8.5-0.64}{0.8} \right) + 25000 \left[1-\Phi\left( \frac{\ln 25000 - 8.5}{0.8} \right)\right] \\
+&= 6558
+\end{aligned}$$</div>
+<p>也可直接应用定义，将保险人净赔付金额的期望表示为：</p>
+<div class="math-display">$$\mathbb{E}(Y_2) = \int\limits_0^M {x f_X(x)} dx + M\int\limits_M^\infty {f_X (x)dx}$$</div>
+<p>其中，第1项为对数正态分布在区间$(0,M]$上的不完全1阶矩，代入计算公式，有：</p>
+<div class="math-display">$$\begin{aligned}
+\mathbb{E}(Y_2) = e^{\mu + \sigma^2/2} \left[\Phi\left( \frac{\ln M - \mu}{\sigma} - \sigma \right) - \Phi\left( -\infty \right)\right] + M[1-F_X(M)]
+\end{aligned}$$</div>
+<p>结果与之前一致。</p></div></div>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true"># 5.3.3 例5.1：再保险方案比较
+# 对应教材：section5.tex 5.2.3节，例5.1
+# -----------------------------------------------------------------
+# 假设X~LN(mu=8.5, sigma^2=0.64)
+mu &lt;- 8.5
+sigma &lt;- 0.8  # sigma^2 = 0.64
+M &lt;- 25000
+
+## (1) 不使用再保险：E(X) = exp(mu + sigma^2/2)
+EX &lt;- exp(mu + sigma^2 / 2)
+EX  # 6768
+
+## (2) 协议1：25%成数再保险，E(Y1) = 0.75 * E(X)
+EX1 &lt;- 0.75 * EX
+EX1  # 5076
+
+## (3) 协议2：无限额超额赔款，自留额M=25000
+## E(Y2) = E(X ∧ M) = 不完全1阶矩 + M*(1-F(M))
+EX2 &lt;- lnorm.k(mu, sigma, 0, M, 1) + M * lnorm.k(mu, sigma, M, Inf, 0)
+EX2  # 6558</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true"># 导入所需的Python模块
+import matplotlib
+matplotlib.rcParams[&#x27;font.sans-serif&#x27;] = [&#x27;DejaVu Sans&#x27;]
+matplotlib.rcParams[&#x27;axes.unicode_minus&#x27;] = False
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.optimize import minimize
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+# 5.1 通货膨胀对损失分布的影响
+##############################################################################
+mu, sigma = 5, 1
+r = 0.1  # 通胀率
+mu_new = mu + np.log(1 + r)
+
+E_X = np.exp(mu + sigma**2/2)
+E_Y = np.exp(mu_new + sigma**2/2)
+print(f&quot;通胀前后: E(X)={E_X:.2f}, E(Y)={E_Y:.2f}, 比值={E_Y/E_X:.4f}&quot;)
+
+# 绘图
+x = np.linspace(0.1, 500, 500)
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu)), &#x27;b-&#x27;, label=&#x27;原分布&#x27;)
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu_new)), &#x27;r--&#x27;, label=&#x27;通胀后&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;通胀对损失分布的影响&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 5.2 比例再保险
+##############################################################################
+np.random.seed(123)
+n_sim = 10000
+X = np.random.lognormal(mu, sigma, n_sim)
+alpha = 0.7  # 自留比例
+
+X_primary = alpha * X
+X_reins = (1 - alpha) * X
+
+print(f&quot;\n比例再保险（自留比例0.7）:&quot;)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">proc iml;
+  /* 原始损失分布：对数正态LN(μ=5, σ=1) */
+  mu = 5; sigma = 1;
+  /* 通胀率r=10% */
+  r = 0.1;
+  /* 通胀后分布：LN(μ+ln(1+r), σ) */
+  mu_new = mu + log(1 + r);
+  print &quot;通胀前后参数:&quot;;
+  print &quot;原 μ=&quot; mu &quot;σ=&quot; sigma;
+  print &quot;通胀后 μ=&quot; mu_new &quot;σ=&quot; sigma;
+
+  /* 均值和方差变化 */
+  E_X = exp(mu + sigma**2/2);
+  E_Y = exp(mu_new + sigma**2/2);
+  print &quot;E(X)=&quot; E_X &quot;E(Y)=&quot; E_Y &quot;比值=&quot; E_Y/E_X;
+quit;
+
+
+/****************************************************************************/
+/* 5.2 比例再保险                                                           */
+/****************************************************************************/
+proc iml;
+  /* 原保险人自留比例α */
+  alpha = 0.7;
+  /* 原损失X */
+  call streaminit(123);
+  X = j(10000, 1, 0);
+  do i = 1 to 10000;
+    X[i] = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+  end;
+
+  /* 原保险人赔付 */</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+<div class="theorem-box exa"><span class="label">例 5.2</span><p>对于前例，计算保险人支付的净赔付金额的方差。</p><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>(1) 保险人净赔付金额的方差为：</p>
+<div class="math-display">$$\text{Var}(X) = e^{2\mu + \sigma ^2} (e^{\sigma ^2} - 1) = e^{2(8.5) + 0.64}(e^{0.64} - 1) = (6408)^2$$</div>
+<p>(2) 在协议1下，保险人净赔付金额的方差为：$\text{Var}(Y_1) = 0.75^2 \text{Var}(X) = (4806)^2$。</p>
+<p>(3) 在协议2下，根据对数正态分布的2阶有限期望函数公式，可计算$Y_2$的二阶矩和方差分别为：
+<div class="math-display">$$\begin{aligned}
+\mathbb{E}[ {( {X\wedge M} )^2 } ] &= \exp ( {2\mu  + 2 \sigma ^2 } )\Phi \left( {\frac{{\ln M - \mu  - 2\sigma ^2 }}{\sigma }} \right) + M^2 [ {1 - F( M )} ] \\
+&= e^{18.28} \Phi\left( \frac{\ln 25000-8.5-1.28}{0.8} \right) + 25000^2 \left[1-\Phi\left( \frac{\ln 25000 - 8.5}{0.8} \right)\right] \\
+&= 71130942
+\end{aligned}$$</div>
+<div class="math-display">$$\text{Var}(Y_2) = \mathbb{E}(Y_2^2) - \mathbb{E}^2(Y_2) = 71130942 - (6558)^2 = (5303)^2$$</div></p>
+<p>将$\mathbb{E}(Y_2^2)$按定义表示，再应用对数正态分布的不完全2阶矩，也可得到同样结果。</p></div></div>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true"># 5.3.4 例5.2：再保险方案下的方差
+# 对应教材：section5.tex 5.2.3节，例5.2
+# -----------------------------------------------------------------
+## (1) Var(X) = E(X^2) - E(X)^2
+EX_sq &lt;- lnorm.k(mu, sigma, 0, Inf, 2)
+VARX &lt;- EX_sq - EX^2
+VARX  # (6408)^2
+
+## (2) 协议1：Var(Y1) = 0.75^2 * Var(X)
+VARX1 &lt;- 0.75^2 * VARX
+VARX1  # (4806)^2
+
+## (3) 协议2：Var(Y2) = E(Y2^2) - E(Y2)^2
+EX2_SQ &lt;- lnorm.k(mu, sigma, 0, M, 2) + M^2 * lnorm.k(mu, sigma, M, Inf, 0)
+VARX2 &lt;- EX2_SQ - EX2^2
+VARX2  # (5303)^2</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true"># 导入所需的Python模块
+import matplotlib
+matplotlib.rcParams[&#x27;font.sans-serif&#x27;] = [&#x27;DejaVu Sans&#x27;]
+matplotlib.rcParams[&#x27;axes.unicode_minus&#x27;] = False
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.optimize import minimize
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+# 5.1 通货膨胀对损失分布的影响
+##############################################################################
+mu, sigma = 5, 1
+r = 0.1  # 通胀率
+mu_new = mu + np.log(1 + r)
+
+E_X = np.exp(mu + sigma**2/2)
+E_Y = np.exp(mu_new + sigma**2/2)
+print(f&quot;通胀前后: E(X)={E_X:.2f}, E(Y)={E_Y:.2f}, 比值={E_Y/E_X:.4f}&quot;)
+
+# 绘图
+x = np.linspace(0.1, 500, 500)
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu)), &#x27;b-&#x27;, label=&#x27;原分布&#x27;)
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu_new)), &#x27;r--&#x27;, label=&#x27;通胀后&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;通胀对损失分布的影响&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 5.2 比例再保险
+##############################################################################
+np.random.seed(123)
+n_sim = 10000
+X = np.random.lognormal(mu, sigma, n_sim)
+alpha = 0.7  # 自留比例
+
+X_primary = alpha * X
+X_reins = (1 - alpha) * X
+
+print(f&quot;\n比例再保险（自留比例0.7）:&quot;)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">proc iml;
+  /* 原始损失分布：对数正态LN(μ=5, σ=1) */
+  mu = 5; sigma = 1;
+  /* 通胀率r=10% */
+  r = 0.1;
+  /* 通胀后分布：LN(μ+ln(1+r), σ) */
+  mu_new = mu + log(1 + r);
+  print &quot;通胀前后参数:&quot;;
+  print &quot;原 μ=&quot; mu &quot;σ=&quot; sigma;
+  print &quot;通胀后 μ=&quot; mu_new &quot;σ=&quot; sigma;
+
+  /* 均值和方差变化 */
+  E_X = exp(mu + sigma**2/2);
+  E_Y = exp(mu_new + sigma**2/2);
+  print &quot;E(X)=&quot; E_X &quot;E(Y)=&quot; E_Y &quot;比值=&quot; E_Y/E_X;
+quit;
+
+
+/****************************************************************************/
+/* 5.2 比例再保险                                                           */
+/****************************************************************************/
+proc iml;
+  /* 原保险人自留比例α */
+  alpha = 0.7;
+  /* 原损失X */
+  call streaminit(123);
+  X = j(10000, 1, 0);
+  do i = 1 to 10000;
+    X[i] = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+  end;
+
+  /* 原保险人赔付 */</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+<div class="theorem-box exa"><span class="label">例 5.3</span><p>对于前例，考虑修改其中的超额赔款再保险协议，再保险公司仅接受25000元至50000元部分的损失，超过50000元部分的索赔责任仍归保险人。则在新的协议下，保险人支付的净赔付金额的期望将如何变化？</p><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>在新的协议下，保险人的净赔付金额为：</p>
+<div class="math-display">$$Y_2 = \left\{
+\begin{aligned}
+&X,&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; \text{if}~~ X \leq M, \\
+&M,&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;~~~ \text{if}~~ M<X\leq R, \\
+&X-(R-M), &nbsp;&nbsp; \text{if}~~ X > R.
+\end{aligned}
+\right.$$</div>
+<p>其中，超额点$M=25000$，上限$R=50000$。
+	
+则按定义，$Y_2$的期望可拆分为：</p>
+<div class="math-display">$$\begin{aligned}
+\mathbb{E}(Y_2) &= \int\limits_0^M {x f_X(x)} dx + M\int\limits_M^R {f_X ( x)} dx + \int\limits_R^\infty {( {x - R + M})} f_X ( x)dx \\
+&= \int\limits_0^M {xf( x)} dx + M\int\limits_M^R {f( x)} dx + \int\limits_R^\infty {xf( x)} dx - ( {R - M})\int\limits_R^\infty {f( x)} dx \\
+\end{aligned}$$</div>
+<p>其中，第一项和第三项可利用对数正态分布的不完全1阶矩，第二项和第四项可应用分布函数和生存函数。</p>
+<p>将数据代入对应公式，可解得结果为：</p>
+<div class="math-display">$$\begin{aligned}
+\mathbb{E}(X_2) &= e^{8.82}\Phi(1.233) + 25000[\Phi(2.900)-\Phi(2.033)] + e^{8.82}[1-\Phi(2.100)] \\
+&&nbsp;&nbsp;&nbsp;&nbsp; - 25000[1-\Phi(2.900)] = 6585
+\end{aligned}$$</div></div></div>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true"># 5.3.5 例5.3：有限额超额赔款再保险
+# 对应教材：section5.tex 5.2.3节，例5.3
+# -----------------------------------------------------------------
+# 超额点M=25000，上限R=50000
+R &lt;- 50000
+## E(Y2) = E(X∧M) + M*P(M&lt;X≤R) + (R-M)*P(X&gt;R) ... 实际为：
+## E(Y2) = ∫₀ᴹ xf(x)dx + M∫ᴹᴿ f(x)dx + ∫ᴿ^∞ (x-R+M)f(x)dx
+EX2_new &lt;- lnorm.k(mu, sigma, 0, M, 1) +
+            M * (plnorm(R, mu, sigma) - plnorm(M, mu, sigma)) +
+            lnorm.k(mu, sigma, R, Inf, 1) -
+            (R - M) * (1 - plnorm(R, mu, sigma))
+EX2_new  # 6585
+
+##############################################################################
+# 5.4 通货膨胀的影响
+##############################################################################</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true"># 导入所需的Python模块
+import matplotlib
+matplotlib.rcParams[&#x27;font.sans-serif&#x27;] = [&#x27;DejaVu Sans&#x27;]
+matplotlib.rcParams[&#x27;axes.unicode_minus&#x27;] = False
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.optimize import minimize
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+# 5.1 通货膨胀对损失分布的影响
+##############################################################################
+mu, sigma = 5, 1
+r = 0.1  # 通胀率
+mu_new = mu + np.log(1 + r)
+
+E_X = np.exp(mu + sigma**2/2)
+E_Y = np.exp(mu_new + sigma**2/2)
+print(f&quot;通胀前后: E(X)={E_X:.2f}, E(Y)={E_Y:.2f}, 比值={E_Y/E_X:.4f}&quot;)
+
+# 绘图
+x = np.linspace(0.1, 500, 500)
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu)), &#x27;b-&#x27;, label=&#x27;原分布&#x27;)
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu_new)), &#x27;r--&#x27;, label=&#x27;通胀后&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;通胀对损失分布的影响&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 5.2 比例再保险
+##############################################################################
+np.random.seed(123)
+n_sim = 10000
+X = np.random.lognormal(mu, sigma, n_sim)
+alpha = 0.7  # 自留比例
+
+X_primary = alpha * X
+X_reins = (1 - alpha) * X
+
+print(f&quot;\n比例再保险（自留比例0.7）:&quot;)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">proc iml;
+  /* 原始损失分布：对数正态LN(μ=5, σ=1) */
+  mu = 5; sigma = 1;
+  /* 通胀率r=10% */
+  r = 0.1;
+  /* 通胀后分布：LN(μ+ln(1+r), σ) */
+  mu_new = mu + log(1 + r);
+  print &quot;通胀前后参数:&quot;;
+  print &quot;原 μ=&quot; mu &quot;σ=&quot; sigma;
+  print &quot;通胀后 μ=&quot; mu_new &quot;σ=&quot; sigma;
+
+  /* 均值和方差变化 */
+  E_X = exp(mu + sigma**2/2);
+  E_Y = exp(mu_new + sigma**2/2);
+  print &quot;E(X)=&quot; E_X &quot;E(Y)=&quot; E_Y &quot;比值=&quot; E_Y/E_X;
+quit;
+
+
+/****************************************************************************/
+/* 5.2 比例再保险                                                           */
+/****************************************************************************/
+proc iml;
+  /* 原保险人自留比例α */
+  alpha = 0.7;
+  /* 原损失X */
+  call streaminit(123);
+  X = j(10000, 1, 0);
+  do i = 1 to 10000;
+    X[i] = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+  end;
+
+  /* 原保险人赔付 */</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+
+  <h3 id="sec-5-2-4">5.2.4 通货膨胀的影响</h3>
+  <p>下面考虑通货膨胀对再保险的影响。对于超额赔款再保险，假设通货膨胀造成原始索赔金额$X$变为$k$倍、自留额$M$保持不变，则原保险人的赔付金额$Y$为：</p>
+<div class="math-display">$$Y = (kX) \wedge M = \left\{
+\begin{aligned}
+kX,&&nbsp;&nbsp; \text{if}~~ kX \leq M, \\
+M,&&nbsp;&nbsp; \text{if}~~ kX > M.
+\end{aligned}
+\right.$$</div>
+<p>此时，保险人赔付金额的期望等于：</p>
+<div class="math-display">$$\mathbb{E}(Y) = \int_0^{M/k} kxf(x) \mathrm{d}x + M \cdot P(X >M / k)$$</div>
+<p>由上式可知，原保险人的平均赔付金额并不是在没有通货膨胀情况下支付的平均赔付金额的$k$倍。若考虑通货膨胀的影响，逐年对自留额$M$进行调整，也可以采用类似方法分析原保险人赔款情况的变化。</p>
+<div class="theorem-box exa"><span class="label">例 5.4</span><p>假设某保单组合的索赔金额服从帕累托分布$\text{Pa}(\alpha,\lambda)$。在第0年，已知分布参数$(\alpha=6,\lambda=1000)$。保险人签订了一个超额赔款再保险协议，自留额为500。假设每年的通胀率为常数10{%}。</p>
+<p>(1) 计算第1年和第2年的原始索赔金额的分布。</p>
+<p>(2) 计算保险人每年平均净赔付金额增长的百分比。</p><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>(1) 记$X_0$表示第0年的原始索赔金额，根据题目有$X_0 \sim \text{Pa}(6,1000)$。</p>
+<p>在考虑通货膨胀的情况下，第1年的原始索赔金额$X_{1}=kX_{0}$，其中$k=1.1$。根据随机变量的变换规律，可计算$X_1$的密度函数为：</p>
+<div class="math-display">$$\begin{aligned}f_{X_1}(y) &= f_{X_0}(\frac{y}{k}) \left| \frac{dx}{dy} \right| \\
+&= \frac{\alpha \lambda ^\alpha }{(\lambda + y/k)^{\alpha + 1}} \cdot \frac{1}{k} \\
+&= \frac{\alpha (k\lambda)^\alpha}{(k\lambda + y)^{\alpha + 1}}\end{aligned}$$</div>
+<p>即$X_{1}$服从帕累托分布$\text{Pa}(\alpha,k\lambda)$。类似可推出$X_2=k^2X_0 \sim \text{Pa}(\alpha,k^2 \lambda)$。</p>
+<p>代入数据得，第1年的索赔金额分布为$\text{Pa}(6,1100)$，第2年为$\text{Pa}(6,1210)$。</p>
+<p>(2) 首先考虑第0年的保险人的平均净赔付金额$\mathbb{E}(Y_0)$，根据定义有：</p>
+<div class="math-display">$$\mathbb{E}(Y_0) = \int\limits_0^{500} {x\frac{\alpha \lambda^\alpha}{(\lambda + x)^{\alpha + 1}}} \mathrm{d}x + 500\int\limits_{500}^\infty {\frac{\alpha \lambda^\alpha }{(\lambda + x)^{\alpha + 1}}} \mathrm{d}x$$</div>
+<p>对于等式第二项，应用帕累托分布的生存函数，结果为：</p>
+<div class="math-display">$$500\int\limits_{500}^\infty {\frac{\alpha \lambda^\alpha }{(\lambda + x)^{\alpha + 1}}} \mathrm{d}x = 500 \cdot \text{P}(X_0 > 500) = 500 \left( {\frac{\lambda }{\lambda + 500}} \right)^\alpha$$</div>
+<p>对于等式第一项，$X_0$在区间$[0,500]$上的不完全期望可表示为$X_0$的期望（在区间$[0,\infty)$上的积分）减去$X_0$在区间$[500,\infty)$上的不完全期望，即：</p>
+<div class="math-display">$$\int\limits_0^{500} {x\frac{\alpha \lambda^\alpha }{(\lambda + x)^{\alpha + 1}}} \mathrm{d}x = \frac{\lambda}{\alpha - 1} - \int\limits_{500}^\infty {x\frac{\alpha \lambda^\alpha }{(\lambda + x)^{\alpha + 1}}} \mathrm{d}x$$</div>
+<p>对上式第二项，应用换元法替换$u=x-500$，积分变为：</p>
+<div class="math-display">$$\begin{aligned}\int\limits_{500}^\infty {x\frac{\alpha \lambda^\alpha }{(\lambda + x)^{\alpha + 1}}} \mathrm{d}u &= \int\limits_{0}^\infty {(u+500)\frac{\alpha \lambda^\alpha }{(\lambda+500 + u)^{\alpha + 1}}} \mathrm{d}x \\
+&= \int\limits_{0}^\infty {u\frac{\alpha \lambda^\alpha }{(\lambda+500 + u)^{\alpha + 1}}} \mathrm{d}u + 500\int\limits_{0}^\infty {\frac{\alpha \lambda^\alpha }{(\lambda+500 + u)^{\alpha + 1}}} \mathrm{d}u \\
+&= \left( \frac{\lambda}{\lambda+500} \right)^\alpha \int\limits_{0}^\infty {u\frac{\alpha (\lambda+500)^\alpha }{(\lambda+500 + u)^{\alpha + 1}}} \mathrm{d}u \\
+&&nbsp;&nbsp; + 500 \left( \frac{\lambda}{\lambda+500} \right)^\alpha \int\limits_{0}^\infty {\frac{\alpha (\lambda+500)^\alpha }{(\lambda+500 + u)^{\alpha + 1}}} \mathrm{d}u\end{aligned}$$</div>
+<p>其中，第一个积分为帕累托分布$\text{Pa}(\alpha,\lambda+500)$的期望，等于$(\lambda+500)/(\alpha  - 1)$，第二个积分为帕累托概率密度函数在$[0,\infty)$上的积分，结果等于1。</p>
+<p>整理可得，当索赔金额$X_0 \sim \text{Pa}(\alpha,\lambda)$时，原保险人净赔付金额的期望为：</p>
+<div class="math-display">$$\mathbb{E}(Y_0 ) = \frac{\lambda }{\alpha - 1} - \left( \frac{\lambda}{\lambda+500} \right)^\alpha \times \frac{\lambda + 500}{\alpha - 1}$$</div>
+<p>代入参数$(\alpha=6,\lambda=1000)$，可得$\mathbb{E}(Y_0)=173.66$。</p>
+<p>类似将$k \lambda$和$k^2 \lambda$代入$\lambda$，可以得到第1年和第2年的净赔付金额的期望分别为：</p>
+<div class="math-display">$$\begin{gathered}\mathbb{E}(Y_1 ) = \frac{1100}{5} - \left( {\frac{1100}{1600}} \right)^6 \times \frac{1600}{5} = 186.21 \\
+\mathbb{E}(Y_2 ) = \frac{1210}{5} - \left( {\frac{1210}{1710}} \right)^6 \times \frac{1710}{5} = 199.07\end{gathered}$$</div>
+<p>因此，保险人的平均净赔付金额从第0年到第1年增长的比例为7.2{%}，从第1年到第2年增长的比例为6.9{%}。</p></div></div>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true"># 5.4.1 通胀对超额赔款再保险的影响
+# 对应教材：section5.tex 5.2.4节，例5.4
+# -----------------------------------------------------------------
+# 假设X~Pa(alpha, lambda)，通胀率k=1.1，自留额M=500
+# 通胀后X1 = k*X0 ~ Pa(alpha, k*lambda)
+# E(Y) = lambda/(alpha-1) - (lambda/(lambda+M))^alpha * (lambda+M)/(alpha-1)
+
+pareto_reinsurance_EY &lt;- function(alpha, lambda, M) {
+  lambda / (alpha - 1) -
+    (lambda / (lambda + M))^alpha * (lambda + M) / (alpha - 1)
+}
+
+alpha &lt;- 6
+lambda0 &lt;- 1000
+M &lt;- 500
+k &lt;- 1.1  # 通胀率10%
+
+## 第0年
+EY0 &lt;- pareto_reinsurance_EY(alpha, lambda0, M)
+EY0  # 173.66
+
+## 第1年：lambda1 = k*lambda0 = 1100
+EY1 &lt;- pareto_reinsurance_EY(alpha, k * lambda0, M)
+EY1  # 186.21
+
+## 第2年：lambda2 = k^2*lambda0 = 1210
+EY2 &lt;- pareto_reinsurance_EY(alpha, k^2 * lambda0, M)
+EY2  # 199.07
+
+## 增长比例
+(EY1 - EY0) / EY0  # 7.2%
+(EY2 - EY1) / EY1  # 6.9%
+
+##############################################################################
+# 5.5 再保险下的累积赔付金额
+##############################################################################</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true"># 导入所需的Python模块
+import matplotlib
+matplotlib.rcParams[&#x27;font.sans-serif&#x27;] = [&#x27;DejaVu Sans&#x27;]
+matplotlib.rcParams[&#x27;axes.unicode_minus&#x27;] = False
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.optimize import minimize
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+# 5.1 通货膨胀对损失分布的影响
+##############################################################################
+mu, sigma = 5, 1
+r = 0.1  # 通胀率
+mu_new = mu + np.log(1 + r)
+
+E_X = np.exp(mu + sigma**2/2)
+E_Y = np.exp(mu_new + sigma**2/2)
+print(f&quot;通胀前后: E(X)={E_X:.2f}, E(Y)={E_Y:.2f}, 比值={E_Y/E_X:.4f}&quot;)
+
+# 绘图
+x = np.linspace(0.1, 500, 500)
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu)), &#x27;b-&#x27;, label=&#x27;原分布&#x27;)
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu_new)), &#x27;r--&#x27;, label=&#x27;通胀后&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;通胀对损失分布的影响&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 5.2 比例再保险
+##############################################################################
+np.random.seed(123)
+n_sim = 10000
+X = np.random.lognormal(mu, sigma, n_sim)
+alpha = 0.7  # 自留比例
+
+X_primary = alpha * X
+X_reins = (1 - alpha) * X
+
+print(f&quot;\n比例再保险（自留比例0.7）:&quot;)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">proc iml;
+  /* 原始损失分布：对数正态LN(μ=5, σ=1) */
+  mu = 5; sigma = 1;
+  /* 通胀率r=10% */
+  r = 0.1;
+  /* 通胀后分布：LN(μ+ln(1+r), σ) */
+  mu_new = mu + log(1 + r);
+  print &quot;通胀前后参数:&quot;;
+  print &quot;原 μ=&quot; mu &quot;σ=&quot; sigma;
+  print &quot;通胀后 μ=&quot; mu_new &quot;σ=&quot; sigma;
+
+  /* 均值和方差变化 */
+  E_X = exp(mu + sigma**2/2);
+  E_Y = exp(mu_new + sigma**2/2);
+  print &quot;E(X)=&quot; E_X &quot;E(Y)=&quot; E_Y &quot;比值=&quot; E_Y/E_X;
+quit;
+
+
+/****************************************************************************/
+/* 5.2 比例再保险                                                           */
+/****************************************************************************/
+proc iml;
+  /* 原保险人自留比例α */
+  alpha = 0.7;
+  /* 原损失X */
+  call streaminit(123);
+  X = j(10000, 1, 0);
+  do i = 1 to 10000;
+    X[i] = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+  end;
+
+  /* 原保险人赔付 */</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+</div>
+
+<div class="section-card" id="sec-5-3">
+  <h2>5.3 再保险下的累积赔付金额</h2>
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline><source src="section5-movs/chap5_3.mp4" type="video/mp4">您的浏览器不支持 HTML5 视频播放。</video>
+    <figcaption>视频 5.3：再保险下的累积赔付金额分布</figcaption>
+  </figure>
+  <p>回到短期聚合风险模型的场景：假设一个保单组合在保险期间内发生的索赔次数记为$N$，每次索赔的金额记为$X_i~(i=1,2,\cdots,N)$，则累积索赔金额$S = \sum\limits_{i=1}^{N} X_i$。分别考虑存在比例再保险和超额赔款再保险情况下，原保险人与再保险人的累积赔付金额的分布和特征。</p>
+
+  <h3 id="sec-5-3-1">5.3.1 比例再保险</h3>
+  <p>在比例再保险中，每当索赔发生时，原保险人和再保险人都按照一定比例进行赔付，因此两者具有相同的索赔次数分布。已知自留比例固定为$\alpha(0\leq\alpha\leq1)$，则原保险人对第$i$项索赔支付的金额为$\alpha X_i$，再保险人支付的金额为$(1-\alpha) X_i$。易推导两者的累积赔付金额分别为$\alpha S$和$(1-\alpha)S$。</p>
+
+  <h3 id="sec-5-3-2">5.3.2 超额赔款再保险</h3>
+  <p>对于超额赔款再保险，若自留额为$M$，则原保险人对每项索赔最多支付$M$，即$Y_i = \min(X_i,M)$；其余部分分出，则再保险人支付的金额为$Z_i = \max(0,X_i-M)$。此时，原保险人和再保险人的累积赔付金额可以表示为：</p>
+<div class="math-display">$$\begin{gathered}S_I = Y_1 + Y_2 + \cdots + Y_N \\
+S_R = Z_1 + Z_2 + \cdots + Z_N\end{gathered}$$</div>
+<p>假设索赔次数$N \sim \text{Poi}(\lambda)$，则$S_I$和$S_R$服从复合泊松分布，每次索赔的赔付金额分别为$Y_i$和$Z_i$。注意再保险人的赔付金额可能出现零值。在这一假设下，可以应用复合泊松分布的性质推导$S_I$和$S_R$的特征。</p>
+<div class="theorem-box exa"><span class="label">例 5.5</span><p>假设某个风险组合的累积索赔金额服从复合泊松分布，泊松参数$\lambda=10$，每次索赔的金额服从区间$(0,2000)$上的均匀分布。对于每次索赔，原保险人采取了自留额$M=1600$的超额损失再保险。计算在该再保险安排下，原保险人和再保险人的累积赔付金额的期望、方差和偏态系数。</p><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>记 $S_{I}$ 和 $S_{R}$ 分别表示原保险人和再保险人的累积赔付金额。首先考虑$S_I$，为计算期望$\mathbb{E}(S_{I})$，需要计算$\mathbb{E}(Y_{i})$，结果为：</p>
+<div class="math-display">$$\begin{aligned}\mathbb{E}(Y_{i}) &= \int\limits_0^M xf(x)\mathrm{d}x + M \cdot \text{P}(X_{i}>M) \\
+&= \int\limits_0^{1600} \frac{x}{2000} \mathrm{d}x + 1600 \cdot \int\limits_{1600}^{2000} \frac{1}{2000} \mathrm{d}x \\
+&= 0.0005 \times \frac{x^2}{2}\bigg|_0^{1600} + 1600 \times 0.2 = 960\end{aligned}$$</div>
+<p>故$\mathbb{E}(S_{I}) = \lambda \mathbb{E}(Y_{i}) = 9600$。</p>
+<p>为计算方差$\text{Var}(S_{I})$，需要计算$\mathbb{E}(Y_i^2)$，结果为：</p>
+<div class="math-display">$$\begin{aligned}\mathbb{E}(Y_{i}^2) &= \int\limits_0^M x^2 f(x) \mathrm{d}x + M^2 \cdot \text{P}(X_{i}>M) \\
+&= 0.0005 \times \frac{x^3}{3}\bigg|_0^{1600} + 1600^2 \times 0.2 = 1194666.7\end{aligned}$$</div>
+<p>故$\text{Var}(S_{I}) = \lambda \mathbb{E}(Y_i^2) = 11946667$。</p>
+<p>为计算$S_I$的偏态系数，需要计算$\mathbb{E}(Y_i^3)$，结果为：</p>
+<div class="math-display">$$\begin{aligned}\mathbb{E}(Y_{i}^3) &= \int\limits_0^M x^3 f(x) \mathrm{d}x + M^3 \cdot \text{P}(X_{i}>M) \\
+&= 0.0005 \times \frac{x^4}{4}\bigg|_0^{1600} + 1600^3 \times 0.2 = 1.6384 \times 10^9\end{aligned}$$</div>
+<p>故偏态系数等于$\lambda \mathbb{E}(Y_i^3)/\text{Var}(S_{I})^{3/2} = 0.397$。</p>
+<p>类似地，为计算$S_R$的特征，需要计算$Z_i$的前3阶矩，结果分别为：</p>
+<div class="math-display">$$\begin{gathered}\mathbb{E}(Z_i) = \int\limits_M^{2000} \frac{x-1600}{2000}\mathrm{d}x = \int\limits_0^{400} \frac{y}{2000}\mathrm{d}y = 0.0005 \times \frac{y^2}{2}\bigg|_0^{400} = 40 \\
+\mathbb{E}(Z_i^2) = \int\limits_M^{2000} \frac{(x-1600)^2}{2000}\mathrm{d}x = \int\limits_0^{400} \frac{y^2}{2000}\mathrm{d}y = 0.0005 \times \frac{y^3}{3}\bigg|_0^{400} = 10666.7 \\
+\mathbb{E}(Z_i^3) = \int\limits_M^{2000} \frac{(x-1600)^3}{2000}\mathrm{d}x = \int\limits_0^{400} \frac{y^3}{2000}\mathrm{d}y = 0.0005 \times \frac{y^4}{4}\bigg|_0^{400} = 3200000\end{gathered}$$</div>
+<p>因此，$S_R$的期望、方差和偏态系数分别等于400、106667和0.919。</p></div></div>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true"># 5.5.2 超额赔款再保险下的累积赔付
+# 对应教材：section5.tex 5.3.2节，例5.5
+# -----------------------------------------------------------------
+# 假设N~Poi(lambda=10)，X~U(0,2000)，自留额M=1600
+lambda &lt;- 10
+M &lt;- 1600
+a &lt;- 0  # 均匀分布下限
+b &lt;- 2000  # 均匀分布上限
+
+## 原保险人Y = min(X, M)
+## E(Y) = ∫₀ᴹ x*f(x)dx + M*P(X&gt;M)
+EY &lt;- integrate(function(x) x * dunif(x, a, b), 0, M)$value +
+       M * (1 - punif(M, a, b))
+EY  # 960
+
+## E(Y^2) = ∫₀ᴹ x²*f(x)dx + M²*P(X&gt;M)
+EY2 &lt;- integrate(function(x) x^2 * dunif(x, a, b), 0, M)$value +
+        M^2 * (1 - punif(M, a, b))
+EY2  # 1194666.7
+
+## E(Y^3) = ∫₀ᴹ x³*f(x)dx + M³*P(X&gt;M)
+EY3 &lt;- integrate(function(x) x^3 * dunif(x, a, b), 0, M)$value +
+        M^3 * (1 - punif(M, a, b))
+EY3  # 1.6384e9
+
+## S_I的期望、方差、偏态系数
+ES_I &lt;- lambda * EY
+VarS_I &lt;- lambda * EY2
+skewS_I &lt;- lambda * EY3 / VarS_I^(3/2)
+c(ES_I, VarS_I, skewS_I)  # 9600, 11946667, 0.397
+
+## 再保险人Z = max(0, X-M)
+## E(Z) = ∫ᴹᵇ (x-M)*f(x)dx
+EZ &lt;- integrate(function(x) (x - M) * dunif(x, a, b), M, b)$value
+EZ  # 40
+
+## E(Z^2)
+EZ2 &lt;- integrate(function(x) (x - M)^2 * dunif(x, a, b), M, b)$value
+EZ2  # 10666.7
+
+## E(Z^3)
+EZ3 &lt;- integrate(function(x) (x - M)^3 * dunif(x, a, b), M, b)$value
+EZ3  # 3200000
+
+## S_R的期望、方差、偏态系数
+ES_R &lt;- lambda * EZ
+VarS_R &lt;- lambda * EZ2
+skewS_R &lt;- lambda * EZ3 / VarS_R^(3/2)
+c(ES_R, VarS_R, skewS_R)  # 400, 106667, 0.919</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true"># 导入所需的Python模块
+import matplotlib
+matplotlib.rcParams[&#x27;font.sans-serif&#x27;] = [&#x27;DejaVu Sans&#x27;]
+matplotlib.rcParams[&#x27;axes.unicode_minus&#x27;] = False
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.optimize import minimize
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+# 5.1 通货膨胀对损失分布的影响
+##############################################################################
+mu, sigma = 5, 1
+r = 0.1  # 通胀率
+mu_new = mu + np.log(1 + r)
+
+E_X = np.exp(mu + sigma**2/2)
+E_Y = np.exp(mu_new + sigma**2/2)
+print(f&quot;通胀前后: E(X)={E_X:.2f}, E(Y)={E_Y:.2f}, 比值={E_Y/E_X:.4f}&quot;)
+
+# 绘图
+x = np.linspace(0.1, 500, 500)
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu)), &#x27;b-&#x27;, label=&#x27;原分布&#x27;)
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu_new)), &#x27;r--&#x27;, label=&#x27;通胀后&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;通胀对损失分布的影响&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 5.2 比例再保险
+##############################################################################
+np.random.seed(123)
+n_sim = 10000
+X = np.random.lognormal(mu, sigma, n_sim)
+alpha = 0.7  # 自留比例
+
+X_primary = alpha * X
+X_reins = (1 - alpha) * X
+
+print(f&quot;\n比例再保险（自留比例0.7）:&quot;)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">proc iml;
+  /* 原始损失分布：对数正态LN(μ=5, σ=1) */
+  mu = 5; sigma = 1;
+  /* 通胀率r=10% */
+  r = 0.1;
+  /* 通胀后分布：LN(μ+ln(1+r), σ) */
+  mu_new = mu + log(1 + r);
+  print &quot;通胀前后参数:&quot;;
+  print &quot;原 μ=&quot; mu &quot;σ=&quot; sigma;
+  print &quot;通胀后 μ=&quot; mu_new &quot;σ=&quot; sigma;
+
+  /* 均值和方差变化 */
+  E_X = exp(mu + sigma**2/2);
+  E_Y = exp(mu_new + sigma**2/2);
+  print &quot;E(X)=&quot; E_X &quot;E(Y)=&quot; E_Y &quot;比值=&quot; E_Y/E_X;
+quit;
+
+
+/****************************************************************************/
+/* 5.2 比例再保险                                                           */
+/****************************************************************************/
+proc iml;
+  /* 原保险人自留比例α */
+  alpha = 0.7;
+  /* 原损失X */
+  call streaminit(123);
+  X = j(10000, 1, 0);
+  do i = 1 to 10000;
+    X[i] = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+  end;
+
+  /* 原保险人赔付 */</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+<div class="theorem-box exa"><span class="label">例 5.6</span><p>注意到在前例~中，再保险人的累积赔付金额也可以表示为：</p>
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">&#9654;</span></button>
+    <div class="collapsible-content">
+<div class="math-display">$$S_R = W_{1} + W_{2} + \cdots + W_{N_R}$$</div>
+<p>其中，随机变量$N_R$表示再保险人实际赔付（即赔付金额非零）的次数。例如，若前述风险组合在某年发生了以下8个索赔：$403, 1490, 1948, 443, 1866, 1704, 1221, 823$，则再保险人仅对第3、第5和第6次索赔进行赔付（即$N_R=3$），每次实际赔付的金额分别为$W_1=348, W_2=266, W_3=104$。容易验证在两种方式下计算的$S_R$是相同的。</p>
+<p>对于再保险人实际赔付的金额$W$，易知其概率密度函数为：</p>
+<div class="math-display">$$g(w)=\frac{f(w + M)}{1 - F(M)},\ w > 0$$</div>
+<p>对于赔付次数$N_R$，可以定义：</p>
+<p><div class="math-display">$$N_R = I_{1}+I_{2} + \cdots +I_{N}$$</div>
+其中，$N$表示风险的原始索赔次数；$I_{i}$是一个指示变量，若再保险人对第$i$次索赔进行赔付，则取值为1，否则取值为0。</p>
+<p>在超额赔款再保险和短期聚合风险模型的假设下，由于索赔金额$\{X_j\}_{i=1}^N$为独立同分布的随机变量，则易知$\{I_i\}_{i=1}^N$也相互独立，均服从伯努利分布，赔付概率和矩母函数分别为：</p>
+<div class="math-display">$$\begin{gathered}\text{P}(I_{i} = 1) = \text{P}(X_{i}> M) = \pi \\
+M_{I}(t)= \pi e^t + 1-\pi\end{gathered}$$</div>
+<p>同时可推导${N_R}$的矩母函数为$M_{N_R}(t)=M_{N}(\ln M_{I}(t))$。</p>
+<p>应用该框架分析前例，容易看出再保险人对每次索赔的赔付概率$\pi=0.2$，实际赔付的次数$N_R$服从参数为$\lambda' = \pi \lambda=2$的泊松分布，每次实际赔付的金额$W_{i}$具有概率密度函数：</p>
+<div class="math-display">$$g(w)=\frac{f(w + M)}{1 - F(M)} = 0.0005/0.2 = 0.0025,\ 0<w<400$$</div>
+<p>即区间$(0,400)$上的均匀分布。二者共同构成了新的复合泊松分布。</p>
+<p>应用$\mathbb{E}(W_{i}) = 200,\ \mathbb{E}(W_i^2) = 53333.33,\ \mathbb{E}(W_i^3) = 16000000$，同样可以计算$S_{R}$的期望、方差和偏态系数，结果与之前一致。</p>
+    </div>
+  </div>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true"># 5.5.3 再保险人实际赔付次数和金额
+# 对应教材：section5.tex 5.3.2节，例5.6
+# -----------------------------------------------------------------
+# 再保险人实际赔付次数 N_R = I_1 + I_2 + ... + I_N
+# 其中I_i ~ Bernoulli(pi), pi = P(X &gt; M)
+# 若N~Poi(lambda)，则N_R~Poi(lambda*pi)
+
+pi &lt;- 1 - punif(M, a, b)  # P(X &gt; M)
+pi  # 0.2
+
+lambda_R &lt;- lambda * pi  # 再保险人实际赔付次数的泊松参数
+lambda_R  # 2
+
+## 示例数据验证
+claims &lt;- c(403, 1490, 1948, 443, 1866, 1704, 1221, 823)
+# 再保险人对超过1600的索赔赔付
+reinsurance_claims &lt;- claims[claims &gt; M] - M
+reinsurance_claims  # 348, 266, 104
+sum(reinsurance_claims)  # 718
+
+##############################################################################
+# 5.6 不完整数据的估计
+##############################################################################</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true"># 导入所需的Python模块
+import matplotlib
+matplotlib.rcParams[&#x27;font.sans-serif&#x27;] = [&#x27;DejaVu Sans&#x27;]
+matplotlib.rcParams[&#x27;axes.unicode_minus&#x27;] = False
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.optimize import minimize
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+# 5.1 通货膨胀对损失分布的影响
+##############################################################################
+mu, sigma = 5, 1
+r = 0.1  # 通胀率
+mu_new = mu + np.log(1 + r)
+
+E_X = np.exp(mu + sigma**2/2)
+E_Y = np.exp(mu_new + sigma**2/2)
+print(f&quot;通胀前后: E(X)={E_X:.2f}, E(Y)={E_Y:.2f}, 比值={E_Y/E_X:.4f}&quot;)
+
+# 绘图
+x = np.linspace(0.1, 500, 500)
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu)), &#x27;b-&#x27;, label=&#x27;原分布&#x27;)
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu_new)), &#x27;r--&#x27;, label=&#x27;通胀后&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;通胀对损失分布的影响&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 5.2 比例再保险
+##############################################################################
+np.random.seed(123)
+n_sim = 10000
+X = np.random.lognormal(mu, sigma, n_sim)
+alpha = 0.7  # 自留比例
+
+X_primary = alpha * X
+X_reins = (1 - alpha) * X
+
+print(f&quot;\n比例再保险（自留比例0.7）:&quot;)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">proc iml;
+  /* 原始损失分布：对数正态LN(μ=5, σ=1) */
+  mu = 5; sigma = 1;
+  /* 通胀率r=10% */
+  r = 0.1;
+  /* 通胀后分布：LN(μ+ln(1+r), σ) */
+  mu_new = mu + log(1 + r);
+  print &quot;通胀前后参数:&quot;;
+  print &quot;原 μ=&quot; mu &quot;σ=&quot; sigma;
+  print &quot;通胀后 μ=&quot; mu_new &quot;σ=&quot; sigma;
+
+  /* 均值和方差变化 */
+  E_X = exp(mu + sigma**2/2);
+  E_Y = exp(mu_new + sigma**2/2);
+  print &quot;E(X)=&quot; E_X &quot;E(Y)=&quot; E_Y &quot;比值=&quot; E_Y/E_X;
+quit;
+
+
+/****************************************************************************/
+/* 5.2 比例再保险                                                           */
+/****************************************************************************/
+proc iml;
+  /* 原保险人自留比例α */
+  alpha = 0.7;
+  /* 原损失X */
+  call streaminit(123);
+  X = j(10000, 1, 0);
+  do i = 1 to 10000;
+    X[i] = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+  end;
+
+  /* 原保险人赔付 */</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+<div class="theorem-box exa"><span class="label">例 5.7</span><p>假设某个风险的累积索赔金额服从复合泊松分布，泊松参数记为$\mu$，每次索赔的金额服从帕累托分布$\text{Pa}(\alpha=3,\lambda=1000)$。保费加成系数为20%，即原保险费等于期望风险损失的120%。保险人正在考虑采用自留额为1000的超额赔款再保险，再保险人按照保费加成系数30%收取再保险费。</p>
+<p>定义保险人的利润为：$\text{原保险费}-\text{再保险费}-\text{实际支付的赔款}$。则：</p>
+<p>(1) 计算保险人在采用再保险前后，利润的期望的变化。</p>
+<p>(2) 计算保险人在采用再保险前后，利润的方差的变化。</p><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>(1) 记$S = X_1 + X_2 + \ldots X_N$表示原始的累积索赔金额，收取的原保险费为$1.2 \mathbb{E}(S)$。则在不采用再保险的情况下，保险人的利润等于$1.2 \mathbb{E}(S) - S$，利润的期望和方差分别为$0.2 \mathbb{E}(S)$和$\text{Var}(S)$。</p>
+<p>已知$\mathbb{E}(X) = \frac{\lambda }{\alpha - 1} = 500$和$\text{Var}(X) = \frac{\alpha \lambda^2}{(\alpha - 1)^2(\alpha - 2)} = 750000$，泊松参数为$\mu$，则可以求出$S$的期望和方差分别为：</p>
+<div class="math-display">$$\begin{gathered}\mathbb{E}(S) = 500\mu \\
+\text{Var}(S) = \mu \mathbb{E}(X^2) = \mu (750000 + 500^2) = 1000000\mu\end{gathered}$$</div>
+<p>即不采用再保险时，保险人利润的期望等于$0.2\mathbb{E}(S) = 100\mu$。</p>
+<p>进一步考虑再保险的影响。对每次索赔$X_{i}$，记$Y_i$和$Z_i$分别表示保险人和再保险人负责赔付的金额。因此，再保险人的累积赔付金额为$S_R = Z_1 + Z_2 + \ldots  + Z_N$，服从复合泊松分布；再保险费等于$1.3\mathbb{E}(S_{R})$，且$\mathbb{E}(S_{R}) = \mu \mathbb{E}(Z)$。</p>
+<p>根据定义，可计算$Z$的期望为：</p>
+<div class="math-display">$$\begin{aligned}\mathbb{E}(Z) &= \int\limits_{1000}^\infty {(x-1000)\frac{3\times 1000^3}{(1000+x)^4}} \mathrm{d}x \\ 
+& \xlongequal{u=x-1000} \int\limits_0^\infty {u \frac{3\times 1000^3}{(2000 + u)^4}} \mathrm{d}u \\
+&= \left( {\frac{1000}{2000}} \right)^3 \int\limits_0^\infty {u\frac{3\times 2000^3}{(2000 + u)^4}} du \\
+&= \left(\frac{1}{2}\right)^3 \times \frac{2000}{3-1} = 125\end{aligned}$$</div>
+<p>其中，最后一个等式应用了帕累托分布$\text{Pa}(3,2000)$的均值。则$\mathbb{E}(S_{R}) = 125\mu$，再保险费等于$1.3\times 125\mu = 162.5\mu$。</p>
+<p>在采用再保险后，保险人的利润可表示为$1.2\mathbb{E}(S) - 1.3\mathbb{E}(S_{R}) - (S-S_R)$，利润的期望等于$0.2\mathbb{E}(S) - 0.3\mathbb{E}(S_{R}) = 100\mu - 37.5\mu = 62.5\mu$，即预期利润有所下降。</p>
+<p>(2) 在采用再保险前，已求出利润的方差等于$\text{Var}(S)=1000000\mu$。</p>
+<p>考虑再保险后，保险人的利润可表示为$1.2\mathbb{E}(S) - 1.3\mathbb{E}(S_{R}) - (S-S_R)$，其中前两项均为确定的常数，仅$S_I=S-S_R=Y_1+Y_2+\cdots+Y_N$为随机变量，服从复合泊松分布。因此，利润的方差等于$\text{Var}(S_I) = \mu \mathbb{E}(Y^2)$。</p>
+<p>注意到$Y=X\wedge M$，其2阶矩$\mathbb{E}(Y^2) = \mathbb{E}[( {X \wedge M} )^2 ]$。应用帕累托分布的有限期望函数，可计算得：</p>
+<div class="math-display">$$\begin{aligned}\mathbb{E}[{( {X \wedge M} )^2 } ] &= \alpha \lambda^2 \cdot \text{B}_{\frac{\lambda}{\lambda+M}}(2+1,\alpha-2) + M^2 \left( {\frac{\lambda }{\lambda + M}} \right)^\alpha \\
+&= 3\times 1000^2 \cdot \text{B}_{\frac{1}{2}}(3,1) + 1000^2 \left( {\frac{1}{2}} \right)^3 = 250000\end{aligned}$$</div>
+<p>其中，$\text{B}_{z}(a,b)=\int_0^z t^{a-1} (1-t)^{b-1} \mathrm{d}t$为不完全贝塔函数。</p>
+<p>故$\text{Var}(S_I) = 250000\mu$，与再保险前相比利润的波动性大大降低。</p></div></div>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true"># 5.6.2 删失数据的极大似然估计
+# 对应教材：section5.tex 5.4节，例5.7
+# -----------------------------------------------------------------
+# 假设X~Exp(lambda)，自留限额M=1000
+# 90次赔付不超过1000，平均赔付82.9；10次赔付超过1000
+# 似然函数：L(lambda) = lambda^90 * exp(-(10000 + 90*xbar)*lambda)
+
+M_censor &lt;- 1000
+n_complete &lt;- 90
+n_censor &lt;- 10
+xbar &lt;- 82.9
+
+## MLE: lambda_hat = n_complete / (n_censor*M + n_complete*xbar)
+lambda_hat &lt;- n_complete / (n_censor * M_censor + n_complete * xbar)
+lambda_hat  # 0.005154
+
+## 验证：使用optim函数进行数值优化
+negloglik &lt;- function(lambda) {
+  -n_complete * log(lambda) + (n_censor * M_censor + n_complete * xbar) * lambda
+}
+optim_result &lt;- optim(par = 0.01, fn = negloglik, method = &quot;BFGS&quot;)
+optim_result$par  # 应接近lambda_hat</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true"># 导入所需的Python模块
+import matplotlib
+matplotlib.rcParams[&#x27;font.sans-serif&#x27;] = [&#x27;DejaVu Sans&#x27;]
+matplotlib.rcParams[&#x27;axes.unicode_minus&#x27;] = False
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.optimize import minimize
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+# 5.1 通货膨胀对损失分布的影响
+##############################################################################
+mu, sigma = 5, 1
+r = 0.1  # 通胀率
+mu_new = mu + np.log(1 + r)
+
+E_X = np.exp(mu + sigma**2/2)
+E_Y = np.exp(mu_new + sigma**2/2)
+print(f&quot;通胀前后: E(X)={E_X:.2f}, E(Y)={E_Y:.2f}, 比值={E_Y/E_X:.4f}&quot;)
+
+# 绘图
+x = np.linspace(0.1, 500, 500)
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu)), &#x27;b-&#x27;, label=&#x27;原分布&#x27;)
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu_new)), &#x27;r--&#x27;, label=&#x27;通胀后&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;通胀对损失分布的影响&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 5.2 比例再保险
+##############################################################################
+np.random.seed(123)
+n_sim = 10000
+X = np.random.lognormal(mu, sigma, n_sim)
+alpha = 0.7  # 自留比例
+
+X_primary = alpha * X
+X_reins = (1 - alpha) * X
+
+print(f&quot;\n比例再保险（自留比例0.7）:&quot;)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">proc iml;
+  /* 原始损失分布：对数正态LN(μ=5, σ=1) */
+  mu = 5; sigma = 1;
+  /* 通胀率r=10% */
+  r = 0.1;
+  /* 通胀后分布：LN(μ+ln(1+r), σ) */
+  mu_new = mu + log(1 + r);
+  print &quot;通胀前后参数:&quot;;
+  print &quot;原 μ=&quot; mu &quot;σ=&quot; sigma;
+  print &quot;通胀后 μ=&quot; mu_new &quot;σ=&quot; sigma;
+
+  /* 均值和方差变化 */
+  E_X = exp(mu + sigma**2/2);
+  E_Y = exp(mu_new + sigma**2/2);
+  print &quot;E(X)=&quot; E_X &quot;E(Y)=&quot; E_Y &quot;比值=&quot; E_Y/E_X;
+quit;
+
+
+/****************************************************************************/
+/* 5.2 比例再保险                                                           */
+/****************************************************************************/
+proc iml;
+  /* 原保险人自留比例α */
+  alpha = 0.7;
+  /* 原损失X */
+  call streaminit(123);
+  X = j(10000, 1, 0);
+  do i = 1 to 10000;
+    X[i] = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+  end;
+
+  /* 原保险人赔付 */</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+</div>
+
+<div class="section-card" id="sec-5-4">
+  <h2>5.4 不完整数据的估计</h2>
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline><source src="section5-movs/chap5_4.mp4" type="video/mp4">您的浏览器不支持 HTML5 视频播放。</video>
+    <figcaption>视频 5.4：删失数据与截断数据的参数估计</figcaption>
+  </figure>
+  <p>~节中介绍了对再保险人实际赔付金额的截断数据进行统计推断的方法。根据上式，可以列出截断数据的似然函数为：</p>
+<div class="math-display">$$L(\theta) = \prod_{i=1}^{n} g(w_i|\theta)$$</div>
+<p>对上述似然函数求极大化，即可得到再保险人实际赔付金额与原始索赔金额分布的参数估计结果。</p>
+<p>现在考虑另一种情况。假设索赔记录只显示原保险人支付的净赔付金额，超过自留额$M$的部分通过超额赔款再保险分出，即$X \wedge M$。典型的数据形式如下：</p>
+<div class="math-display">$$x_1,x_2,M,x_3,M,x_4,x_5,\cdots$$</div>
+<p>问题目标是对原始索赔金额的分布进行估计。</p>
+<p>与()形式类似的数据称为删失数据（censored data），即观察数据受限于某个上下限或区间范围，部分样本的真实值未知。例如，低于自留额的索赔被真实记录在数据中；而对于第3和第5次索赔，仅知道原始索赔金额超过保险人的自留上限，但实际值无法确定，称为右删失。删失数据的一个重要特点是，超出特定范围的个体仍然包含在样本中，仅真实值未知；而截断数据则完全不同，超出特定范围的个体将直接被排除在样本之外。</p>
+<p>由于删失数据的观测值不完整，应用矩估计法可能存在较大偏差。而百分位数估计法则不然，若自留额$M$较大，则只有少数高额索赔被删失，使用较低水平的分位数进行估计则不会受到影响。</p>
+<p>在处理删失数据时，极大似然估计是一种有效方法。对形如()的超额赔款再保险数据，假设$x_1,x_2,\cdots,x_n$是完整观测的索赔金额（未删失），此类样本的似然函数可直接应用概率密度函数计算，即：</p>
+<div class="math-display">$$L_1(\theta) = \prod_{i=1}^{n} f(x_i|\theta)$$</div>
+<p>有$m$次索赔的金额被删失，即仅知道索赔金额超过自留额$M$，则此类样本对应的似然函数为：</p>
+<div class="math-display">$$L_2(\theta) = \prod_{j=1}^{m} \text{P}(X_j > M \mid \theta)$$</div>
+<p>因此，完整数据的似然函数可以表示为：</p>
+<div class="math-display">$$L(\theta) = \prod_{i=1}^{n} f(x_i|\theta) \times [1 - F(M|\theta)]^m$$</div>
+<p>其中，$F(\cdot \mid \theta)$是原始索赔金额的累积分布函数。</p>
+<div class="theorem-box exa"><span class="label">例 5.8</span><p>假设某保单组合的索赔服从指数分布$\text{Exp}(\lambda)$，原保险人的自留限额为1000，超过1000的索赔由再保险人支付。保险公司观察了100次赔付记录的随机样本，发现其中有90次赔付不超过1000，平均赔付金额为82.9；有10次赔付超出了自留限额。计算$\lambda$的极大似然估计值。</p><button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">▶</span></button><div class="collapsible-content"><p>已知$f(x)=\lambda e^{-\lambda x}$，$\text{P}(X>1000)=1-F(1000)=e^{-1000\lambda}$，则该样本的似然函数可以表示为：</p>
+<div class="math-display">$$\begin{aligned}L(\lambda) = \lambda e^{-\lambda x_1} \lambda e^{-\lambda x_2} \cdots \lambda e^{-\lambda x_{90}} \times ({e^{-1000\lambda}})^{10} = \lambda ^{90}e^{-(10000 + 90\bar{x})\lambda}\end{aligned}$$</div>
+<p>取对数，得到对数似然函数$l(\lambda) = \ln L = 90 \ln \lambda - (10000 + 90\bar{x})\lambda$。</p>
+<p>将对数似然关于$\lambda$求导，并令导函数等于0，解得极大似然估计$\hat{\lambda}$等于：
+<div class="math-display">$$\frac{\partial l}{\partial \lambda} = \frac{90}{\lambda} - (10000 + 90\bar{x}) ~~\Rightarrow~~
+\hat{\lambda} = \frac{90}{10000 + 90\bar{x}} = 0.005154$$</div></p></div></div>
+<div class="code-tabs">
+    <div class="code-tab-header">
+      <button class="code-tab-btn active" data-lang="r" onclick="switchTab(this)"><span class="lang-dot"></span>R</button>
+      <button class="code-tab-btn" data-lang="python" onclick="switchTab(this)"><span class="lang-dot"></span>Python</button>
+      <button class="code-tab-btn" data-lang="sas" onclick="switchTab(this)"><span class="lang-dot"></span>SAS</button>
+    </div>
+    <div class="code-tab-content active" data-lang="r">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runRCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-r" contenteditable="true"># 5.6.3 左删失随机变量
+# 对应教材：section5.tex 5.4节，例5.8
+# -----------------------------------------------------------------
+# Y = (X-M)+ = max(0, X-M)
+# E(Y) = E((X-M)+) = ∫ᴹ^∞ (x-M)*f(x)dx
+
+## 示例：指数分布
+E_left_censor &lt;- function(lambda, M) {
+  integrate(function(x) (x - M) * dexp(x, lambda), M, Inf)$value
+}
+E_left_censor(0.005, 1000)
+
+##############################################################################
+# 5.7 随机模拟：再保险效果比较
+##############################################################################</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="python">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runPythonCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-python" contenteditable="true"># 导入所需的Python模块
+import matplotlib
+matplotlib.rcParams[&#x27;font.sans-serif&#x27;] = [&#x27;DejaVu Sans&#x27;]
+matplotlib.rcParams[&#x27;axes.unicode_minus&#x27;] = False
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.optimize import minimize
+import warnings
+warnings.filterwarnings(&#x27;ignore&#x27;)
+
+# 5.1 通货膨胀对损失分布的影响
+##############################################################################
+mu, sigma = 5, 1
+r = 0.1  # 通胀率
+mu_new = mu + np.log(1 + r)
+
+E_X = np.exp(mu + sigma**2/2)
+E_Y = np.exp(mu_new + sigma**2/2)
+print(f&quot;通胀前后: E(X)={E_X:.2f}, E(Y)={E_Y:.2f}, 比值={E_Y/E_X:.4f}&quot;)
+
+# 绘图
+x = np.linspace(0.1, 500, 500)
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu)), &#x27;b-&#x27;, label=&#x27;原分布&#x27;)
+ax.plot(x, stats.lognorm.pdf(x, s=sigma, scale=np.exp(mu_new)), &#x27;r--&#x27;, label=&#x27;通胀后&#x27;)
+ax.set_xlabel(&#x27;x&#x27;); ax.set_ylabel(&#x27;f(x)&#x27;)
+ax.set_title(&#x27;通胀对损失分布的影响&#x27;); ax.legend()
+plt.tight_layout(); plt.show()
+
+
+##############################################################################
+# 5.2 比例再保险
+##############################################################################
+np.random.seed(123)
+n_sim = 10000
+X = np.random.lognormal(mu, sigma, n_sim)
+alpha = 0.7  # 自留比例
+
+X_primary = alpha * X
+X_reins = (1 - alpha) * X
+
+print(f&quot;\n比例再保险（自留比例0.7）:&quot;)</code></pre>
+      <div class="code-output"></div>
+    </div>
+    <div class="code-tab-content" data-lang="sas">
+      <div class="code-actions">
+        <button class="code-btn run-btn" onclick="runSasCode(this)">&#9654; 运行</button>
+        <button class="code-btn copy-btn" onclick="copyCode(this)">复制</button>
+        <button class="code-btn reset-btn" onclick="resetCode(this)" title="恢复原始代码">重置</button>
+      </div>
+<pre><code class="language-sas" contenteditable="true">proc iml;
+  /* 原始损失分布：对数正态LN(μ=5, σ=1) */
+  mu = 5; sigma = 1;
+  /* 通胀率r=10% */
+  r = 0.1;
+  /* 通胀后分布：LN(μ+ln(1+r), σ) */
+  mu_new = mu + log(1 + r);
+  print &quot;通胀前后参数:&quot;;
+  print &quot;原 μ=&quot; mu &quot;σ=&quot; sigma;
+  print &quot;通胀后 μ=&quot; mu_new &quot;σ=&quot; sigma;
+
+  /* 均值和方差变化 */
+  E_X = exp(mu + sigma**2/2);
+  E_Y = exp(mu_new + sigma**2/2);
+  print &quot;E(X)=&quot; E_X &quot;E(Y)=&quot; E_Y &quot;比值=&quot; E_Y/E_X;
+quit;
+
+
+/****************************************************************************/
+/* 5.2 比例再保险                                                           */
+/****************************************************************************/
+proc iml;
+  /* 原保险人自留比例α */
+  alpha = 0.7;
+  /* 原损失X */
+  call streaminit(123);
+  X = j(10000, 1, 0);
+  do i = 1 to 10000;
+    X[i] = exp(rand(&#x27;NORMAL&#x27;, 5, 1));
+  end;
+
+  /* 原保险人赔付 */</code></pre>
+      <div class="code-output"></div>
+    </div>
+  </div>
+<div class="theorem-box exa"><span class="label">例 5.9</span><p>具有下列形式的$Y$称为左删失（并平移）的随机变量：
+<div class="math-display">$$Y = (X-M)_{+} = 
+\left\{
+\begin{aligned}
+& ~0, &\text{if}~~ X < M \\
+& X-M, &\text{if}~~ X \geq M
+\end{aligned}
+\right.$$</div></p>
+    <button class="collapsible-toggle answer-toggle" onclick="toggleCollapsible(this)"><span>点击查看解答</span><span class="arrow">&#9654;</span></button>
+    <div class="collapsible-content">
+<p>当$X<M$时，样本仍然存在于数据中，但观察值变为0。此时$Y$的分布函数和概率密度函数可以表示为：</p>
+<p><div class="math-display">$$F_Y(y) = 
+\left\{
+\begin{aligned}
+& \text{P}(Y=0) = \text{P}(X<M) = F_X(M), &\text{if}~~ y=0 \\
+& \text{P}(Y \leq y) = \text{P}(X \leq y+M) = F_X(y+M), &\text{if}~~ y>0
+\end{aligned}
+\right.$$</div>
+<div class="math-display">$$f_Y(y) = 
+\left\{
+\begin{aligned}
+& ~0, &\text{if}~~ y=0 \\
+& f_X(y+M), &\text{if}~~ y>0
+\end{aligned}
+\right.$$</div></p>
+<p>根据定义，对于左删失随机变量，可以求得期望损失：
+<div class="math-display">$$\begin{aligned}
+\mathbb{E}(X-M)_{+} &= 0 \times \text{P}(Y=0) + \int_{0}^{\infty} y f_{Y}(y) \mathrm{d}y \\
+&= 0 \times F_X(M) + \int_{M}^{\infty} (x-M)f_{X}(x) \mathrm{d}x
+\end{aligned}$$</div></p>
+    </div>
+  </div>
+</div>
+
+<div class="section-card" id="sec-5-5">
+  
+
+<!-- ===== 本章汇总 ===== -->
+<div class="section-card" id="sec-summary">
+  <h2>本章小结</h2>
+  <h3>再保险类型比较</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>类型</th>
+        <th>分保方式</th>
+        <th>分出保费</th>
+        <th>摊回赔款</th>
+        <th>适用场景</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>成数再保险</td>
+        <td>按比例分出</td>
+        <td>c·P</td>
+        <td>c·S</td>
+        <td>保额均匀的业务</td>
+      </tr>
+      <tr>
+        <td>溢额再保险</td>
+        <td>超过自留额部分</td>
+        <td>按比例计算</td>
+        <td>按比例摊回</td>
+        <td>保额差异大的业务</td>
+      </tr>
+      <tr>
+        <td>超额赔款再保险</td>
+        <td>超过自留额的赔款</td>
+        <td>再保保费</td>
+        <td>X-d部分</td>
+        <td>大额索赔风险</td>
+      </tr>
+      <tr>
+        <td>停损再保险</td>
+        <td>超过自留额的累积赔款</td>
+        <td>再保保费</td>
+        <td>S-d部分</td>
+        <td>控制总赔付</td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+
+<h2>5.5 真题练习</h2>
+  <figure class="lesson-video">
+    <video controls preload="metadata" playsinline><source src="section5-movs/chap5_5.mp4" type="video/mp4">您的浏览器不支持 HTML5 视频播放。</video>
+    <figcaption>视频 5.5：本章真题讲解</figcaption>
+  </figure>
+  <p>1. 设随机变量$X$服从对数正态分布$\text{LN}(\mu,\sigma^2)$，概率密度函数记为$f(x)$。</p>
+<p>(1) 证明对于$\alpha>0$，有：</p>
+<div class="math-display">$$\int\limits_\alpha ^\infty xf(x) \mathrm{d}x = \exp({\mu + \frac{\sigma^2}{2}}) [ 1 - \Phi(\frac{\ln \alpha - \mu - \sigma^2}{\sigma})]$$</div>
+<p>其中，$\Phi(\cdot)$是标准正态分布的累积分布函数。</p>
+<p>假设某险种的索赔服从对数正态分布，均值为9.070，标准差为10.132（单位：千英镑）。在任意一年，预计20{%}的保单会发生索赔。一家保险公司有200份保单，正考虑为每份保单投保超额赔款再保险。再保险人对两种再保险的保费报价如下：</p>
+<table><thead><tr><th>自留额</th><th>总再保费（单位：千英镑）</th></tr></thead><tbody><tr><td>$25$</td><td>$48.5$</td></tr><tr><td>$30$</td><td>$38.2$</td></tr></tbody></table>
+<p>(2) 对于每个再保险安排，计算发生索赔涉及再保险人的概率。</p>
+<p>(3) 计算再保险人对每项索赔支付的平均金额，判断哪个再保险协议对保险人最有利（忽略保险人对风险的态度）？</p>
+<p>(4) 第2年，假设所有其他条件相同，保险公司认为通货膨胀将使其组合中的索赔均值和标准偏差增加8{%}。如果再保险人收取与前1年相同的再保险费，则哪个再保险对保险人最有利？</p>
+<p>【解答】 (1) 令$\displaystyle u = \frac{\ln x - \mu}{\sigma} - \sigma$，则$x = e^{\mu + \sigma^2 + \sigma u}$，$\mathrm{d}x = \sigma e^{\mu + \sigma^2 + \sigma u} \mathrm{d}u$。应用换元法，原积分可以写为：</p>
+<div class="math-display">$$\begin{aligned}\int\limits_\alpha^\infty xf(x) \mathrm{d}x &= \int\limits_\alpha^\infty x \frac{1}{\sqrt{2\pi} \sigma x} e^{-\frac{1}{2}( {\frac{{\ln x - \mu }}{\sigma }} )^2} \mathrm{d}x \\
+&= \int\limits_{\frac{\ln \alpha-\mu}{\sigma}-\sigma}^\infty \frac{1}{\sqrt{2\pi}\sigma} e^{-\frac{1}{2}(u+\sigma)^2} \sigma e^{\mu + \sigma^2 + \sigma u} \mathrm{d}u \\
+&= e^{\mu+\frac{\sigma^2}{2}} \int\limits_{\frac{\ln \alpha-\mu}{\sigma}-\sigma}^\infty \frac{1}{\sqrt{2\pi}}e^{-\frac{1}{2}u^2} \mathrm{d}u\end{aligned}$$</div>
+<p>上述积分为标准正态概率密度函数$\phi(u)$在区间$(\frac{\ln \alpha - u - \sigma^2}{\sigma}, \infty)$上的积分（即生存函数），则有：</p>
+<div class="math-display">$$\int\limits_\alpha ^\infty {xf( x)} dx = e^{\mu+\frac{1}{2}\sigma ^2}[1 - \Phi(\frac{\ln \alpha - u - \sigma^2}{\sigma})]$$</div>
+<p>(2) 首先根据题目，计算对数正态分布的参数值。由对数正态分布的期望和方差公式，可建立以下方程组：</p>
+<p><div class="math-display">$$\left\{
+\begin{aligned}
+&e^{\mu+0.5\sigma^2} = 9.070, \\
+&e^{2\mu+\sigma^2}(e^{\sigma^2}-1) = 10.132^2
+\end{aligned}
+\right.$$</div></p>
+<p>解得索赔金额分布的参数为：$\sigma ^2 = 0.80999,\ \mu = 1.79998$。</p>
+<p>索赔涉及再保险人的概率是指索赔金额超过自留额的概率。记$X$表示原始索赔金额，则对于两个再保险协议，分别有：</p>
+<div class="math-display">$$\begin{aligned}\text{P}(X > 25) &= \text{P}(\ln X >25) = \text{P}(\frac{\ln X -\mu}{\sigma} > \frac{25 -\mu}{\sigma}) \\
+&= 1 - \Phi ( {\frac{\ln 25 - \mu }{\sigma}}) = 1 - \Phi(1.57656) = 0.05745\end{aligned}$$</div>
+<p><div class="math-display">$$\text{P}(X > 30) = 1 - \Phi ( {\frac{\ln 30 - \mu }{\sigma}}) = 1 - \Phi(1.77914) = 0.03761 \\$$</div></p>
+<p>(3) 记$R$表示原保险人在每项索赔中分出给再保险人的金额，则：
+<div class="math-display">$$R=
+\left\{
+\begin{aligned}
+& ~0, & X \leq M \\
+& X-M, & X > M
+\end{aligned}
+\right.$$</div></p>
+<p>对于第一个再保险协议，自留额$M=25$，可计算$R$的期望为：</p>
+<div class="math-display">$$\begin{aligned}\mathbb{E}(R) &= \int\limits_{25}^\infty (x - 25)f(x) \mathrm{d}x = \int\limits_{25}^\infty xf(x)\mathrm{d}x - 25\int\limits_{25}^\infty f(x) \mathrm{d}x\end{aligned}$$</div>
+<p>其中，$f(x)$是对数正态分布$\text{LN}(\mu,\sigma^2)$的概率密度函数。</p>
+<p>根据第(1)问的结果，第一项积分等于：
+<div class="math-display">$$\int\limits_{25}^\infty x f(x) \mathrm{d}x = e^{u + \frac{1}{2}\sigma ^2} [1 - \Phi(\frac{\ln 25 - \mu - \sigma^2}{\sigma})] = 9.070[1 - \Phi(0.67657)] = 2.2615$$</div></p>
+<p>第二项积分为索赔涉及再保险人的概率。故当$M=25$时，可计算分出金额的期望值等于$\mathbb{E}(R) = 2.2615 - 25\times 0.05745 = 0.8253$。</p>
+<p>类似地，对于第二个再保险协议，当$M=30$时，可计算分出金额的期望值等于$\mathbb{E}(R) = 9.070[1 - \Phi(0.87915)] - 30\times 0.03761 = 0.5919$。</p>
+<p>将上述结果归一化，可得再保险人在每千英镑再保费下，对每项索赔支付的平均金额分别为：</p>
+<div class="math-display">$$\begin{gathered}\frac{200\times 0.2\times 0.8253}{48.5} = 0.681,&nbsp;&nbsp;
+\frac{200\times 0.2\times 0.5919}{38.2} = 0.620\end{gathered}$$</div>
+<p>故在其他条件相同的情况下，第一个再保险协议对保险人更有利。</p>
+<p>(4) 第2年，索赔金额的均值和标准差分别为9.7956和10.94256。类似采用矩估计法，可计算此时的参数值为$\mu=1.87694,\ \sigma^ 2=0.80999$。</p>
+<p>采用与第(3)问类似的分析框架。在第一个再保险协议下，计算$\mathbb{E}(R)$等于：</p>
+<div class="math-display">$$\begin{aligned}\mathbb{E}(R) &= 9.7956[1 - \Phi(\frac{\ln 25 - 1.87694 - 0.80999}{\sqrt{0.80999}})] - 25\times [1 - \Phi(\frac{\ln 25 - 1.87694}{\sqrt {0.80999}})] \\
+&= 9.7956[1 - \Phi(0.59106)] - 25[1 - \Phi(1.49105)] \\
+&= 9.7956 \times 0.27724 - 25 \times 0.06797 = 1.0164\end{aligned}$$</div>
+<p>在第二个再保险协议下，计算$\mathbb{E}(R)$等于：</p>
+<div class="math-display">$$\begin{aligned}\mathbb{E}(R) &= 9.7956[1 - \Phi(\frac{\ln 30 - 1.87694 - 0.80999}{\sqrt{0.80999}})] - 30\times [1 - \Phi(\frac{\ln 30 - 1.87694}{\sqrt {0.80999}})] \\
+&= 9.7956[1 - \Phi(0.79364)] - 30[1 - \Phi(1.69363)] \\
+&= 9.7956 \times 0.21370 - 30 \times 0.04517 = 0.73830\end{aligned}$$</div>
+<p>将上述结果归一化，可得再保险人在每千英镑再保费下，对每项索赔支付的平均金额分别为：</p>
+<div class="math-display">$$\begin{gathered}\frac{200\times 0.2\times 1.0164}{48.5} = 0.838,&nbsp;&nbsp;
+\frac{200\times 0.2\times 0.7383}{38.2} = 0.773\end{gathered}$$</div>
+<p>依然是第一个再保险协议对保险人更有利。</p>
+<p>此外，在8{%}的通货膨胀情况下，也可以重新定义$R^{*}$表示再保险人对每项索赔的支付，直接计算其期望值：
+<div class="math-display">$$R^{*} = 
+\left\{
+\begin{aligned}
+& 0, & X \leq {M}/{1.08} \\
+& 1.08X-M, & X > {M}/{1.08}
+\end{aligned}
+\right.$$</div></p>
+<p><div class="math-display">$$\mathbb{E}(R^{*}) = \int\limits_{\frac{M}{1.08}}^\infty (1.08x - M)f(x) \mathrm{d}x = 1.08\int\limits_{\frac{M}{1.08}}^\infty xf(x) \mathrm{d}x - M \cdot \text{P}(X>\frac{M}{1.08})$$</div></p>
+<p>两种方法的计算结果一致。</p>
+<p>2. 一家保险公司拥有一个独立保单构成的组合：组合的索赔次数服从泊松分布，每年预计发生300次索赔；每次索赔的金额服从指数分布，平均值为3000英镑；记$S$表示保单组合的年度累积索赔金额。</p>
+<p>假设保险公司按照12%的保费加成系数收取保费，其他费用可忽略。公司仅在年底对该组合进行破产检查。</p>
+<p>(1) 对$S$进行正态近似，并估计所需的的初始资本$U$，以确保在第一年年底的破产概率低于5%。</p>
+<p>保险公司正在考虑购买一项比例再保险，该再保险按照$\beta$%的保费加成系数收取保费。在再保险协议中，原保险人承担每笔索赔金额的80%。记，$S_1$表示原保险人在扣除再保险后实际支付的年度累积索赔金额，$U_1$表示购买再保险后所需的初始资本。保险公司
+仍然对$S_1$进行正态近似。</p>
+<p>(2) 计算再保费加成系数$\beta$的最大值，使得在5%破产概率下$U_1$不超过$U$。</p>
+<p>【解答】(1) 易知$S$服从复合泊松分布，其期望和方差可计算为：</p>
+<div class="math-display">$$\begin{gathered}\mathbb{E}(S) = \mathbb{E}(N) \mathbb{E}(X) = 300 \times 3000 = 900000 \\
+\text{Var}(S) = \mathbb{E}(N) \text{Var}(X) + \text{Var}(N) \mathbb{E}^2(X) = 300 \times (3000^2 + 3000^2) = 5.4 \times 10^9\end{gathered}$$</div>
+<p>保险公司收取的保费为$p = 1.12 \mathbb{E}(S)$。</p>
+<p>为保证破产概率（即初始资本加保费收入不足以覆盖赔款支出）低于5%，初始资本需满足$\text{P}(S>U+p)<0.05$或$\text{P}(S\leq U+p)\geq0.95$，变换可得：</p>
+<div class="math-display">$$\begin{gathered}\text{P}(S\leq U+p) = \text{P}(\frac{S-\mathbb{E}(S)}{\sqrt{\text{Var}(S)}} \geq \frac{U+p-\mathbb{E}(S)}{\sqrt{\text{Var}(S)}}) \geq 0.95 \\
+\frac{U+p-\mathbb{E}(S)}{\sqrt{\text{Var}(S)}} \geq 1.64 ~~\Rightarrow~~ U \geq 1.64\sqrt{\text{Var}(S)} + \mathbb{E}(S) - p = 12515\end{gathered}$$</div>
+<p>(2) 已知分出比例20%，再保费加成系数$\beta$%，则再保费等于$0.2(1+\beta%)\mathbb{E}(S)$。在购买再保险后，保险公司剩余的保费收入为$p1 = 1.12\mathbb{E}S - 0.2(1+\beta%)\mathbb{E}(S)$，公司的赔款支出变为$S_1 = 0.8S$，赔款的期望和方差分别为$0.8\mathbb{E}(S)$和$0.8^2\text{Var}(S)$。</p>
+<p>与第(1)问类似，为保证破产概率低于5%，初始资本需满足：</p>
+<div class="math-display">$$\begin{gathered}\text{P}(S_1\leq U_1+p_1) = \text{P}(\frac{S_1-\mathbb{E}(S_1)}{\sqrt{\text{Var}(S_1)}} \geq \frac{U_1+p_1-\mathbb{E}(S_1)}{\sqrt{\text{Var}(S_1)}}) \geq 0.95 \\
+U_1 \geq 1.64\sqrt{\text{Var}(S_1)} + \mathbb{E}(S_1) - p_1\end{gathered}$$</div>
+<p>为使$U_1 \leq U$，则：</p>
+<div class="math-display">$$\begin{gathered}1.64\sqrt{\text{Var}(S_1)} + \mathbb{E}(S_1) - p_1 \leq 12515 \\
+1.64 \times 0.8 \times \sqrt{5.4\times10^9} + 0.8 \times 900000 - (0.92-0.2\beta\%) \times 900000 \leq 12515 \\
+\beta \leq 13.4\end{gathered}$$</div>
+<p>即原保险人可以接受的最大再保险保费加成系数为13.4%。</p>
+<p>3. 一家保险公司在其家庭保险业务组合中产生了10000起索赔。这些索赔的平均金额为2000英镑，标准差为800英镑，且其中有100起索赔的金额超过了该公司购买的超额损失再保险的自留限额。</p>
+<p>(1) 使用对数正态分布假设，估计该再保险合同的自留限额。</p>
+<p>(2) 预计有多少起索赔的金额小于1000英镑？</p>
+<p>(3) 若监管机构建议使用正态分布对索赔金额进行建模，请对该分布在不同条件下的适用性进行评价。除正态分布、对数正态分布外，你认为还有哪些分布适合用于拟合索赔金额数据？</p>
+<p>【解答】(1) 由对数正态分布的期望和方差公式，建立以下方程组：
+<div class="math-display">$$\left\{
+\begin{aligned}
+&e^{\mu+0.5\sigma^2} = 2000, \\
+&e^{2\mu+\sigma^2}(e^{\sigma^2}-1) = 800^2
+\end{aligned}
+\right.$$</div>
+解得分布的参数为：$\sigma ^2 = 0.3852,\ \mu = 7.5267$。</p>
+<p>假设自留额为$M$，应用百分位数估计法，结果为：</p>
+<div class="math-display">$$\begin{gathered}\text{P}(X > M) = \text{P}(\frac{\ln X - \mu}{\sigma} > \frac{\ln M - \mu}{\sigma}) = 1-\frac{100}{10000} = 0.99 \\[1em]
+\frac{\ln M - \mu}{\sigma} = 2.326 ~~\Rightarrow~~ \hat{M} = 4550\end{gathered}$$</div>
+<p>(2) 应用第(1)问的结果，可计算索赔金额小于1000英镑的概率为：
+<div class="math-display">$$\text{P}(X < 1000) = \text{P}(\frac{\ln X - \mu}{\sigma} < \frac{\ln 1000 - \mu}{\sigma}) = \Phi(-1.607) = 0.540$$</div>
+即预期有540起索赔的金额小于1000英镑。</p>
+<p>(3) 使用正态分布对索赔金额进行建模的局限性主要包括以下两个方面：一是正态分布的尾部较轻，可能导致对大额索赔发生概率的低估，引发潜在的偿付能力问题；二是正态分布允许负值，对于索赔金额而言缺少现实意义。然而，当索赔数据具有对称性且呈现轻尾特征时，正态分布的应用则相对合理。</p>
+<p>除了对数正态分布外，伽马分布和威布尔分布等也是潜在的候选分布。这些分布的定义域为非负数，且通常表现出右偏和厚尾特性，更能反映保险损失的实际特征。</p>
+</div>
+
+<div class="section-card" id="sec-references">
+  <h2>参考文献</h2>
+  <ol class="references">
+    <li>Klugman, S. A., Panjer, H. H., & Willmot, G. E. (2019). <em>Loss Models: From Data to Decisions</em> (5th ed.). Wiley.</li>
+    <li>Boland, P. J. (2007). <em>Statistical and Probabilistic Methods in Actuarial Science</em>. Chapman & Hall/CRC.</li>
+    <li>孟生旺, 袁卫. (2020). 《非寿险精算学》. 中国人民大学出版社.</li>
+    <li>Frees, E. W. (2009). <em>Regression Modeling with Actuarial and Financial Applications</em>. Cambridge University Press.</li>
+    <li>R Core Team. (2024). <em>R: A Language and Environment for Statistical Computing</em>. R Foundation for Statistical Computing.</li>
+  </ol>
+</div>
+
+<!-- ===== Footer ===== -->
+<div class="footer">
+  <p>非寿险精算学模型与应用 · 第五章 损失调整与再保险</p>
+  <p>© 2024 保险学院 · 统计与精算学系</p>
+  <nav class="book-pager" aria-label="章节导航">
+    <a class="book-prev" href="chap4.html">上一章：第4章 费率厘定</a>
+    <a class="book-home" href="index.html">目录</a>
+    <a class="book-next" href="chap6.html">下一章：第6章 准备金评估</a>
+  </nav>
+</div>
+
+<!-- ===== Lightbox ===== -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close">&times;</span>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- ===== Scripts ===== -->
+<script>
+
+  // 折叠面板
+  function toggleCollapsible(btn) {
+    const content = btn.nextElementSibling;
+    const arrow = btn.querySelector('.arrow');
+    const label = btn.querySelector('span:first-child');
+    const isOpen = content.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+    arrow.textContent = isOpen ? '▼' : '▶';
+    if (label) {
+      if (isOpen && label.textContent.includes('查看')) {
+        label.textContent = label.textContent.replace('点击查看', '点击收起');
+      } else if (!isOpen && label.textContent.includes('收起')) {
+        label.textContent = label.textContent.replace('点击收起', '点击查看');
+      }
+    }
+  }
+
+  // 代码标签页切换
+  function switchTab(btn) {
+    const tabs = btn.parentElement;
+    const container = tabs.parentElement;
+    const targetLang = btn.dataset.lang;
+    tabs.querySelectorAll('.code-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    container.querySelectorAll('.code-tab-content').forEach(c => {
+      if (c.dataset.lang === targetLang) {
+        c.classList.add('active');
+      } else {
+        c.classList.remove('active');
+      }
+    });
+  }
+
+  // R代码中文字符串翻译（webR缺少中文字体时的兜底方案）
+  const _R_CN_EN_MAP = [
+    ['概率质量函数', 'PMF'], ['累积分布函数', 'CDF'], ['概率密度函数', 'PDF'],
+    ['生存函数', 'Survival'], ['危险率函数', 'Hazard'],
+    ['二项分布', 'Binomial'], ['泊松分布', 'Poisson'], ['负二项分布', 'Neg.Binom'],
+    ['几何分布', 'Geometric'], ['指数分布', 'Exponential'], ['伽马分布', 'Gamma'],
+    ['对数正态分布', 'Lognormal'], ['帕累托分布', 'Pareto'], ['威布尔分布', 'Weibull'],
+    ['正态分布', 'Normal'], ['卡方分布', 'Chi-sq'], ['t分布', 't-dist'],
+    ['零截断负二项', 'ZTNB'], ['零调整负二项', 'ZMNB'],
+    ['零截断', 'ZT'], ['零调整', 'ZM'], ['零膨胀', 'ZI'],
+    ['索赔次数', 'Claim Count'], ['索赔金额', 'Claim Amt'], ['索赔强度', 'Severity'],
+    ['累积索赔', 'Cum.Claim'], ['总索赔', 'Total Claim'],
+    ['事故年', 'Acc.Year'], ['进展年', 'Dev.Year'], ['准备金', 'Reserve'],
+    ['费率', 'Rate'], ['保费', 'Premium'], ['赔款', 'Loss'], ['纯保费', 'Pure Prem'],
+    ['均值', 'Mean'], ['方差', 'Var'], ['标准差', 'Std'], ['中位数', 'Median'],
+    ['偏度', 'Skew'], ['峰度', 'Kurt'], ['分位数', 'Quantile'],
+    ['参数', 'Param'], ['估计', 'Est'], ['拟合', 'Fit'], ['预测', 'Pred'],
+    ['观测值', 'Obs'], ['期望值', 'Exp'], ['残差', 'Resid'],
+    ['风险', 'Risk'], ['损失', 'Loss'], ['概率', 'Prob'], ['频率', 'Freq'],
+    ['信度', 'Cred'], ['先验', 'Prior'], ['后验', 'Posterior'],
+    ['回归', 'Reg'], ['分类', 'Class'], ['聚类', 'Clust'],
+    ['准确率', 'Acc'], ['误差', 'Error'], ['平方误差', 'MSE'],
+    ['时间', 'Time'], ['年份', 'Year'], ['月份', 'Month'], ['季度', 'Qtr'],
+    ['金额', 'Amt'], ['数量', 'Count'], ['比率', 'Ratio'], ['因子', 'Factor'],
+    ['分布', 'Dist'], ['函数', 'Func'], ['模型', 'Model'], ['数据', 'Data'],
+    ['图', 'Fig'], ['表', 'Tab'], ['例', 'Ex'], ['注', 'Note'],
+    ['尺度', 'Scale'], ['形状', 'Shape'], ['位置', 'Loc'],
+    ['直方图', 'Histogram'], ['密度曲线', 'Density'], ['散点图', 'Scatter'],
+    ['拟合优度', 'Goodness of Fit'], ['QQ图', 'QQ Plot'], ['PP图', 'PP Plot'],
+    ['经验分布', 'Empirical'], ['理论分布', 'Theoretical'],
+    ['对数似然', 'Log-Likelihood'], ['AIC', 'AIC'], ['BIC', 'BIC'],
+    ['置信区间', 'CI'], ['标准误', 'SE'], ['p值', 'p-value'],
+    ['极大似然估计', 'MLE'], ['矩估计', 'MoM'],
+    ['火灾损失', 'Fire Loss'], ['丹麦', 'Danish'],
+    ['实际', 'Actual'], ['理论', 'Theor'], ['样本', 'Sample'],
+    ['检验', 'Test'], ['统计量', 'Stat'], ['自由度', 'df'],
+    ['对比', ' vs '], ['频数', 'Freq'], ['累积', 'Cum'],
+    ['的', ' '], ['和', ' & '], ['与', ' & '], ['在', ' at '],
+    ['为', ' = '], ['中', ' in '], ['上', ' up '], ['下', ' down '],
+    ['x轴', 'x'], ['y轴', 'y'], ['x 轴', 'x'], ['y 轴', 'y'],
+  ];
+
+  function _translateRCode(code) {
+    if (!code) return code;
+    let translated = code;
+    for (const [cn, en] of _R_CN_EN_MAP) {
+      translated = translated.split(cn).join(en);
+    }
+    translated = translated.replace(/[\u4e00-\u9fff]+/g, '?');
+    return translated;
+  }
+
+  // 复制代码
+  function copyCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const text = codeBlock.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = btn.textContent;
+      btn.textContent = '✓ 已复制';
+      setTimeout(() => { btn.textContent = originalText; }, 2000);
+    }).catch(() => {
+      // fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      btn.textContent = '✓ 已复制';
+      setTimeout(() => { btn.textContent = '复制'; }, 2000);
+    });
+  }
+
+  // 存储所有代码块的原始代码（用于重置功能）
+  const _originalCode = new Map();
+
+  // 初始化：保存所有代码块的原始代码
+  function initCodeReset() {
+    document.querySelectorAll('.code-tab-content pre code').forEach(codeBlock => {
+      _originalCode.set(codeBlock, codeBlock.textContent);
+    });
+  }
+
+  // 重置代码块为原始代码
+  function resetCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const original = _originalCode.get(codeBlock);
+    if (original !== undefined) {
+      codeBlock.textContent = original;
+      // 显示短暂提示
+      const originalText = btn.textContent;
+      btn.textContent = '✓ 已重置';
+      btn.style.background = 'rgba(34,197,94,0.3)';
+      btn.style.color = '#4ade80';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 1500);
+    }
+  }
+
+  // 图片灯箱
+  function openLightbox(src) {
+    const lb = document.getElementById('lightbox');
+    document.getElementById('lightbox-img').src = src;
+    lb.classList.add('active');
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('active');
+  }
+
+  // WebR 代码运行
+  let webRReady = false;
+  let webRLoading = false;
+  let webRInstance = null;
+
+  async function initWebR() {
+    if (webRReady) return webRInstance;
+    if (webRLoading) {
+      while (webRLoading) { await new Promise(r => setTimeout(r, 100)); }
+      return webRInstance;
+    }
+    webRLoading = true;
+    if (typeof WebR === 'undefined') {
+      webRLoading = false;
+      throw new Error('WebR 未加载，请检查网络连接');
+    }
+    try {
+      webRInstance = new WebR.WebR();
+      await webRInstance.init();
+
+      // 1) canvas 设备：单步容错，失败不阻塞后续流程
+      try {
+        await webRInstance.evalRVoid('webr::canvas_install()');
+      } catch (e) {
+        console.warn('canvas_install 跳过（可能为 I/O read 错误，图形输出将不可用）:', e && e.message);
+      }
+
+      // 2) 预安装 R 包。WebR CRAN 镜像 (repo.r-wasm.org) 不一定能访问，
+      //    因此每个包单独 try/catch，全部失败也不会让初始化彻底失败。
+      //    <span class="hl">注意：</span>lightgbm/rgl/CASdatasets/DPpackage 等不在镜像中，预期会失败。
+      const requiredPackages = [
+        "fitdistrplus", "statmod", "MASS", "Metrics", "ModelMetrics",
+        "caret", "data.table", "ggplot2", "glmnet", "gridExtra",
+        "pdp", "psych", "randomForest", "reshape2", "rpart", "rpart.plot",
+        "copula", "gsl", "evd", "evir", "tseries", "actuar",
+        "goftest", "mgcv", "gamlss", "gamlss.dist", "urca",
+        "forecast", "vars", "fGarch", "ChainLadder", "survival",
+        "mixtools", "kernelshap", "DALEX"
+      ];
+      const installErrors = [];
+      for (const pkg of requiredPackages) {
+        try {
+          await webRInstance.evalRVoid(
+            `tryCatch({if (!require("${pkg}", quietly = TRUE)) webr::install("${pkg}")}, ` +
+            `error = function(e) message("install ${pkg} skipped: ", conditionMessage(e)))`
+          );
+        } catch (e) {
+          // 捕获 JS 层 I/O 错误（如 repo.r-wasm.org 不可达），跳过此包
+          installErrors.push(pkg);
+          console.warn(`R包 ${pkg} 预安装跳过:`, e && e.message);
+        }
+      }
+      if (installErrors.length) {
+        console.info('下列 R 包在 WebR 中未能预安装（可能不在 WebR CRAN 镜像内，' +
+                     '运行相应代码时会报错）：', installErrors.join(', '));
+      }
+
+      webRReady = true;
+    } finally {
+      webRLoading = false;
+    }
+    return webRInstance;
+  }
+
+  function _decodeHtmlEntities(text) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+  }
+
+  async function runRCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const outputDiv = btn.closest('.code-tab-content').querySelector('.code-output');
+    const code = _decodeHtmlEntities(codeBlock.textContent);
+
+    outputDiv.innerHTML = '<div class="output-running">⏳ 正在加载 R 环境（首次运行需较长时间，请耐心等待）...</div>';
+    outputDiv.classList.add('show');
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ 运行中';
+    btn.disabled = true;
+
+    try {
+      const webr = await initWebR();
+
+      // WebR的canvas设备不支持showtext等字体包，统一使用翻译兜底
+      const hasChinese = /[\u4e00-\u9fff]/.test(code);
+      const codeToRun = _translateRCode(code);
+
+      outputDiv.innerHTML = '<div class="output-running">▶ 执行代码...</div>';
+
+      const shelter = await new webr.Shelter();
+      let outputHTML = '';
+      const plotCanvases = [];
+
+      try {
+        const result = await shelter.captureR(codeToRun, {
+          withAutoprint: true,
+          captureStreams: true,
+          captureConditions: false,
+          captureGraphics: true
+        });
+
+        for (const item of result.output) {
+          if (item.type === 'stdout' || item.type === 'stderr') {
+            const cls = item.type === 'stderr' ? 'error' : '';
+            outputHTML += `<pre class="output-text ${cls}">${escapeHTML(item.data)}</pre>`;
+          }
+        }
+
+        if (result.images && result.images.length > 0) {
+          for (const imgBitmap of result.images) {
+            const canvas = document.createElement('canvas');
+            canvas.width = imgBitmap.width;
+            canvas.height = imgBitmap.height;
+            canvas.className = 'output-plot';
+            canvas.style.maxWidth = '100%';
+            canvas.style.height = 'auto';
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imgBitmap, 0, 0);
+            plotCanvases.push(canvas);
+          }
+        }
+      } finally {
+        shelter.purge();
+      }
+
+      if (!outputHTML && plotCanvases.length === 0) {
+        outputHTML = '<pre class="output-text">(代码执行完毕，无文本输出)</pre>';
+      }
+
+      const translateNotice = hasChinese
+        ? '<div class="output-notice" style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">[提示] WebR环境缺少中文字体，图表中的中文标签已自动翻译为英文</div>'
+        : '';
+
+      outputDiv.innerHTML = `<div class="output-header">R 输出：</div>${translateNotice}${outputHTML}`;
+      for (const c of plotCanvases) {
+        outputDiv.appendChild(c);
+      }
+    } catch (err) {
+      outputDiv.innerHTML = `<div class="output-error">❌ 错误: ${escapeHTML(err.message || String(err))}</div>`;
+      console.error('WebR 运行错误:', err);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // ===== Python (Pyodide) 运行支持 =====
+  let pyodideReady = false;
+  let pyodideLoading = false;
+  let pyodideInstance = null;
+
+  async function initPyodide() {
+    if (pyodideReady) return pyodideInstance;
+    if (pyodideLoading) {
+      while (pyodideLoading) { await new Promise(r => setTimeout(r, 100)); }
+      return pyodideInstance;
+    }
+    pyodideLoading = true;
+    if (typeof loadPyodide === 'undefined') {
+      pyodideLoading = false;
+      throw new Error('Pyodide 未加载，请检查网络连接');
+    }
+    try {
+      pyodideInstance = await loadPyodide();
+      pyodideReady = true;
+    } finally {
+      pyodideLoading = false;
+    }
+    return pyodideInstance;
+  }
+
+  // 确保代码块有输出区域
+  function ensureOutputDiv(btn) {
+    const content = btn.closest('.code-tab-content');
+    let outputDiv = content.querySelector('.code-output');
+    if (!outputDiv) {
+      outputDiv = document.createElement('div');
+      outputDiv.className = 'code-output';
+      content.appendChild(outputDiv);
+    }
+    return outputDiv;
+  }
+
+  async function runPythonCode(btn) {
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const outputDiv = ensureOutputDiv(btn);
+    const code = _decodeHtmlEntities(codeBlock.textContent);
+
+    outputDiv.innerHTML = '<div class="output-running">⏳ 正在加载 Python 环境（首次运行需较长时间，请耐心等待）...</div>';
+    outputDiv.classList.add('show');
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ 运行中';
+    btn.disabled = true;
+
+    try {
+      const pyodide = await initPyodide();
+      outputDiv.innerHTML = '<div class="output-running">⏳ 加载依赖库（numpy, scipy, matplotlib）...</div>';
+
+      // 加载常用库
+      await pyodide.loadPackage(['numpy', 'scipy', 'matplotlib']);
+
+      // 重定向 stdout/stderr
+      let outputText = '';
+      pyodide.setStdout({ batched: (s) => { outputText += s + '\n'; } });
+      pyodide.setStderr({ batched: (s) => { outputText += s + '\n'; } });
+
+      // 配置 matplotlib 使用 Agg 后端，图形保存为 base64
+      // 策略：优先加载本地中文字体，失败则翻译中文为英文
+      const setupCode = `
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import io, base64
+import warnings
+import re
+
+# 抑制中文字体缺失的警告
+warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
+warnings.filterwarnings('ignore', message='.*missing from current font.*')
+
+# 中文术语英文翻译映射（按长度降序，避免短词误匹配）
+_CN_EN_MAP = [
+    ('概率质量函数', 'PMF'), ('累积分布函数', 'CDF'), ('概率密度函数', 'PDF'),
+    ('生存函数', 'Survival'), ('危险率函数', 'Hazard'),
+    ('二项分布', 'Binomial'), ('泊松分布', 'Poisson'), ('负二项分布', 'Neg.Binom'),
+    ('几何分布', 'Geometric'), ('指数分布', 'Exponential'), ('伽马分布', 'Gamma'),
+    ('对数正态分布', 'Lognormal'), ('帕累托分布', 'Pareto'), ('威布尔分布', 'Weibull'),
+    ('正态分布', 'Normal'), ('卡方分布', 'Chi-sq'), ('t分布', 't-dist'),
+    ('零截断负二项', 'ZTNB'), ('零调整负二项', 'ZMNB'),
+    ('零截断', 'ZT'), ('零调整', 'ZM'), ('零膨胀', 'ZI'),
+    ('索赔次数', 'Claim Count'), ('索赔金额', 'Claim Amt'), ('索赔强度', 'Severity'),
+    ('累积索赔', 'Cum.Claim'), ('总索赔', 'Total Claim'),
+    ('事故年', 'Acc.Year'), ('进展年', 'Dev.Year'), ('准备金', 'Reserve'),
+    ('费率', 'Rate'), ('保费', 'Premium'), ('赔款', 'Loss'), ('纯保费', 'Pure Prem'),
+    ('均值', 'Mean'), ('方差', 'Var'), ('标准差', 'Std'), ('中位数', 'Median'),
+    ('偏度', 'Skew'), ('峰度', 'Kurt'), ('分位数', 'Quantile'),
+    ('参数', 'Param'), ('估计', 'Est'), ('拟合', 'Fit'), ('预测', 'Pred'),
+    ('观测值', 'Obs'), ('期望值', 'Exp'), ('残差', 'Resid'),
+    ('风险', 'Risk'), ('损失', 'Loss'), ('概率', 'Prob'), ('频率', 'Freq'),
+    ('信度', 'Cred'), ('先验', 'Prior'), ('后验', 'Posterior'),
+    ('回归', 'Reg'), ('分类', 'Class'), ('聚类', 'Clust'),
+    ('训练', 'Train'), ('测试', 'Test'), ('验证', 'Valid'),
+    ('准确率', 'Acc'), ('误差', 'Error'), ('平方误差', 'MSE'),
+    ('时间', 'Time'), ('年份', 'Year'), ('月份', 'Month'), ('季度', 'Qtr'),
+    ('金额', 'Amt'), ('数量', 'Count'), ('比率', 'Ratio'), ('因子', 'Factor'),
+    ('分布', 'Dist'), ('函数', 'Func'), ('模型', 'Model'), ('数据', 'Data'),
+    ('图', 'Fig'), ('表', 'Tab'), ('例', 'Ex'), ('注', 'Note'),
+    ('的', ' '), ('和', ' & '), ('与', ' & '), ('在', ' at '), ('为', ' = '),
+    ('中', ' in '), ('上', ' up '), ('下', ' down '), ('前', ' fwd '), ('后', ' back '),
+    ('尺度', 'Scale'), ('形状', 'Shape'), ('位置', 'Loc'),
+    ('直方图', 'Histogram'), ('密度曲线', 'Density'), ('散点图', 'Scatter'),
+    ('拟合优度', 'Goodness of Fit'), ('QQ图', 'QQ Plot'), ('PP图', 'PP Plot'),
+    ('经验分布', 'Empirical'), ('理论分布', 'Theoretical'),
+    ('对数似然', 'Log-Likelihood'), ('AIC', 'AIC'), ('BIC', 'BIC'),
+    ('置信区间', 'CI'), ('标准误', 'SE'), ('p值', 'p-value'),
+    ('极大似然估计', 'MLE'), ('矩估计', 'MoM'),
+    ('火灾损失', 'Fire Loss'), ('丹麦', 'Danish'),
+    ('实际', 'Actual'), ('理论', 'Theor'), ('样本', 'Sample'),
+    ('检验', 'Test'), ('统计量', 'Stat'), ('自由度', 'df'),
+    ('对比', ' vs '), ('频数', 'Freq'), ('累积', 'Cum'),
+]
+
+def _translate_cn(text):
+    """将中文文本翻译为英文"""
+    if not isinstance(text, str):
+        return text
+    result = text
+    for cn, en in _CN_EN_MAP:
+        result = result.replace(cn, en)
+    result = re.sub(r'[\\u4e00-\\u9fff]', '?', result)
+    result = re.sub(r' +', ' ', result).strip()
+    return result
+
+_plots = []
+_font_loaded = False
+_font_prop = None
+
+def _apply_font_to_fig(fig, font_prop):
+    """将字体属性直接应用到figure中所有文本元素（绕过rcParams）"""
+    for ax in fig.get_axes():
+        if ax.title:
+            ax.title.set_fontproperties(font_prop)
+        if ax.xaxis.label:
+            ax.xaxis.label.set_fontproperties(font_prop)
+        if ax.yaxis.label:
+            ax.yaxis.label.set_fontproperties(font_prop)
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontproperties(font_prop)
+        for text in ax.texts:
+            text.set_fontproperties(font_prop)
+        legend = ax.get_legend()
+        if legend:
+            for text in legend.get_texts():
+                text.set_fontproperties(font_prop)
+    if fig._suptitle:
+        fig._suptitle.set_fontproperties(font_prop)
+
+def _translate_fig_text(fig):
+    """翻译figure中所有中文文本为英文"""
+    for ax in fig.get_axes():
+        if ax.get_title():
+            ax.set_title(_translate_cn(ax.get_title()))
+        if ax.get_xlabel():
+            ax.set_xlabel(_translate_cn(ax.get_xlabel()))
+        if ax.get_ylabel():
+            ax.set_ylabel(_translate_cn(ax.get_ylabel()))
+        legend = ax.get_legend()
+        if legend:
+            for text in legend.get_texts():
+                t = text.get_text()
+                if t:
+                    text.set_text(_translate_cn(t))
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            if label.get_text():
+                label.set_text(_translate_cn(label.get_text()))
+        for text in ax.texts:
+            t = text.get_text()
+            if t:
+                text.set_text(_translate_cn(t))
+    if fig._suptitle and fig._suptitle.get_text():
+        fig._suptitle.set_text(_translate_cn(fig._suptitle.get_text()))
+
+def _capture_show(*args, **kwargs):
+    for num in plt.get_fignums():
+        fig = plt.figure(num)
+        if _font_loaded and _font_prop:
+            _apply_font_to_fig(fig, _font_prop)
+        else:
+            _translate_fig_text(fig)
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+        buf.seek(0)
+        _plots.append(base64.b64encode(buf.read()).decode('utf-8'))
+        buf.close()
+    plt.close('all')
+
+plt.show = _capture_show
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+`;
+      await pyodide.runPythonAsync(setupCode);
+
+      // 加载本地中文字体（同源fetch，无CORS问题）
+      // 必须在setupCode之后执行，确保_font_loaded控制翻译逻辑
+      try {
+        const fontUrl = new URL('../../assets/fonts/NotoSansSC-Regular.otf', window.location.href).href;
+        const fontResp = await fetch(fontUrl);
+        if (fontResp.ok) {
+          const fontBuffer = await fontResp.arrayBuffer();
+          const fontBytes = new Uint8Array(fontBuffer);
+          pyodide.FS.writeFile('/tmp/cjk_font.otf', fontBytes);
+          await pyodide.runPythonAsync(`
+import os
+font_path = '/tmp/cjk_font.otf'
+if os.path.getsize(font_path) > 100000:
+    import matplotlib.font_manager as fm
+    fm.fontManager.addfont(font_path)
+    _font_prop = fm.FontProperties(fname=font_path)
+    _font_name = _font_prop.get_name()
+    _font_loaded = True
+    print(f'[提示] 中文字体加载成功: {_font_name}')
+else:
+    print('[提示] 字体文件异常，使用英文翻译模式')
+`);
+        } else {
+          console.log('本地字体获取失败，使用英文翻译模式');
+        }
+      } catch (fontErr) {
+        console.log('字体加载异常:', fontErr, '，使用英文翻译模式');
+      }
+
+      outputDiv.innerHTML = '<div class="output-running">▶ 执行代码...</div>';
+
+      // 运行用户代码
+      await pyodide.runPythonAsync(code);
+
+      // 获取图形
+      const plots = pyodide.globals.get('_plots').toJs();
+
+      let outputHTML = '';
+      if (outputText.trim()) {
+        outputHTML += `<pre class="output-text">${escapeHTML(outputText)}</pre>`;
+      }
+
+      if (plots && plots.length > 0) {
+        for (const imgBase64 of plots) {
+          outputHTML += `<img class="output-plot" src="data:image/png;base64,${imgBase64}" style="max-width:100%;height:auto;" />`;
+        }
+      }
+
+      if (!outputHTML) {
+        outputHTML = '<pre class="output-text">(代码执行完毕，无文本输出)</pre>';
+      }
+
+      outputDiv.innerHTML = `<div class="output-header">Python 输出：</div>${outputHTML}`;
+    } catch (err) {
+      outputDiv.innerHTML = `<div class="output-error">❌ 错误: ${escapeHTML(err.message || String(err))}</div>`;
+      console.error('Pyodide 运行错误:', err);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // ===== SAS 运行提示 =====
+  async function runSasCode(btn) {
+    const outputDiv = ensureOutputDiv(btn);
+    const codeBlock = btn.closest('.code-tab-content').querySelector('pre code');
+    const code = _decodeHtmlEntities(codeBlock.textContent);
+
+    outputDiv.innerHTML = `
+      <div class="output-header">SAS 运行提示：</div>
+      <div class="output-info">
+        <p><strong>&#9888; SAS 为商业软件，无法在浏览器中直接运行。</strong></p>
+        <p>请将代码复制到本地 SAS 环境中执行（如 SAS Studio、SAS EG 或 SAS Base）。</p>
+        <p style="margin-top:10px;color:var(--text-secondary);font-size:0.85rem;">&#128161; 提示：您可以切换到 R 或 Python 标签页，在浏览器中直接运行等效代码查看结果。</p>
+      </div>
+    `;
+    outputDiv.classList.add('show');
+  }
+
+  function escapeHTML(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // 滚动监听 - 高亮当前章节
+  document.addEventListener('DOMContentLoaded', function() {
+    // 初始化代码块重置功能
+    initCodeReset();
+
+    const navLinks = document.querySelectorAll('#sidebar a.nav-link');
+    // 收集所有带id的章节元素（section-card、h3、h4）
+    const headings = document.querySelectorAll('.section-card, .section-card h3[id], .section-card h4[id]');
+
+    function updateActiveNav() {
+      let current = '';
+      headings.forEach(h => {
+        const top = h.getBoundingClientRect().top;
+        if (top < 200) current = h.id;
+      });
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) {
+          link.classList.add('active');
+        }
+      });
+    }
+    window.addEventListener('scroll', updateActiveNav);
+
+    // 侧边栏切换（移动端）
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+      });
+      navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (window.innerWidth <= 768) sidebar.classList.remove('open');
+        });
+      });
+    }
+
+    // 主题初始化
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      const btn = document.querySelector('.theme-toggle');
+      if (btn) btn.innerHTML = '&#9728; 浅色模式';
+    }
+  });
+
+  // 主题切换
+  function toggleTheme() {
+    const html = document.documentElement;
+    const btn = document.querySelector('.theme-toggle');
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+      if (btn) btn.innerHTML = '&#127769; 深色模式';
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+      if (btn) btn.innerHTML = '&#9728; 浅色模式';
+    }
+  }
+
+</script>
+
+</body>
+</html>
